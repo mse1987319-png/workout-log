@@ -68,6 +68,7 @@ No Supabase CLI, Vercel CLI or Docker is needed: this project uses the hosted da
 | `oxlint` | Vite template | Linter (`npm run lint`) |
 | `@supabase/supabase-js` | Added by the script | Auth and database client |
 | `react-router-dom` | Added by the script | Navigation between the screens |
+| `vitest`, `jsdom`, `@testing-library/*` | `package.json` (dev) | Unit tests (`npm test`); they never contact Supabase |
 
 `recharts` is needed only for the bonus Progress chart. Add it in that feature's branch: `npm install recharts`.
 
@@ -141,6 +142,7 @@ npm run dev
 | `powershell -ExecutionPolicy Bypass -File scripts\setup.ps1 -CheckOnly` | Every line is `[ok]`; ends with "Environment is ready" |
 | `npm run dev` | Vite prints `Local: http://localhost:5173/`; the page opens |
 | `npm run build` | Ends with `✓ built in …`; output in `dist/` |
+| `npm test` | Every test file passes |
 | `git status` | `.env.local`, `node_modules/` and `dist/` are **not** listed |
 
 ## Troubleshooting
