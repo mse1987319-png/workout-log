@@ -10,24 +10,27 @@ The Database Webhook to Zapier is a separate step in lecture 3: [zapier.md](zapi
 2. Paste the whole of [`supabase/schema.sql`](../supabase/schema.sql) and press **Run**.
    Expected: `Success. No rows returned`. Running it again later is safe.
 3. Check:
-   - **Table Editor** lists `plans` and `workouts`.
-   - **Authentication → Policies** (or **Database → Policies**) shows RLS **enabled** on both tables, with 4 policies each:
+   - **Table Editor** lists `plans`, `workouts` and `workout_sets`.
+   - **Authentication → Policies** (or **Database → Policies**) shows RLS **enabled** on all three tables, with 4 policies each:
 
      | Table | Policies |
      |---|---|
      | `plans` | Read own plans · Add own plans · Edit own plans · Delete own plans |
      | `workouts` | Read own workouts · Add workouts to own plans · Edit own workouts · Delete own workouts |
+     | `workout_sets` | Read own sets · Add sets to own workouts · Edit own sets · Delete own sets |
 
 4. Take the submission screenshots now (checklist item 3): the Table Editor with both tables, and the Policies page.
 
 What the schema does, in short:
 
-| | `plans` (table A) | `workouts` (table B) |
-|---|---|---|
-| Key fields | `name`, `goal` | `plan_id → plans.id`, `title`, `type`, `duration_min` |
-| `user_id` | `default auth.uid()`; the app never sends it | same |
-| Checks | name 1–100 characters | `type` is `strength` or `other`; duration 1–1440 min |
-| RLS | `user_id = auth.uid()` for select, insert, update, delete | same, and a workout can only be filed under one of your own plans |
+| | `plans` (table A) | `workouts` (table B) | `workout_sets` (Extended) |
+|---|---|---|---|
+| Key fields | `name`, `goal` | `plan_id → plans.id`, `title`, `type`, `duration_min`; optional `activity`, `distance_km`, `notes` | `workout_id → workouts.id`, `exercise`, `set_no`, `reps`, `weight_kg` |
+| `user_id` | `default auth.uid()`; the app never sends it | same | same |
+| Checks | name 1–100 characters | `type` is `strength` or `other`; duration 1–1440 min; `activity` is run/bike/swim/walk/row/other | reps 1–1000; weight 0–1000 kg (0 = bodyweight); up to 100 sets per workout |
+| RLS | `user_id = auth.uid()` for select, insert, update, delete | same, and a workout can only be filed under one of your own plans | same, and sets can only be added to your own workouts |
+
+The app saves a workout through the database function **`log_workout()`**: the workout and its sets in one transaction, as the signed-in user (so every policy above applies). The INSERT into `workouts` still fires the Database Webhook once per workout; if anything fails, nothing is saved and nothing is sent.
 
 ## 2. Sign-up without email confirmation
 
