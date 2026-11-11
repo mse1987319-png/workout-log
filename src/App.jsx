@@ -5,6 +5,7 @@ import Layout from './components/Layout'
 import { ErrorState } from './components/States'
 import { configError } from './lib/supabase'
 import LoginPage from './pages/LoginPage'
+import LogWorkoutPage from './pages/LogWorkoutPage'
 import PlansPage from './pages/PlansPage'
 
 export default function App() {
@@ -32,6 +33,7 @@ export default function App() {
           }
         >
           <Route index element={<PlansPage />} />
+          <Route path="log" element={<LogWorkoutPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

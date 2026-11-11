@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -81,6 +81,16 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Try again' }))
     expect(await screen.findByRole('heading', { name: 'Log in' })).toBeInTheDocument()
     expect(supabase.auth.signOut).toHaveBeenCalledTimes(2)
+  })
+
+  it('opens the Log workout screen from the navigation', async () => {
+    supabase.auth = createFakeAuth({ session: sessionFor(ATHLETE) })
+    const user = renderApp('/')
+
+    const nav = await screen.findByRole('navigation', { name: 'Main' })
+    await user.click(within(nav).getByRole('link', { name: 'Log workout' }))
+
+    expect(await screen.findByRole('heading', { name: 'Log workout' })).toBeInTheDocument()
   })
 
   it('sends an unknown address to the plans', async () => {
