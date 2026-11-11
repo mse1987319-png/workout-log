@@ -697,3 +697,95 @@ textarea {
 .sets-table tbody tr:last-child > * {
   border-bottom: 0;
 }
+
+/* ---------- Progress charts ---------- */
+
+.chart-summary {
+  margin: 0;
+  font-weight: 600;
+}
+
+.chart-filter {
+  max-width: 20rem;
+}
+
+.chart {
+  width: 100%;
+  min-width: 0;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin: 0 0 0.25rem;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  list-style: none;
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.swatch {
+  display: inline-block;
+  flex: none;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 2px;
+}
+
+.chart-tooltip {
+  padding: 0.5rem 0.75rem;
+  color: var(--text);
+  font-size: 0.85rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.chart-tooltip p {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.chart-tooltip .chart-tooltip-title {
+  margin-bottom: 0.2rem;
+  color: var(--muted);
+}
+
+.table-view summary {
+  color: var(--accent);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.data-table {
+  width: 100%;
+  margin-top: 0.5rem;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table thead th {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.data-table tbody th {
+  font-weight: 500;
+}

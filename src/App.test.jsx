@@ -93,6 +93,18 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Log workout' })).toBeInTheDocument()
   })
 
+  it('opens the Progress screen from the navigation', async () => {
+    supabase.auth = createFakeAuth({ session: sessionFor(ATHLETE) })
+    backend.reply('GET', '/rest/v1/workouts', 200, [])
+    backend.reply('GET', '/rest/v1/workout_sets', 200, [])
+    const user = renderApp('/')
+
+    const nav = await screen.findByRole('navigation', { name: 'Main' })
+    await user.click(within(nav).getByRole('link', { name: 'Progress' }))
+
+    expect(await screen.findByRole('heading', { name: 'Progress', level: 1 })).toBeInTheDocument()
+  })
+
   it('sends an unknown address to the plans', async () => {
     supabase.auth = createFakeAuth({ session: sessionFor(ATHLETE) })
     renderApp('/no-such-page')
