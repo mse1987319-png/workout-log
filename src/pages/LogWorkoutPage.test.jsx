@@ -183,7 +183,7 @@ describe('LogWorkoutPage', () => {
   describe('new workout', () => {
     it('logs a workout, confirms it and clears the form for the next one', async () => {
       backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
-      backend.reply('POST', '/rest/v1/workouts', 201, savedWorkout({ plan_id: 'plan-2' }))
+      backend.reply('POST', '/rest/v1/rpc/log_workout', 200, savedWorkout({ plan_id: 'plan-2' }))
       const user = renderLog()
       await screen.findByLabelText('Plan')
 
@@ -193,11 +193,15 @@ describe('LogWorkoutPage', () => {
       const status = await screen.findByRole('status')
       expect(status).toHaveTextContent('Workout saved: Leg day.')
       expect(screen.getByRole('link', { name: 'See it in My plans' })).toHaveAttribute('href', '/')
-      expect(posts('/rest/v1/workouts')[0].body).toEqual({
-        plan_id: 'plan-2',
-        title: 'Leg day',
-        type: 'strength',
-        duration_min: 60,
+      expect(posts('/rest/v1/rpc/log_workout')[0].body).toEqual({
+        p_plan_id: 'plan-2',
+        p_title: 'Leg day',
+        p_type: 'strength',
+        p_duration_min: 60,
+        p_activity: null,
+        p_distance_km: null,
+        p_notes: null,
+        p_sets: [],
       })
       expect(screen.getByLabelText('Plan')).toHaveValue('plan-2')
       expect(screen.getByLabelText('Title')).toHaveValue('')
@@ -207,7 +211,7 @@ describe('LogWorkoutPage', () => {
 
     it('sends type "other" for cardio and similar workouts', async () => {
       backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
-      backend.reply('POST', '/rest/v1/workouts', 201, savedWorkout({ title: '5 km run', type: 'other' }))
+      backend.reply('POST', '/rest/v1/rpc/log_workout', 200, savedWorkout({ title: '5 km run', type: 'other' }))
       const user = renderLog()
       await screen.findByLabelText('Plan')
 
@@ -215,7 +219,7 @@ describe('LogWorkoutPage', () => {
       await user.click(screen.getByRole('button', { name: 'Save workout' }))
 
       await screen.findByText(/Workout saved/)
-      expect(posts('/rest/v1/workouts')[0].body).toMatchObject({ type: 'other', duration_min: 30 })
+      expect(posts('/rest/v1/rpc/log_workout')[0].body).toMatchObject({ p_type: 'other', p_duration_min: 30 })
     })
 
     it('needs a title and a type before saving', async () => {
@@ -230,7 +234,7 @@ describe('LogWorkoutPage', () => {
       await user.click(screen.getByRole('button', { name: 'Save workout' }))
       expect(screen.getByRole('alert')).toHaveTextContent('Choose a type: Strength or Other.')
 
-      expect(posts('/rest/v1/workouts')).toHaveLength(0)
+      expect(posts('/rest/v1/rpc/log_workout')).toHaveLength(0)
     })
 
     it.each(['', '0', '45.5', '1441'])('rejects the duration "%s"', async (duration) => {
@@ -244,12 +248,12 @@ describe('LogWorkoutPage', () => {
       expect(screen.getByRole('alert')).toHaveTextContent(
         'Enter the duration in whole minutes (1–1440).',
       )
-      expect(posts('/rest/v1/workouts')).toHaveLength(0)
+      expect(posts('/rest/v1/rpc/log_workout')).toHaveLength(0)
     })
 
     it('shows Saving… while the workout is being saved', async () => {
       backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
-      backend.hang('POST', '/rest/v1/workouts')
+      backend.hang('POST', '/rest/v1/rpc/log_workout')
       const user = renderLog()
       await screen.findByLabelText('Plan')
 
@@ -261,8 +265,8 @@ describe('LogWorkoutPage', () => {
 
     it('explains a failed save, keeps the form and retries', async () => {
       backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
-      backend.networkDown('POST', '/rest/v1/workouts')
-      backend.reply('POST', '/rest/v1/workouts', 201, savedWorkout())
+      backend.networkDown('POST', '/rest/v1/rpc/log_workout')
+      backend.reply('POST', '/rest/v1/rpc/log_workout', 200, savedWorkout())
       const user = renderLog()
       await screen.findByLabelText('Plan')
 
@@ -274,7 +278,7 @@ describe('LogWorkoutPage', () => {
 
       await user.click(screen.getByRole('button', { name: 'Try again' }))
       expect(await screen.findByRole('status')).toHaveTextContent('Workout saved: Leg day.')
-      const sent = posts('/rest/v1/workouts')
+      const sent = posts('/rest/v1/rpc/log_workout')
       expect(sent).toHaveLength(2)
       expect(sent[1].body).toEqual(sent[0].body)
     })
