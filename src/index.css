@@ -673,6 +673,7 @@ textarea {
 .sets-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed; /* same column widths in every exercise */
   font-variant-numeric: tabular-nums;
 }
 
