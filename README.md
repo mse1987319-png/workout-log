@@ -4,7 +4,17 @@ A web workout log. Athletes follow workout plans (their own, or ones an instruct
 
 Capstone project for the course *"The full cycle from idea to live product"*: one app that runs online, stores data, separates users, and reports every important event by email.
 
-> **Status: planning.** The product scope and implementation plan are written; the app itself is not scaffolded yet (`index.js` is a placeholder). See [docs/implementation-plan.md](docs/implementation-plan.md).
+> **Status: Core tier, lectures 1–2 done in code.** Sign-up/login, the plans list and workout logging work against Supabase. Deployment and the email automation are set up by following [docs/deployment.md](docs/deployment.md) and [docs/zapier.md](docs/zapier.md).
+>
+> **Live:** *add the Vercel URL here after deployment.*
+
+## What it does
+
+- **Accounts**: sign up and log in with email and password. Every user sees only their own plans and workouts, enforced in the database with Row Level Security.
+- **My plans** (list): each plan (table A) with the workouts (table B) logged under it; a workout's title can be edited.
+- **Log workout** (create): create a plan; log a workout under a plan with title, type (`strength` / `other`) and duration.
+- **Email to the instructor**: each new workout → Supabase Database Webhook → Zapier → Gmail. Strength workouts arrive as *STRENGTH: title*, others as *New workout: title*.
+- **Four states** on every screen that loads or saves: Loading, Error (plain language, with *Try again*), Empty, Success.
 
 ## How it works
 
@@ -22,51 +32,77 @@ Zapier  (Catch Hook → Filter → Paths)
 Code path (separate): GitHub → Vercel → public URL
 ```
 
-- **Users:** sign-up and login; every user sees only their own data (Row Level Security).
-- **Data:** table A `plans` and table B `workouts` (`plan_id → plans.id`).
-- **Event:** a logged workout is one `INSERT` into `workouts`.
-- **Routing field:** `workouts.type` is `strength` or `other` (cardio, mobility, etc.); Zapier Paths picks the email path from it.
+- **Data**: table A `plans` → table B `workouts` (`plan_id → plans.id`), defined in [`supabase/schema.sql`](supabase/schema.sql).
+- **Event**: a logged workout is one `INSERT` into `workouts`.
+- **Routing field**: `workouts.type` is `strength` or `other` (cardio, mobility, etc.); Zapier Paths picks the email from it.
 
 ## Stack
 
 | Part | Tool |
 |---|---|
 | Code | GitHub (feature branches + pull requests) |
-| Interface | React + Vite, JavaScript |
+| Interface | React 19 + Vite, JavaScript, React Router, plain CSS |
 | Data and auth | Supabase (Auth, 2 tables, RLS) |
 | Deployment | Vercel |
 | Automation | Zapier (Webhook → Filter → Paths → Gmail) |
+| Tests | Vitest + Testing Library |
 | Documentation | Notion + this README |
 
-## Setup
+## Run it locally
 
-On Windows, one script installs the tools, scaffolds the app, installs dependencies and creates the env files:
+Needs Node.js 22.12 or newer. On Windows, `scripts\setup.ps1` installs the tools and creates the env files ([setup.md](docs/setup.md)).
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
+```bash
+npm install
+cp .env.example .env.local     # then fill in the two values
+npm run dev                    # http://localhost:5173
 ```
 
-Full instructions, manual steps for other systems and troubleshooting: [docs/setup.md](docs/setup.md).
+The Supabase project needs a one-time setup: run `supabase/schema.sql` and turn off *Confirm email* ([docs/supabase.md](docs/supabase.md)).
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Development server at `http://localhost:5173` |
+| `npm test` | Unit tests (Vitest); they never contact Supabase |
+| `npm run lint` | Linter (oxlint) |
+| `npm run build` | Production build into `dist/` |
 
 ## Environment variables
 
-Names only; never commit values. Create `.env.local` yourself (it is git-ignored) and set the same two variables in Vercel.
+Names only; never commit values. `.env.local` is git-ignored; set the same two variables in Vercel.
 
 | Variable | Where to get it | Secret? |
 |---|---|---|
-| `VITE_SUPABASE_URL` | Supabase → Project Settings → API | No |
-| `VITE_SUPABASE_ANON_KEY` | Supabase → Project Settings → API | Safe only with RLS enabled |
+| `VITE_SUPABASE_URL` | Supabase → Project Settings → Data API | No |
+| `VITE_SUPABASE_ANON_KEY` | Supabase → Project Settings → API Keys (publishable / anon key) | Safe only with RLS enabled |
 
 The Supabase `service_role` key and the Zapier Catch Hook URL must **never** go into the app, Vercel or this repo.
+
+## Documentation
+
+| File | Contents |
+|---|---|
+| [docs/implementation-plan.md](docs/implementation-plan.md) | Scope tiers, data model, Zapier design, test table, lecture plan |
+| [docs/setup.md](docs/setup.md) | Tools, packages and environment setup |
+| [docs/supabase.md](docs/supabase.md) | Tables, Row Level Security, sign-up and URL settings; tests 1 and 4 |
+| [docs/deployment.md](docs/deployment.md) | Vercel: env vars, Supabase URLs, incognito test |
+| [docs/zapier.md](docs/zapier.md) | Webhook → Zap → Gmail, error handler, cost, cleanup; tests 2, 3 and 5 |
 
 ## Repository layout
 
 ```
-docs/implementation-plan.md   high-level plan: scope tiers, data model, Zapier, test table
-docs/setup.md                 environment and dependency setup
-scripts/setup.ps1             automated setup for Windows (safe to re-run)
-_task/                        course task decks (LT / EN) and the prompts used to scope the idea
-index.js, package.json        placeholder; the Vite app is added in lecture 1
+src/
+  pages/          Login, My plans (list), Log workout (create)
+  components/     header, plan card, workout row, forms, the four UI states
+  auth/           session provider and route guard
+  api/            Supabase queries for plans and workouts
+  lib/            Supabase client, settings check, error messages
+  test/           test setup and fakes (no network)
+supabase/schema.sql   tables + Row Level Security
+docs/                 guides (see Documentation)
+scripts/setup.ps1     automated setup for Windows (safe to re-run)
+vercel.json           lets client-side routes survive a page reload
+_task/                course task decks (LT / EN) and the prompts used to scope the idea
 ```
 
 ## Roadmap
@@ -74,8 +110,8 @@ index.js, package.json        placeholder; the Vite app is added in lecture 1
 Built in four lectures, one `feature/…` branch and pull request per feature:
 
 1. **Foundation:** scope card, Notion page, repo, Vite app, Supabase project and tables.
-2. **Users and interface:** Auth, 3 screens with 4 states (loading, error, empty, success), RLS.
-3. **Deployment and automation:** Vercel with env vars, Supabase webhook, Zap with Filter and Paths, Gmail.
+2. **Users and interface:** Auth, 3 screens with 4 states (loading, error, empty, success), RLS. *Code done: `feature/auth`, `feature/plans-workouts`.*
+3. **Deployment and automation:** Vercel with env vars, Supabase webhook, Zap with Filter and Paths, Gmail. *Guides: `feature/zapier-docs`.*
 4. **Verification and presentation:** test table, error handling, README and Notion, 5-minute demo.
 
 Extended ideas (exercises/sets/reps, instructor role, plan assignment, progress reports by email, charts) are tracked in the implementation plan.
