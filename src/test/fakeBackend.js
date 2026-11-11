@@ -11,31 +11,39 @@ function json(status, body) {
 }
 
 export function createFakeBackend() {
-  const replies = new Map()
+  // Each route: method + path (+ optional predicate on the request) and a
+  // queue of replies; the last reply in a queue is reused. Routes with a
+  // predicate are tried first.
+  const routes = []
   const requests = []
 
-  // Replies are queued per "METHOD /path"; the last one is reused.
-  function queue(method, path, makeResponse) {
-    const key = `${method} ${path}`
-    if (!replies.has(key)) replies.set(key, [])
-    replies.get(key).push(makeResponse)
+  function queue(method, path, makeResponse, when = null) {
+    let route = routes.find((r) => r.method === method && r.path === path && r.when === when)
+    if (!route) {
+      route = { method, path, when, replies: [] }
+      routes.push(route)
+    }
+    route.replies.push(makeResponse)
   }
 
   async function fetch(input, init = {}) {
     const url = new URL(String(input))
     const method = (init.method ?? 'GET').toUpperCase()
-    requests.push({
+    const request = {
       method,
       path: url.pathname,
       query: url.searchParams,
       headers: new Headers(init.headers),
       body: typeof init.body === 'string' ? JSON.parse(init.body) : undefined,
-    })
-    const pending = replies.get(`${method} ${url.pathname}`)
-    if (!pending?.length) {
-      throw new Error(`fake backend: no reply set for ${method} ${url.pathname}`)
     }
-    const makeResponse = pending.length > 1 ? pending.shift() : pending[0]
+    requests.push(request)
+    const candidates = routes.filter((r) => r.method === method && r.path === url.pathname)
+    const route =
+      candidates.find((r) => r.when && r.when(request)) ?? candidates.find((r) => !r.when)
+    if (!route?.replies.length) {
+      throw new Error(`fake backend: no reply set for ${method} ${url.pathname}${url.search}`)
+    }
+    const makeResponse = route.replies.length > 1 ? route.replies.shift() : route.replies[0]
     return makeResponse()
   }
 
@@ -43,11 +51,15 @@ export function createFakeBackend() {
     fetch,
     requests,
     reset() {
-      replies.clear()
+      routes.length = 0
       requests.length = 0
     },
     reply(method, path, status, body) {
       queue(method, path, () => json(status, body))
+    },
+    /** Like reply(), but only for requests where when(request) is true. */
+    replyWhen(method, path, when, status, body) {
+      queue(method, path, () => json(status, body), when)
     },
     networkDown(method, path) {
       queue(method, path, () => Promise.reject(new TypeError('Failed to fetch')))

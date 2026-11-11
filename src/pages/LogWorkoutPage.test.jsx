@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -281,6 +281,203 @@ describe('LogWorkoutPage', () => {
       const sent = posts('/rest/v1/rpc/log_workout')
       expect(sent).toHaveLength(2)
       expect(sent[1].body).toEqual(sent[0].body)
+    })
+  })
+})
+
+describe('LogWorkoutPage: exercises and cardio details', () => {
+  beforeEach(() => {
+    backend.reset()
+    backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+    // Exercise names and history: none unless a test says otherwise.
+    backend.reply('GET', '/rest/v1/workout_sets', 200, [])
+  })
+
+  async function startStrength(user) {
+    await screen.findByLabelText('Plan')
+    await fillWorkout(user, { title: 'Leg day', type: 'Strength', duration: '60' })
+  }
+
+  it('logs a strength workout with its exercises and sets', async () => {
+    backend.reply('POST', '/rest/v1/rpc/log_workout', 200, savedWorkout({ id: 'workout-7' }))
+    const user = renderLog()
+    await startStrength(user)
+
+    await user.click(screen.getByRole('button', { name: 'Add exercise' }))
+    await user.type(screen.getByLabelText('Exercise 1 name'), 'Squat')
+    await user.type(screen.getByLabelText('Exercise 1, set 1 reps'), '5')
+    await user.type(screen.getByLabelText('Exercise 1, set 1 kg'), '105')
+    await user.click(screen.getByRole('button', { name: 'Add set to exercise 1' }))
+    expect(screen.getByLabelText('Exercise 1, set 2 reps')).toHaveValue(5)
+    expect(screen.getByLabelText('Exercise 1, set 2 kg')).toHaveValue(105)
+    await user.clear(screen.getByLabelText('Exercise 1, set 2 kg'))
+    await user.type(screen.getByLabelText('Exercise 1, set 2 kg'), '107.5')
+
+    await user.click(screen.getByRole('button', { name: 'Add exercise' }))
+    await user.type(screen.getByLabelText('Exercise 2 name'), ' Pull-up ')
+    await user.type(screen.getByLabelText('Exercise 2, set 1 reps'), '8')
+
+    await user.click(screen.getByRole('button', { name: 'Save workout' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Workout saved: Leg day.')
+    expect(posts('/rest/v1/rpc/log_workout')[0].body).toMatchObject({
+      p_type: 'strength',
+      p_activity: null,
+      p_distance_km: null,
+      p_sets: [
+        { exercise: 'Squat', set_no: 1, reps: 5, weight_kg: 105 },
+        { exercise: 'Squat', set_no: 2, reps: 5, weight_kg: 107.5 },
+        { exercise: 'Pull-up', set_no: 3, reps: 8, weight_kg: 0 },
+      ],
+    })
+    expect(screen.getByRole('link', { name: 'Open it' })).toHaveAttribute('href', '/workouts/workout-7')
+    expect(screen.queryByLabelText('Exercise 1 name')).not.toBeInTheDocument()
+  })
+
+  it("shows last time's sets for an exercise, or that it is the first time", async () => {
+    backend.replyWhen(
+      'GET',
+      '/rest/v1/workout_sets',
+      (request) => request.query.get('exercise') === 'ilike.Squat',
+      200,
+      [
+        { workout_id: 'w1', set_no: 1, reps: 5, weight_kg: 100, created_at: '2026-11-10T18:00:00+00:00' },
+        { workout_id: 'w1', set_no: 2, reps: 5, weight_kg: 100, created_at: '2026-11-10T18:00:00+00:00' },
+      ],
+    )
+    const user = renderLog()
+    await startStrength(user)
+
+    await user.click(screen.getByRole('button', { name: 'Add exercise' }))
+    await user.type(screen.getByLabelText('Exercise 1 name'), 'Squat')
+    await user.tab()
+    expect(await screen.findByText(/^Last time \(.+\): 2 × 5 @ 100 kg$/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Add exercise' }))
+    await user.type(screen.getByLabelText('Exercise 2 name'), 'Lunge')
+    await user.tab()
+    expect(await screen.findByText('First time logging Lunge.')).toBeInTheDocument()
+  })
+
+  it('suggests exercise names used before', async () => {
+    backend.replyWhen(
+      'GET',
+      '/rest/v1/workout_sets',
+      (request) => request.query.get('select') === 'exercise',
+      200,
+      [{ exercise: 'Squat' }, { exercise: 'Bench press' }],
+    )
+    const user = renderLog()
+    await startStrength(user)
+    await user.click(screen.getByRole('button', { name: 'Add exercise' }))
+
+    const input = screen.getByLabelText('Exercise 1 name')
+    await waitFor(() => {
+      const listId = input.getAttribute('list')
+      const options = [...document.querySelectorAll(`datalist[id="${listId}"] option`)].map((o) => o.value)
+      expect(options).toEqual(['Squat', 'Bench press'])
+    })
+  })
+
+  it('explains a problem in the exercises and does not save', async () => {
+    const user = renderLog()
+    await startStrength(user)
+    await user.click(screen.getByRole('button', { name: 'Add exercise' }))
+    await user.type(screen.getByLabelText('Exercise 1, set 1 reps'), '5')
+
+    await user.click(screen.getByRole('button', { name: 'Save workout' }))
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Enter a name for exercise 1.')
+    expect(posts('/rest/v1/rpc/log_workout')).toHaveLength(0)
+  })
+
+  it('removes a set and an exercise', async () => {
+    backend.reply('POST', '/rest/v1/rpc/log_workout', 200, savedWorkout())
+    const user = renderLog()
+    await startStrength(user)
+    await user.click(screen.getByRole('button', { name: 'Add exercise' }))
+    await user.type(screen.getByLabelText('Exercise 1 name'), 'Squat')
+    await user.type(screen.getByLabelText('Exercise 1, set 1 reps'), '5')
+    await user.click(screen.getByRole('button', { name: 'Add set to exercise 1' }))
+    await user.click(screen.getByRole('button', { name: 'Remove set 2 of exercise 1' }))
+    await user.click(screen.getByRole('button', { name: 'Add exercise' }))
+    await user.click(screen.getByRole('button', { name: 'Remove exercise 2' }))
+
+    await user.click(screen.getByRole('button', { name: 'Save workout' }))
+
+    await screen.findByText(/Workout saved/)
+    expect(posts('/rest/v1/rpc/log_workout')[0].body.p_sets).toEqual([
+      { exercise: 'Squat', set_no: 1, reps: 5, weight_kg: 0 },
+    ])
+  })
+
+  it('logs a run with its activity, distance and notes', async () => {
+    backend.reply('POST', '/rest/v1/rpc/log_workout', 200, savedWorkout({ type: 'other' }))
+    const user = renderLog()
+    await screen.findByLabelText('Plan')
+    await fillWorkout(user, { title: 'Easy run', type: /^Other/, duration: '28' })
+    await user.selectOptions(screen.getByLabelText('Activity'), 'Run')
+    await user.type(screen.getByLabelText('Distance (km)'), '5.25')
+    await user.type(screen.getByLabelText('Notes (optional)'), '  Felt easy ')
+
+    await user.click(screen.getByRole('button', { name: 'Save workout' }))
+
+    await screen.findByText(/Workout saved/)
+    expect(posts('/rest/v1/rpc/log_workout')[0].body).toMatchObject({
+      p_type: 'other',
+      p_activity: 'run',
+      p_distance_km: 5.25,
+      p_notes: 'Felt easy',
+      p_sets: [],
+    })
+    expect(screen.getByLabelText('Notes (optional)')).toHaveValue('')
+  })
+
+  it.each(['0', '1000.5'])('rejects the distance "%s"', async (distance) => {
+    const user = renderLog()
+    await screen.findByLabelText('Plan')
+    await fillWorkout(user, { title: 'Run', type: /^Other/, duration: '30' })
+    await user.type(screen.getByLabelText('Distance (km)'), distance)
+
+    await user.click(screen.getByRole('button', { name: 'Save workout' }))
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Enter the distance in km (more than 0, up to 1000), or leave it empty.',
+    )
+    expect(posts('/rest/v1/rpc/log_workout')).toHaveLength(0)
+  })
+
+  it('sends no sets when the type is switched to Other', async () => {
+    backend.reply('POST', '/rest/v1/rpc/log_workout', 200, savedWorkout({ type: 'other' }))
+    const user = renderLog()
+    await startStrength(user)
+    await user.click(screen.getByRole('button', { name: 'Add exercise' }))
+    await user.type(screen.getByLabelText('Exercise 1 name'), 'Squat')
+    await user.type(screen.getByLabelText('Exercise 1, set 1 reps'), '5')
+    await user.click(screen.getByRole('radio', { name: /^Other/ }))
+
+    await user.click(screen.getByRole('button', { name: 'Save workout' }))
+
+    await screen.findByText(/Workout saved/)
+    expect(posts('/rest/v1/rpc/log_workout')[0].body).toMatchObject({ p_type: 'other', p_sets: [] })
+  })
+
+  it('sends no cardio details when the type is switched to Strength', async () => {
+    backend.reply('POST', '/rest/v1/rpc/log_workout', 200, savedWorkout())
+    const user = renderLog()
+    await screen.findByLabelText('Plan')
+    await fillWorkout(user, { title: 'Run', type: /^Other/, duration: '30' })
+    await user.selectOptions(screen.getByLabelText('Activity'), 'Run')
+    await user.type(screen.getByLabelText('Distance (km)'), '5')
+    await user.click(screen.getByRole('radio', { name: 'Strength' }))
+
+    await user.click(screen.getByRole('button', { name: 'Save workout' }))
+
+    await screen.findByText(/Workout saved/)
+    expect(posts('/rest/v1/rpc/log_workout')[0].body).toMatchObject({
+      p_type: 'strength',
+      p_activity: null,
+      p_distance_km: null,
     })
   })
 })
