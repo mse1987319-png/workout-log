@@ -8,3 +8,11 @@ export function Loading({ children = 'Loading…' }) {
     </p>
   )
 }
+
+export function SuccessMessage({ children }) {
+  return (
+    <p className="state state-success" role="status">
+      {children}
+    </p>
+  )
+}
