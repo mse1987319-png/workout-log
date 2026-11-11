@@ -60,6 +60,13 @@ export function weeklyMinutes(workouts, { weeks = 8, now = new Date() } = {}) {
   return buckets.map((b) => b.row)
 }
 
+/** Round y-axis ticks for minutes: steps of 15, 30, 60, 120 or 240, at most four above 0. */
+export function minuteTicks(maxMinutes) {
+  const step = [15, 30, 60, 120, 240].find((s) => maxMinutes / s <= 4) ?? 240
+  const top = Math.max(step, Math.ceil(maxMinutes / step) * step)
+  return Array.from({ length: top / step + 1 }, (_, i) => i * step)
+}
+
 /** "Squat: 95 kg → 110 kg over 3 sessions (+15 kg)." */
 export function describeTrend(exercise, points) {
   if (points.length === 0) return ''

@@ -1,6 +1,7 @@
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useChartColors } from '../lib/chartColors'
 import { formatWeekStart } from '../lib/format'
+import { minuteTicks } from '../lib/progress'
 
 const GAP = 2 // surface gap between stacked segments
 const RADIUS = 4 // rounded data-end; square at the baseline
@@ -48,6 +49,7 @@ export default function MinutesChart({ weeks }) {
     label: formatWeekStart(week.weekStart),
   }))
   const last = data.length - 1
+  const ticks = minuteTicks(Math.max(0, ...data.map((week) => week.total)))
 
   return (
     <div className="chart">
@@ -73,6 +75,8 @@ export default function MinutesChart({ weeks }) {
           />
           <YAxis
             allowDecimals={false}
+            ticks={ticks}
+            domain={[0, ticks.at(-1)]}
             tick={{ fill: colors.muted, fontSize: 12 }}
             tickLine={false}
             axisLine={false}

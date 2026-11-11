@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { describeTrend, describeWeek, heaviestPerSession, weeklyMinutes, weightedExercises } from './progress'
+import {
+  describeTrend,
+  describeWeek,
+  heaviestPerSession,
+  minuteTicks,
+  weeklyMinutes,
+  weightedExercises,
+} from './progress'
 
 // Mid-day UTC timestamps, so local dates match in any European time zone.
 const set = (workout_id, exercise, weight_kg, created_at) => ({ workout_id, exercise, weight_kg, created_at })
@@ -69,6 +76,17 @@ describe('describeTrend', () => {
 
   it('handles a single session', () => {
     expect(describeTrend('Squat', [{ kg: 110 }])).toBe('Squat: 110 kg in 1 session.')
+  })
+})
+
+describe('minuteTicks', () => {
+  it.each([
+    [120, [0, 30, 60, 90, 120]],
+    [50, [0, 15, 30, 45, 60]],
+    [0, [0, 15]],
+    [400, [0, 120, 240, 360, 480]],
+  ])('gives round axis steps for a tallest week of %i min', (max, ticks) => {
+    expect(minuteTicks(max)).toEqual(ticks)
   })
 })
 
