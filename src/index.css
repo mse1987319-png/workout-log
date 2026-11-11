@@ -14,6 +14,10 @@
   --danger-soft: #fdecea;
   --success: #067647;
   --success-soft: #e5f5ec;
+  --strength: #9a3412;
+  --strength-soft: #ffedd5;
+  --other: #1e40af;
+  --other-soft: #dbeafe;
   --radius: 10px;
   --shadow: 0 1px 2px rgb(16 24 40 / 6%), 0 1px 3px rgb(16 24 40 / 10%);
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -36,6 +40,10 @@
     --danger-soft: #3a1a17;
     --success: #6fe0a8;
     --success-soft: #11301f;
+    --strength: #fdba74;
+    --strength-soft: #3b2412;
+    --other: #93c5fd;
+    --other-soft: #172554;
     --shadow: none;
   }
 }
@@ -306,4 +314,216 @@ textarea:focus {
   margin: 1rem 0 0;
   color: var(--muted);
   text-align: center;
+}
+
+/* ---------- Page parts ---------- */
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.page-head h1 {
+  margin: 0;
+}
+
+.stack {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.stack > h2,
+.stack > .state {
+  margin: 0;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.button-small {
+  min-height: 36px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.9rem;
+}
+
+.state-empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.9rem;
+  padding: 1.75rem 1rem;
+  color: var(--muted);
+  text-align: center;
+  border: 2px dashed var(--border);
+}
+
+/* ---------- Plans and workouts ---------- */
+
+.plan-list,
+.workout-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.plan-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.plan-head h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.plan-goal {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+}
+
+.plan > .muted {
+  margin: 0.75rem 0 0;
+}
+
+.workout-list {
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.workout {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.workout:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.workout-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.workout-title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.workout-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.workout .state {
+  margin: 0.6rem 0 0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-strength {
+  color: var(--strength);
+  background: var(--strength-soft);
+}
+
+.badge-other {
+  color: var(--other);
+  background: var(--other-soft);
+}
+
+.rename-form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.rename-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.rename-form .state {
+  margin: 0;
+}
+
+/* ---------- Radio choices ---------- */
+
+.choice-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice-group legend {
+  margin-bottom: 0.35rem;
+  padding: 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.choice input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.choice:has(input:checked) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }
