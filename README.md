@@ -14,6 +14,7 @@ Capstone project for the course *"The full cycle from idea to live product"*: on
 - **My plans** (list): each plan (table A) with the workouts (table B) logged under it; a workout's title can be edited.
 - **Log workout** (create): create a plan; log a workout under a plan with title, type (`strength` / `other`) and duration. For strength: exercises with sets of reps × kg, showing last time's result for each exercise. For cardio: activity and distance. Notes for both.
 - **Workout detail**: a workout's sets by exercise, each with the previous session; or duration, distance and pace for cardio.
+- **Progress**: the heaviest set per session of an exercise over time (line chart) and minutes per week, strength vs other (stacked columns), each with a one-line summary and a table view.
 - **Email to the instructor**: each new workout → Supabase Database Webhook → Zapier → Gmail. Strength workouts arrive as *STRENGTH: title*, others as *New workout: title*.
 - **Four states** on every screen that loads or saves: Loading, Error (plain language, with *Try again*), Empty, Success.
 
@@ -42,7 +43,7 @@ Code path (separate): GitHub → Vercel → public URL
 | Part | Tool |
 |---|---|
 | Code | GitHub (feature branches + pull requests) |
-| Interface | React 19 + Vite, JavaScript, React Router, plain CSS |
+| Interface | React 19 + Vite, JavaScript, React Router, plain CSS; Recharts for the Progress charts |
 | Data and auth | Supabase (Auth, 2 tables, RLS) |
 | Deployment | Vercel |
 | Automation | Zapier (Webhook → Filter → Paths → Gmail) |
