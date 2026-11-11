@@ -1,12 +1,18 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { supabase } from './lib/supabase'
+import { backend } from './test/fakeBackend'
 import { ATHLETE, createFakeAuth, sessionFor } from './test/fakeSupabase'
 
-vi.mock('./lib/supabase', () => ({ supabase: {}, configError: null }))
+// A real supabase-js client on the fake REST backend, with the auth
+// part swapped for the in-memory fake (sign-in without a server).
+vi.mock('./lib/supabase', async () => {
+  const { createTestClient } = await import('./test/fakeBackend')
+  return { supabase: createTestClient(), configError: null }
+})
 
 function renderApp(path = '/') {
   render(
@@ -20,6 +26,8 @@ function renderApp(path = '/') {
 describe('App', () => {
   beforeEach(() => {
     supabase.auth = createFakeAuth()
+    backend.reset()
+    backend.reply('GET', '/rest/v1/plans', 200, [])
   })
 
   it('opens the login screen for a signed-out visitor', async () => {
@@ -34,6 +42,16 @@ describe('App', () => {
 
     expect(await screen.findByRole('heading', { name: 'My plans' })).toBeInTheDocument()
     expect(screen.getByText('athlete@example.com')).toBeInTheDocument()
+  })
+
+  it("loads the plans with the signed-in user's token, which RLS checks", async () => {
+    supabase.auth = createFakeAuth({ session: sessionFor(ATHLETE) })
+    renderApp('/')
+
+    expect(await screen.findByText('No plans yet — create your first plan.')).toBeInTheDocument()
+    const [request] = backend.requests
+    expect(request.path).toBe('/rest/v1/plans')
+    expect(request.headers.get('Authorization')).toBe('Bearer test-access-token')
   })
 
   it('logs out from the header and returns to the login screen', async () => {
@@ -63,6 +81,16 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Try again' }))
     expect(await screen.findByRole('heading', { name: 'Log in' })).toBeInTheDocument()
     expect(supabase.auth.signOut).toHaveBeenCalledTimes(2)
+  })
+
+  it('opens the Log workout screen from the navigation', async () => {
+    supabase.auth = createFakeAuth({ session: sessionFor(ATHLETE) })
+    const user = renderApp('/')
+
+    const nav = await screen.findByRole('navigation', { name: 'Main' })
+    await user.click(within(nav).getByRole('link', { name: 'Log workout' }))
+
+    expect(await screen.findByRole('heading', { name: 'Log workout' })).toBeInTheDocument()
   })
 
   it('sends an unknown address to the plans', async () => {
