@@ -6,7 +6,7 @@ Capstone project for the course *"The full cycle from idea to live product"*: on
 
 > **Status: Core tier live.** Sign-up/login, the plans list and workout logging run on Vercel against Supabase, and a Supabase Database Webhook sends every new or edited workout to Zapier. Still to do: confirm the Zap's paths and emails, the reliability checks (error handler, cost) and the demo.
 >
-> **Live:** https://workout-log-mse1987319-9300.vercel.app/
+> **Live:** https://workout-log-murex-three.vercel.app/
 
 ## What it does
 
