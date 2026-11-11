@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { renameWorkout } from '../api/workouts'
 import { friendlyError } from '../lib/errors'
 import { formatDateTime, TYPE_LABELS } from '../lib/format'
@@ -96,7 +97,9 @@ export default function WorkoutItem({ workout, onRenamed }) {
   return (
     <li className="workout">
       <div className="workout-head">
-        <span className="workout-title">{workout.title}</span>
+        <Link className="workout-title" to={`/workouts/${workout.id}`}>
+          {workout.title}
+        </Link>
         <button
           type="button"
           className="link-button"

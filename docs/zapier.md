@@ -51,10 +51,15 @@ In the app, log a **Strength** workout (for example *Test strength*, 30 min). In
 | `record__title` | `Test strength` | |
 | `record__type` | `strength` | The routing field: `strength` or `other` |
 | `record__duration_min` | `30` | |
+| `record__activity` | `run` | Cardio only; may be empty |
+| `record__distance_km` | `5` | Cardio only; may be empty |
+| `record__notes` | `Felt easy` | May be empty |
 | `record__user_id` | `3f6c…` | Who logged it |
 | `record__plan_id` | `9a1e…` | |
 | `record__created_at` | `2026-11-11T18:00:00.123+00:00` | |
 | `old_record…` | (empty) | Filled only for UPDATE |
+
+The sets of a strength workout live in a separate table (`workout_sets`), so they are not part of this payload: the email reports the workout, not its sets.
 
 > **Watch out:** `type` (INSERT / UPDATE) and `record__type` (strength / other) are different fields. The Filter uses `type`, Paths use `record__type`. Mixing them up is the most likely first bug; if it happens, put it in the Notion error log.
 

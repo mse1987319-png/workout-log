@@ -434,7 +434,14 @@ textarea:focus {
 
 .workout-title {
   font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
   overflow-wrap: anywhere;
+}
+
+a.workout-title:hover {
+  color: var(--accent);
+  text-decoration: underline;
 }
 
 .workout-meta {
@@ -526,4 +533,167 @@ textarea:focus {
 .choice:has(input:checked) {
   background: var(--accent-soft);
   border-color: var(--accent);
+}
+
+/* ---------- Exercises and cardio on the Log workout form ---------- */
+
+textarea {
+  resize: vertical;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 1rem;
+}
+
+.exercises {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.exercises > legend {
+  margin-bottom: 0.35rem;
+  padding: 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.exercise {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.exercise-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.exercise-head input {
+  flex: 1;
+  font-weight: 600;
+}
+
+.exercise .last-time {
+  margin: 0;
+}
+
+.sets {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.set {
+  display: grid;
+  grid-template-columns: 3.2rem minmax(0, 1fr) auto minmax(0, 1fr) auto 1.6rem;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.set-label,
+.set .unit {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.exercise > .button-small {
+  justify-self: start;
+}
+
+/* ---------- Workout detail ---------- */
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--text);
+}
+
+.workout-detail h1 {
+  margin-bottom: 0.4rem;
+  overflow-wrap: anywhere;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stats li {
+  display: grid;
+  padding: 0.45rem 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.notes {
+  padding: 0.75rem 1rem;
+  white-space: pre-wrap;
+  background: var(--surface);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+}
+
+.exercise-sets h2 {
+  margin-bottom: 0.5rem;
+}
+
+.exercise-sets .last-time {
+  margin: 0.6rem 0 0;
+}
+
+.sets-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* same column widths in every exercise */
+  font-variant-numeric: tabular-nums;
+}
+
+.sets-table th,
+.sets-table td {
+  padding: 0.4rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.sets-table thead th {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.sets-table tbody th {
+  font-weight: 500;
+}
+
+.sets-table tbody tr:last-child > * {
+  border-bottom: 0;
 }

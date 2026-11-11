@@ -12,7 +12,8 @@ Capstone project for the course *"The full cycle from idea to live product"*: on
 
 - **Accounts**: sign up and log in with email and password. Every user sees only their own plans and workouts, enforced in the database with Row Level Security.
 - **My plans** (list): each plan (table A) with the workouts (table B) logged under it; a workout's title can be edited.
-- **Log workout** (create): create a plan; log a workout under a plan with title, type (`strength` / `other`) and duration.
+- **Log workout** (create): create a plan; log a workout under a plan with title, type (`strength` / `other`) and duration. For strength: exercises with sets of reps × kg, showing last time's result for each exercise. For cardio: activity and distance. Notes for both.
+- **Workout detail**: a workout's sets by exercise, each with the previous session; or duration, distance and pace for cardio.
 - **Email to the instructor**: each new workout → Supabase Database Webhook → Zapier → Gmail. Strength workouts arrive as *STRENGTH: title*, others as *New workout: title*.
 - **Four states** on every screen that loads or saves: Loading, Error (plain language, with *Try again*), Empty, Success.
 
@@ -32,7 +33,7 @@ Zapier  (Catch Hook → Filter → Paths)
 Code path (separate): GitHub → Vercel → public URL
 ```
 
-- **Data**: table A `plans` → table B `workouts` (`plan_id → plans.id`), defined in [`supabase/schema.sql`](supabase/schema.sql).
+- **Data**: table A `plans` → table B `workouts` (`plan_id → plans.id`), plus `workout_sets` for the sets of a strength workout, defined in [`supabase/schema.sql`](supabase/schema.sql).
 - **Event**: a logged workout is one `INSERT` into `workouts`.
 - **Routing field**: `workouts.type` is `strength` or `other` (cardio, mobility, etc.); Zapier Paths picks the email from it.
 

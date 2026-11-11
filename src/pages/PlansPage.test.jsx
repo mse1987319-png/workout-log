@@ -95,6 +95,13 @@ describe('PlansPage', () => {
     )
   })
 
+  it("opens a workout's own page from the list", async () => {
+    backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+    renderPlans()
+
+    expect(await screen.findByRole('link', { name: 'Leg day' })).toHaveAttribute('href', '/workouts/workout-2')
+  })
+
   it('shows the Empty state with a way to create the first plan', async () => {
     backend.reply('GET', '/rest/v1/plans', 200, [])
     renderPlans()
