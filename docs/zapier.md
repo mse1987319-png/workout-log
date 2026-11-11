@@ -54,12 +54,13 @@ In the app, log a **Strength** workout (for example *Test strength*, 30 min). In
 | `record__activity` | `run` | Cardio only; may be empty |
 | `record__distance_km` | `5` | Cardio only; may be empty |
 | `record__notes` | `Felt easy` | May be empty |
+| `record__sets_summary` | `Squat: 2 × 5 @ 100 kg; Pull-up: 3 × 8 (bodyweight)` | Strength workouts with sets; empty otherwise |
 | `record__user_id` | `3f6c…` | Who logged it |
 | `record__plan_id` | `9a1e…` | |
 | `record__created_at` | `2026-11-11T18:00:00.123+00:00` | |
 | `old_record…` | (empty) | Filled only for UPDATE |
 
-The sets of a strength workout live in a separate table (`workout_sets`), so they are not part of this payload: the email reports the workout, not its sets.
+The sets themselves live in their own table (`workout_sets`), which the webhook does not watch. So that the email can list them anyway, `log_workout()` also writes a one-line summary into the workout row it inserts: `record__sets_summary`. If your Zap was set up before this field existed, log a strength workout with sets and press **Test trigger** again so Zapier learns the new field.
 
 > **Watch out:** `type` (INSERT / UPDATE) and `record__type` (strength / other) are different fields. The Filter uses `type`, Paths use `record__type`. Mixing them up is the most likely first bug; if it happens, put it in the Notion error log.
 
@@ -77,7 +78,7 @@ Before you prompt:
 **Prompt 1: Filter, Paths and both emails** (one sentence on purpose: Zapier advises combining related instructions so Copilot treats them as one task)
 
 ```text
-This Zap's trigger is a Webhooks by Zapier Catch Hook that receives Supabase Database Webhook events for the "workouts" table, where the top-level field "type" is INSERT or UPDATE and the row is under "record" (Record Title = record__title, Record Type = record__type, plus record__duration_min, record__user_id and record__created_at); keep this trigger and after it add a Filter by Zapier step that only continues when the top-level "type" field exactly matches INSERT (not record__type), then add Paths by Zapier with two branches: path A named "Strength", whose rule is that record__type exactly matches strength (lowercase) and which uses Gmail to send an email to <instructor email> with the subject "STRENGTH: " followed by record__title, and a second branch set as the Fallback path, which runs whenever path A does not match and uses Gmail to send an email to <instructor email> with the subject "New workout: " followed by record__title; in both emails the body lists the title, type, duration in minutes, user id and created-at time from the record.
+This Zap's trigger is a Webhooks by Zapier Catch Hook that receives Supabase Database Webhook events for the "workouts" table, where the top-level field "type" is INSERT or UPDATE and the row is under "record" (Record Title = record__title, Record Type = record__type, plus record__duration_min, record__user_id and record__created_at); keep this trigger and after it add a Filter by Zapier step that only continues when the top-level "type" field exactly matches INSERT (not record__type), then add Paths by Zapier with two branches: path A named "Strength", whose rule is that record__type exactly matches strength (lowercase) and which uses Gmail to send an email to <instructor email> with the subject "STRENGTH: " followed by record__title, and a second branch set as the Fallback path, which runs whenever path A does not match and uses Gmail to send an email to <instructor email> with the subject "New workout: " followed by record__title; in both emails the body lists the title, type, duration in minutes, the sets (record__sets_summary), user id and created-at time from the record.
 ```
 
 **Prompt 2: error handlers** (deck slide 18)
@@ -95,6 +96,12 @@ Rename this Zap to "Workout Log: new workout" and set its description to "Owner:
 ```
 
 If Copilot can't change these, set them in the Zap's settings.
+
+**Prompt 4: add the sets to a Zap you already built**
+
+```text
+In both Gmail "Send Email" steps, add a line to the body that reads "Sets: " followed by record__sets_summary (Record Sets Summary), right after the duration line.
+```
 
 **If the check finds a mistake**, these fix-up prompts target the usual ones:
 
@@ -147,6 +154,7 @@ A new workout was logged in Workout Log.
 Title: {{Record Title}}
 Type: {{Record Type}}
 Duration: {{Record Duration Min}} min
+Sets: {{Record Sets Summary}}
 User id: {{Record User Id}}
 Logged at: {{Record Created At}}
 ```
