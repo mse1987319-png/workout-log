@@ -1,40 +1,11 @@
 import { useEffect, useId, useState } from 'react'
-import { lastSession, listExerciseNames } from '../api/sets'
-import { formatDay } from '../lib/format'
-import { formatSets } from '../lib/sets'
+import { listExerciseNames } from '../api/sets'
+import LastTime from './LastTime'
 
 let lastKey = 0
 const nextKey = () => `draft-${(lastKey += 1)}`
 const newSet = (copyOf) => ({ key: nextKey(), reps: copyOf?.reps ?? '', weight: copyOf?.weight ?? '' })
 const newExercise = () => ({ key: nextKey(), name: '', lookup: '', sets: [newSet()] })
-
-// "Last time (10 Nov): 2 × 5 @ 100 kg", looked up when the name is left.
-function LastTime({ name }) {
-  const [result, setResult] = useState({ name: '', text: '' })
-
-  useEffect(() => {
-    if (!name) return undefined
-    let current = true
-    lastSession(name).then(
-      (session) => {
-        if (!current) return
-        const text = session
-          ? `Last time (${formatDay(session.date)}): ${formatSets(session.sets)}`
-          : `First time logging ${name}.`
-        setResult({ name, text })
-      },
-      () => {
-        if (current) setResult({ name, text: '' })
-      },
-    )
-    return () => {
-      current = false
-    }
-  }, [name])
-
-  if (!name || result.name !== name || !result.text) return null
-  return <p className="hint last-time">{result.text}</p>
-}
 
 /**
  * Exercises and sets of a strength workout. The draft lives in the parent:
