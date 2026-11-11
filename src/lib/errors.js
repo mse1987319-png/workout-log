@@ -10,6 +10,7 @@ const BY_CODE = {
   over_email_send_rate_limit: 'Too many attempts. Wait a few minutes and try again.',
   over_request_rate_limit: 'Too many attempts. Wait a few minutes and try again.',
   42501: "You don't have permission to do that.",
+  PGRST116: 'This item no longer exists. Reload the page and try again.',
 }
 
 export function friendlyError(error) {

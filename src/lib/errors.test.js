@@ -59,6 +59,16 @@ describe('friendlyError', () => {
     expect(friendlyError(error)).toMatch(/permission/i)
   })
 
+  it('explains that the row is gone instead of the PostgREST wording', () => {
+    const error = {
+      message: 'JSON object requested, multiple (or no) rows returned',
+      details: 'The result contains 0 rows',
+      hint: null,
+      code: 'PGRST116',
+    }
+    expect(friendlyError(error)).toMatch(/no longer exists/i)
+  })
+
   it('passes any other message through unchanged', () => {
     const error = authApiError('weak_password', 422, 'Password should be at least 6 characters.')
     expect(friendlyError(error)).toBe('Password should be at least 6 characters.')
