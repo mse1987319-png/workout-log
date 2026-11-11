@@ -38,6 +38,16 @@ Code path (separate): GitHub → Vercel → public URL
 | Automation | Zapier (Webhook → Filter → Paths → Gmail) |
 | Documentation | Notion + this README |
 
+## Setup
+
+On Windows, one script installs the tools, scaffolds the app, installs dependencies and creates the env files:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
+```
+
+Full instructions, manual steps for other systems and troubleshooting: [docs/setup.md](docs/setup.md).
+
 ## Environment variables
 
 Names only; never commit values. Create `.env.local` yourself (it is git-ignored) and set the same two variables in Vercel.
@@ -53,6 +63,8 @@ The Supabase `service_role` key and the Zapier Catch Hook URL must **never** go 
 
 ```
 docs/implementation-plan.md   high-level plan: scope tiers, data model, Zapier, test table
+docs/setup.md                 environment and dependency setup
+scripts/setup.ps1             automated setup for Windows (safe to re-run)
 _task/                        course task decks (LT / EN) and the prompts used to scope the idea
 index.js, package.json        placeholder; the Vite app is added in lecture 1
 ```

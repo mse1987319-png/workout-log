@@ -21,3 +21,6 @@ Fill in slide 5 (Scope Card, column "Your idea").
 
 Create high-level implementation plan that covers all the requirements mentioned in the .pptx in a separate .md file.
 
+___
+
+
