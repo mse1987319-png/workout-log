@@ -127,7 +127,11 @@ alter table public.workouts
   add column if not exists distance_km numeric(6, 2)
     check (distance_km > 0 and distance_km <= 1000),
   add column if not exists notes text
-    check (char_length(notes) <= 500);
+    check (char_length(notes) <= 500),
+  -- One line about the sets, written by log_workout() into the row it
+  -- inserts, so the Database Webhook (and the instructor's email) carries it:
+  -- "Squat: 2 × 5 @ 100 kg, 5 @ 102.5 kg; Pull-up: 3 × 8 (bodyweight)".
+  add column if not exists sets_summary text;
 
 -- Sets of a strength workout -------------------------------------------------------
 create table if not exists public.workout_sets (
@@ -190,6 +194,60 @@ create policy "Delete own sets" on public.workout_sets
   for delete to authenticated
   using (user_id = auth.uid());
 
+-- One-line summary of a list of sets (the p_sets payload of log_workout) ----------
+-- Exercises in entry order; equal sets in a row are counted ("2 × 5 @ 100 kg");
+-- 0 kg reads as bodyweight. Same wording as the app. NULL when there are no sets.
+create or replace function public.format_sets(p_sets jsonb)
+returns text
+language sql
+immutable
+set search_path = ''
+as $$
+  with s as (
+    select row_number() over (order by x.set_no) as n,
+           btrim(x.exercise) as exercise,
+           lower(btrim(x.exercise)) as exercise_key,
+           x.reps,
+           coalesce(x.weight_kg, 0) as kg
+    from jsonb_to_recordset(coalesce(p_sets, '[]'::jsonb))
+      as x(exercise text, set_no integer, reps integer, weight_kg numeric)
+  ),
+  marked as (
+    select s.*,
+           case when lag(exercise_key) over w is distinct from exercise_key then 1 else 0 end as new_exercise,
+           case when lag(exercise_key) over w is distinct from exercise_key
+                  or lag(reps) over w is distinct from reps
+                  or lag(kg) over w is distinct from kg then 1 else 0 end as new_run
+    from s
+    window w as (order by n)
+  ),
+  grouped as (
+    select marked.*,
+           sum(new_exercise) over (order by n) as exercise_no,
+           sum(new_run) over (order by n) as run_no
+    from marked
+  ),
+  runs as (
+    select exercise_no, min(n) as first_n,
+           (case when count(*) > 1 then count(*) || ' × ' || min(reps) else min(reps)::text end)
+           || (case when min(kg) > 0 then ' @ ' || trim_scale(min(kg))::text || ' kg' else ' (bodyweight)' end) as text
+    from grouped
+    group by exercise_no, run_no
+  ),
+  exercises as (
+    select g.exercise_no, min(g.n) as first_n, (array_agg(g.exercise order by g.n))[1] as name
+    from grouped g
+    group by g.exercise_no
+  )
+  select string_agg(
+           e.name || ': ' || (select string_agg(r.text, ', ' order by r.first_n) from runs r where r.exercise_no = e.exercise_no),
+           '; ' order by e.first_n)
+  from exercises e;
+$$;
+
+revoke execute on function public.format_sets(jsonb) from public, anon;
+grant execute on function public.format_sets(jsonb) to authenticated;
+
 -- Log a workout and its sets in ONE transaction ----------------------------------
 -- The app calls this instead of inserting into workouts directly, so a workout
 -- is never saved without its sets. It runs as the caller (security invoker),
@@ -218,8 +276,10 @@ begin
     raise exception 'Only strength workouts have sets' using errcode = '22023';
   end if;
 
-  insert into public.workouts (plan_id, title, type, duration_min, activity, distance_km, notes)
-  values (p_plan_id, p_title, p_type, p_duration_min, p_activity, p_distance_km, p_notes)
+  -- The summary goes into the same INSERT, so the webhook payload carries it.
+  insert into public.workouts (plan_id, title, type, duration_min, activity, distance_km, notes, sets_summary)
+  values (p_plan_id, p_title, p_type, p_duration_min, p_activity, p_distance_km, p_notes,
+          public.format_sets(p_sets))
   returning * into saved;
 
   insert into public.workout_sets (workout_id, exercise, set_no, reps, weight_kg, created_at)
