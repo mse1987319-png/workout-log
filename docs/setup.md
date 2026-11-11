@@ -102,12 +102,12 @@ Never put the `service_role` key or a Zapier Catch Hook URL into any of these fi
 
 ## Hosted services, by hand
 
-Short checklist; the details are in [implementation-plan.md](implementation-plan.md) (§5 data model, §7 Zapier, §9 lecture plan).
+Short checklist; each step has its own step-by-step guide.
 
-1. **Supabase:** new project in an EU region → create tables `plans` and `workouts` with RLS policies → Authentication: email login on, Site URL `http://localhost:5173`.
-2. **`.env.local`:** copy the project URL and anon key in (or pass them to the script).
-3. **Vercel** (lecture 3): import the GitHub repo → add both `VITE_` variables → deploy → set Supabase Site URL and Redirect URLs to the Vercel link.
-4. **Zapier** (lecture 3): Catch Hook → Supabase Database Webhook on `workouts` → Filter → Paths → Gmail.
+1. **Supabase:** new project in an EU region → run [`supabase/schema.sql`](../supabase/schema.sql) (tables `plans` and `workouts` with RLS) → Authentication: email login on, *Confirm email* off, Site URL `http://localhost:5173`. Guide: [supabase.md](supabase.md).
+2. **`.env.local`:** copy the project URL and the publishable (anon) key in (or pass them to the script).
+3. **Vercel** (lecture 3): import the GitHub repo → add both `VITE_` variables → deploy → set Supabase Site URL and Redirect URLs to the Vercel link. Guide: [deployment.md](deployment.md).
+4. **Zapier** (lecture 3): Catch Hook → Supabase Database Webhook on `workouts` → Filter → Paths → Gmail. Guide: [zapier.md](zapier.md).
 
 ## Manual setup (macOS, Linux, or no winget)
 
