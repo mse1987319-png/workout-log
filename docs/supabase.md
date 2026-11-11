@@ -25,12 +25,14 @@ What the schema does, in short:
 
 | | `plans` (table A) | `workouts` (table B) | `workout_sets` (Extended) |
 |---|---|---|---|
-| Key fields | `name`, `goal` | `plan_id → plans.id`, `title`, `type`, `duration_min`; optional `activity`, `distance_km`, `notes` | `workout_id → workouts.id`, `exercise`, `set_no`, `reps`, `weight_kg` |
+| Key fields | `name`, `goal` | `plan_id → plans.id`, `title`, `type`, `duration_min`; optional `activity`, `distance_km`, `notes`, `sets_summary` | `workout_id → workouts.id`, `exercise`, `set_no`, `reps`, `weight_kg` |
 | `user_id` | `default auth.uid()`; the app never sends it | same | same |
 | Checks | name 1–100 characters | `type` is `strength` or `other`; duration 1–1440 min; `activity` is run/bike/swim/walk/row/other | reps 1–1000; weight 0–1000 kg (0 = bodyweight); up to 100 sets per workout |
 | RLS | `user_id = auth.uid()` for select, insert, update, delete | same, and a workout can only be filed under one of your own plans | same, and sets can only be added to your own workouts |
 
-The app saves a workout through the database function **`log_workout()`**: the workout and its sets in one transaction, as the signed-in user (so every policy above applies). The INSERT into `workouts` still fires the Database Webhook once per workout; if anything fails, nothing is saved and nothing is sent.
+The app saves a workout through the database function **`log_workout()`**: the workout and its sets in one transaction, as the signed-in user (so every policy above applies). The INSERT into `workouts` still fires the Database Webhook once per workout; if anything fails, nothing is saved and nothing is sent. Because the webhook only sees the workout row, `log_workout()` also writes a one-line summary of the sets into it (`sets_summary`, built by **`format_sets()`**), so the instructor's email can list them.
+
+[`supabase/tests/sets_summary.test.sql`](../supabase/tests/sets_summary.test.sql) tests both functions. Paste it into the SQL Editor and run it: it always ends with an error that rolls everything back, reading *TESTS PASSED (…)* when all is well, so it never saves a workout or sends an email.
 
 ## 2. Sign-up without email confirmation
 
