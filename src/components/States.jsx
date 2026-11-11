@@ -9,6 +9,19 @@ export function Loading({ children = 'Loading…' }) {
   )
 }
 
+export function ErrorState({ message, onRetry }) {
+  return (
+    <div className="state state-error" role="alert">
+      <p>{message}</p>
+      {onRetry && (
+        <button type="button" className="button" onClick={onRetry}>
+          Try again
+        </button>
+      )}
+    </div>
+  )
+}
+
 export function SuccessMessage({ children }) {
   return (
     <p className="state state-success" role="status">
