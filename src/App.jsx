@@ -1,14 +1,22 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import AuthProvider from './auth/AuthProvider'
 import RequireAuth from './auth/RequireAuth'
 import Layout from './components/Layout'
-import { ErrorState } from './components/States'
+import { ErrorState, Loading } from './components/States'
 import { configError } from './lib/supabase'
 import LoginPage from './pages/LoginPage'
 import LogWorkoutPage from './pages/LogWorkoutPage'
-import ProgressPage from './pages/ProgressPage'
-import WorkoutDetailPage from './pages/WorkoutDetailPage'
 import PlansPage from './pages/PlansPage'
+
+// Screens that are never the first one shown load on demand, keeping the
+// first download small (the Progress screen carries the charts library).
+const ProgressPage = lazy(() => import('./pages/ProgressPage'))
+const WorkoutDetailPage = lazy(() => import('./pages/WorkoutDetailPage'))
+
+function OnDemand({ loading, children }) {
+  return <Suspense fallback={<Loading>{loading}</Loading>}>{children}</Suspense>
+}
 
 export default function App() {
   if (configError) {
@@ -36,8 +44,22 @@ export default function App() {
         >
           <Route index element={<PlansPage />} />
           <Route path="log" element={<LogWorkoutPage />} />
-          <Route path="workouts/:id" element={<WorkoutDetailPage />} />
-          <Route path="progress" element={<ProgressPage />} />
+          <Route
+            path="workouts/:id"
+            element={
+              <OnDemand loading="Loading the workout…">
+                <WorkoutDetailPage />
+              </OnDemand>
+            }
+          />
+          <Route
+            path="progress"
+            element={
+              <OnDemand loading="Loading your progress…">
+                <ProgressPage />
+              </OnDemand>
+            }
+          />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

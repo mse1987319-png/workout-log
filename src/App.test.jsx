@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { supabase } from './lib/supabase'
 import { backend } from './test/fakeBackend'
@@ -24,6 +24,12 @@ function renderApp(path = '/') {
 }
 
 describe('App', () => {
+  // Screens loaded on demand: compile them once up front, so the tests
+  // measure routing, not how long the test runner takes to transform them.
+  beforeAll(async () => {
+    await Promise.all([import('./pages/ProgressPage'), import('./pages/WorkoutDetailPage')])
+  }, 60000)
+
   beforeEach(() => {
     supabase.auth = createFakeAuth()
     backend.reset()
