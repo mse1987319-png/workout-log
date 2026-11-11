@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { supabase } from './lib/supabase'
 import { backend } from './test/fakeBackend'
@@ -24,6 +24,12 @@ function renderApp(path = '/') {
 }
 
 describe('App', () => {
+  // Screens loaded on demand: compile them once up front, so the tests
+  // measure routing, not how long the test runner takes to transform them.
+  beforeAll(async () => {
+    await Promise.all([import('./pages/ProgressPage'), import('./pages/WorkoutDetailPage')])
+  }, 60000)
+
   beforeEach(() => {
     supabase.auth = createFakeAuth()
     backend.reset()
@@ -91,6 +97,18 @@ describe('App', () => {
     await user.click(within(nav).getByRole('link', { name: 'Log workout' }))
 
     expect(await screen.findByRole('heading', { name: 'Log workout' })).toBeInTheDocument()
+  })
+
+  it('opens the Progress screen from the navigation', async () => {
+    supabase.auth = createFakeAuth({ session: sessionFor(ATHLETE) })
+    backend.reply('GET', '/rest/v1/workouts', 200, [])
+    backend.reply('GET', '/rest/v1/workout_sets', 200, [])
+    const user = renderApp('/')
+
+    const nav = await screen.findByRole('navigation', { name: 'Main' })
+    await user.click(within(nav).getByRole('link', { name: 'Progress' }))
+
+    expect(await screen.findByRole('heading', { name: 'Progress', level: 1 })).toBeInTheDocument()
   })
 
   it('sends an unknown address to the plans', async () => {

@@ -30,6 +30,7 @@ export default function Layout() {
               My plans
             </NavLink>
             <NavLink to="/log">Log workout</NavLink>
+            <NavLink to="/progress">Progress</NavLink>
           </nav>
           <div className="account">
             <span className="account-email">{user?.email}</span>
