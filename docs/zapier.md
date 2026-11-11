@@ -58,6 +58,63 @@ In the app, log a **Strength** workout (for example *Test strength*, 30 min). In
 
 > **Watch out:** `type` (INSERT / UPDATE) and `record__type` (strength / other) are different fields. The Filter uses `type`, Paths use `record__type`. Mixing them up is the most likely first bug; if it happens, put it in the Notion error log.
 
+## Faster: build steps 4–6 with Zapier Copilot
+
+Zapier Copilot, the AI assistant in the Zap editor, can add the Filter, Paths and Gmail steps from a description. Either follow steps 4–6 by hand, or paste the prompts below, then **check the result against steps 4–6**. Copilot can pick the wrong field, and `type` versus `record__type` is the classic mix-up.
+
+Before you prompt:
+
+- **Extend the Zap you already have.** Open it and prompt Copilot there. If Copilot builds a *new* Zap, it also makes a new Catch Hook with a **new URL**, and the Supabase webhook (`workouts_to_zapier`) keeps sending to the old one. If that happens, put the new URL into the webhook (Supabase → Database Webhooks → edit).
+- **Send a sample first** (step 3), so Copilot sees the real field names.
+- Replace `<instructor email>`, `<your email>`, `<your name>` and `<date>` **in Zapier only**, never in this repo.
+- Copilot's default *Auto-build* sets up as much as it can at once; switch to *Ask as you build* to approve each step.
+
+**Prompt 1: Filter, Paths and both emails** (one sentence on purpose: Zapier advises combining related instructions so Copilot treats them as one task)
+
+```text
+This Zap's trigger is a Webhooks by Zapier Catch Hook that receives Supabase Database Webhook events for the "workouts" table, where the top-level field "type" is INSERT or UPDATE and the row is under "record" (Record Title = record__title, Record Type = record__type, plus record__duration_min, record__user_id and record__created_at); keep this trigger and after it add a Filter by Zapier step that only continues when the top-level "type" field exactly matches INSERT (not record__type), then add Paths by Zapier with two branches: path A named "Strength", whose rule is that record__type exactly matches strength (lowercase) and which uses Gmail to send an email to <instructor email> with the subject "STRENGTH: " followed by record__title, and a second branch set as the Fallback path, which runs whenever path A does not match and uses Gmail to send an email to <instructor email> with the subject "New workout: " followed by record__title; in both emails the body lists the title, type, duration in minutes, user id and created-at time from the record.
+```
+
+**Prompt 2: error handlers** (deck slide 18)
+
+```text
+For each of the two Gmail "Send Email" steps, add an error handler that uses Gmail to send me an email at <your email> with the subject "Workout Log Zap failed" and the error message in the body, so that a failed send shows up as a handled error in Zap history.
+```
+
+If Copilot can't add error handlers, add them by hand (step 6).
+
+**Prompt 3: name and owner** (deck slide 18)
+
+```text
+Rename this Zap to "Workout Log: new workout" and set its description to "Owner: <your name>, <your email>, <date>. Emails the instructor about every new workout in Workout Log."
+```
+
+If Copilot can't change these, set them in the Zap's settings.
+
+**If the check finds a mistake**, these fix-up prompts target the usual ones:
+
+```text
+The Filter must use the top-level "type" field (INSERT or UPDATE), not record__type: change its rule to "type (Text) exactly matches INSERT".
+```
+
+```text
+Path A must use record__type, not the top-level "type" field: change its rule to "record__type (Text) exactly matches strength", in lowercase.
+```
+
+```text
+Make the second branch of the Paths step the Fallback path, so that it runs whenever path A's rule does not match.
+```
+
+**Check what Copilot built**, then publish and run the tests in step 7:
+
+| Step | Must be |
+|---|---|
+| Filter | top-level `Type` exactly matches `INSERT` |
+| Path A "Strength" | `Record Type` exactly matches `strength` → Gmail, subject `STRENGTH: ` + `Record Title` |
+| Fallback | set as the *Fallback* branch → Gmail, subject `New workout: ` + `Record Title` |
+| Gmail *To* | the instructor's address, in both paths |
+| Error handlers | on both Gmail steps (step 6) |
+
 ## 4. Filter: new workouts only
 
 Add **Filter by Zapier**: *Only continue if…* `Type` (the top-level field, **not** `Record Type`) **(Text) Exactly matches** `INSERT`.
