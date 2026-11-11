@@ -22,6 +22,15 @@ export function ErrorState({ message, onRetry }) {
   )
 }
 
+export function EmptyState({ children, action }) {
+  return (
+    <div className="state state-empty">
+      <p>{children}</p>
+      {action}
+    </div>
+  )
+}
+
 export function SuccessMessage({ children }) {
   return (
     <p className="state state-success" role="status">

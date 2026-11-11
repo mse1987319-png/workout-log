@@ -46,6 +46,8 @@ export function createFakeAuth({ session = null, confirmEmail = false } = {}) {
   }
 
   return {
+    // supabase-js reads this before every database request (for the JWT).
+    getSession: vi.fn(async () => ({ data: { session: current }, error: null })),
     onAuthStateChange: vi.fn((callback) => {
       const id = `subscription-${nextId++}`
       listeners.set(id, callback)
