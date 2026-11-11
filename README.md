@@ -4,9 +4,9 @@ A web workout log. Athletes follow workout plans (their own, or ones an instruct
 
 Capstone project for the course *"The full cycle from idea to live product"*: one app that runs online, stores data, separates users, and reports every important event by email.
 
-> **Status: Core tier, lectures 1–2 done in code.** Sign-up/login, the plans list and workout logging work against Supabase. Deployment and the email automation are set up by following [docs/deployment.md](docs/deployment.md) and [docs/zapier.md](docs/zapier.md).
+> **Status: Core tier live.** Sign-up/login, the plans list and workout logging run on Vercel against Supabase, and a Supabase Database Webhook sends every new or edited workout to Zapier. Still to do: confirm the Zap's paths and emails, the reliability checks (error handler, cost) and the demo.
 >
-> **Live:** *add the Vercel URL here after deployment.*
+> **Live:** https://workout-log-mse1987319-9300.vercel.app/
 
 ## What it does
 
@@ -111,7 +111,7 @@ Built in four lectures, one `feature/…` branch and pull request per feature:
 
 1. **Foundation:** scope card, Notion page, repo, Vite app, Supabase project and tables.
 2. **Users and interface:** Auth, 3 screens with 4 states (loading, error, empty, success), RLS. *Code done: `feature/auth`, `feature/plans-workouts`.*
-3. **Deployment and automation:** Vercel with env vars, Supabase webhook, Zap with Filter and Paths, Gmail. *Guides: `feature/zapier-docs`.*
+3. **Deployment and automation:** Vercel with env vars, Supabase webhook, Zap with Filter and Paths, Gmail. *Live on Vercel; the webhook delivers to Zapier.*
 4. **Verification and presentation:** test table, error handling, README and Notion, 5-minute demo.
 
 Extended ideas (exercises/sets/reps, instructor role, plan assignment, progress reports by email, charts) are tracked in the implementation plan.
