@@ -25,7 +25,7 @@ Baigiamasis kurso *„Pilnas ciklas nuo idėjos iki produkto“* projektas: vien
 - **Sportininkai ir treneriai**: vaidmenį pasirenkate registruodamiesi. Sportininkas dalijasi su treneriu įvesdamas trenerio kodą skiltyje **Dalijimasis** ir gali nustoti bet kada.
 - **Mano sportininkai** (treneriai): jūsų kodas, kiekvieno sportininko naujausia veikla ir sportininko puslapis su jo pasiūlymais, tikslais, naujausiomis treniruotėmis (su serijomis), ataskaitomis ir diagramomis. Puslapis tik skaitomas: duomenis gali keisti tik pats sportininkas.
 - **Planų priskyrimas**: treneris vieną planą priskiria daugeliui sportininkų. Kiekvienas pagal jį įrašo savo treniruotes; skiltyje „Mano planai“ jis rodomas su užrašu *Priskyrė jūsų treneris*.
-- **El. laiškas treneriui**: kiekviena nauja treniruotė → Supabase Database Webhook → Zapier → Gmail. Jėgos treniruotės ateina kaip *STRENGTH: pavadinimas*, kitos – kaip *New workout: pavadinimas*; laiške išvardytos serijos (pvz., *Squat: 2 × 5 @ 100 kg, 5 @ 102.5 kg*).
+- **El. laiškas sportininko treneriui**: kiekviena nauja treniruotė → Supabase Database Webhook → Zapier → Gmail, adresuotas treneriui (treneriams), su kuriuo sportininkas dalijasi (`instructor_emails` užpildo duomenų bazės trigeris; sportininkas, kuris nesidalija su niekuo, laiško nesiunčia). Jėgos treniruotės ateina kaip *STRENGTH: pavadinimas*, kitos – kaip *New workout: pavadinimas*; laiške išvardytos serijos (pvz., *Squat: 2 × 5 @ 100 kg, 5 @ 102.5 kg*).
 - **Kalbos**: lietuvių (numatytoji) ir anglų. **LT / EN** jungiklis yra antraštėje tarp logotipo ir meniu (taip pat prisijungimo ekrane); pasirinkimas įsimenamas naršyklėje, todėl išlieka naršant ir perkrovus. Visi tekstai yra `src/i18n/translations.js`. Jūsų įvesti duomenys (planų pavadinimai, pratimai, pastabos) niekada neverčiami, taip pat neverčiamos ataskaitos ir serijų santraukos, kurias duomenų bazė rašo į savo eilutes (jos patenka ir į el. laiškus).
 - **Keturios būsenos** kiekviename ekrane, kuris kraunasi ar saugo duomenis: Kraunama, Klaida (paprasta kalba, su *Bandyti dar kartą*), Tuščia, Pavyko.
 
@@ -106,7 +106,7 @@ Supabase projektą reikia vieną kartą paruošti: paleiskite `supabase/schema.s
 | `demo.athlete.b@example.com` | `WorkoutLog-demo-2026` | Sportininkas | Pradedantysis, 8 dienas neįrašęs jokios treniruotės, su deadlift tikslu |
 | `demo.instructor@example.com` | `WorkoutLog-demo-2026` | Treneris | Kodas **GYM234**, abu sportininkai dalijasi, jiems priskirti 3 planai |
 
-Kas tai perskaito, gali prisijungti su šiais duomenimis: tai demonstracinės paskyros. Veikiančioje svetainėje įrašius treniruotę ar išsiuntus ataskaitą kaip viena iš jų, treneris gauna laišką per Zapier, kaip ir iš bet kurios kitos paskyros.
+Kas tai perskaito, gali prisijungti su šiais duomenimis: tai demonstracinės paskyros. Veikiančioje svetainėje įrašius treniruotę ar išsiuntus ataskaitą kaip viena iš jų, laišką per Zapier gauna treneris, su kuriuo ji dalijasi (`demo.instructor@example.com`, netikras adresas, kuris pašto gauti negali), kaip ir iš bet kurios kitos paskyros.
 
 | Komanda | Ką daro |
 |---|---|

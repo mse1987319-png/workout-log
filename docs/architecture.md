@@ -100,7 +100,7 @@ erDiagram
 | Table | Tier | Purpose |
 |---|---|---|
 | `plans` | **Initial task (A)** | A workout plan. Owned by one user; an instructor's plan can be assigned to athletes |
-| `workouts` | **Initial task (B)** | One logged session under a plan. **Its INSERT fires the first webhook** (Zap 1) |
+| `workouts` | **Initial task (B)** | One logged session under a plan. **Its INSERT fires the first webhook** (Zap 1); `instructor_emails` (set by a trigger) says who is emailed |
 | `workout_sets` | Extended | Exercise, set number, reps and kg of a strength workout |
 | `goals` | Extended | An exercise, a target weight and a date; reached or overdue is worked out from the sets |
 | `reports` | Extended | A progress report, written only by `send_report()`. **Its INSERT fires the second webhook** (Zap 2) |
@@ -205,6 +205,8 @@ Tests run without a network: the real `supabase-js` client talks to a fake `fetc
 **Logging a workout.** The form calls `log_workout()` (one transaction: the workout and its sets). The `INSERT` into `workouts` fires the webhook once, with `sets_summary` already in the row, so Zap 1 can put the sets in the email. If anything fails, nothing is saved and nothing is sent.
 
 **Sending a report.** The button calls `send_report()`, which builds the numbers from the caller's own last 7 days, stores a `reports` row (at most one per 5 minutes) and so fires the second webhook.
+
+**Who gets the emails.** A `BEFORE INSERT` trigger (`set_instructor_emails()`) on `workouts` and `reports` copies the emails of the athlete's linked instructors (`instructor_links`) into the row's `instructor_emails`. The webhook carries it, and each Zap's Filter stops the run when it is empty and uses it as Gmail's *To* otherwise. So the recipient is the athlete's own instructor, decided by the database and never typed by a user or stored in Zapier.
 
 **Goals and suggestions.** Goals live in the database; whether one is reached or overdue, and every suggestion, is computed in the browser from the athlete's sets, so each can state its reason. No AI key anywhere.
 

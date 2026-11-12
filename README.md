@@ -25,7 +25,7 @@ Capstone project for the course *"The full cycle from idea to live product"*: on
 - **Athletes and instructors**: choose your role when you sign up. An athlete shares with an instructor by typing the instructor's code under **Sharing**, and can stop at any time.
 - **My athletes** (instructors): your code, each athlete's recent activity, and an athlete page with their suggestions, goals, recent workouts (with sets), reports and charts. It is read-only: only the athlete can change their data.
 - **Plan assignment**: an instructor assigns one plan to many athletes. Each logs their own workouts under it; it shows as *Assigned by your instructor* under My plans.
-- **Email to the instructor**: each new workout → Supabase Database Webhook → Zapier → Gmail. Strength workouts arrive as *STRENGTH: title*, others as *New workout: title*; the email lists the sets (e.g. *Squat: 2 × 5 @ 100 kg, 5 @ 102.5 kg*).
+- **Email to the athlete's instructor**: each new workout → Supabase Database Webhook → Zapier → Gmail, addressed to the instructor(s) the athlete shares with (a database trigger fills `instructor_emails`; an athlete who shares with nobody sends no email). Strength workouts arrive as *STRENGTH: title*, others as *New workout: title*; the email lists the sets (e.g. *Squat: 2 × 5 @ 100 kg, 5 @ 102.5 kg*).
 - **Languages**: Lithuanian (default) and English. The **LT / EN** switch sits in the header between the logo and the menu (and on the login screen); the choice is kept in the browser, so it survives navigation and reloads. All texts live in `src/i18n/translations.js`. Data you enter (plan names, exercises, notes) is never translated, and neither are the report summary and set summary the database writes into its own rows (they also go into the emails).
 - **Four states** on every screen that loads or saves: Loading, Error (plain language, with *Try again*), Empty, Success.
 
@@ -106,7 +106,7 @@ The Supabase project needs a one-time setup: run `supabase/schema.sql`, then `su
 | `demo.athlete.b@example.com` | `WorkoutLog-demo-2026` | Athlete | A beginner with nothing logged for 8 days and a deadlift goal |
 | `demo.instructor@example.com` | `WorkoutLog-demo-2026` | Instructor | Code **GYM234**, both athletes sharing, 3 plans assigned to them |
 
-Anyone who reads this can log in with these: they're demo accounts. On the live site, logging a workout or sending a report as one of them emails the instructor through Zapier, like any other account.
+Anyone who reads this can log in with these: they're demo accounts. On the live site, logging a workout or sending a report as one of them emails the instructor they share with (`demo.instructor@example.com`, a fake address that cannot receive mail) through Zapier, like any other account.
 
 | Command | What it does |
 |---|---|

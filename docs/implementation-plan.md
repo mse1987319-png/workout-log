@@ -180,16 +180,17 @@ Each one states its reason, so the user can see why:
 |---|---|
 | Trigger | Webhooks by Zapier → Catch Hook |
 | Supabase | Database Webhook on table `workouts`, HTTP POST to the Catch Hook URL |
-| Filter | Continue only if `type` = `INSERT` |
+| Filter | Continue only if `type` = `INSERT` **and** `record__instructor_emails` exists |
 | Paths — A: Strength | `record__type` = `strength` → Gmail: Subject "STRENGTH: " + `record__title` |
 | Paths — Fallback: Other | Doesn't match A → Gmail: Subject "New workout: " + `record__title` |
+| Gmail *To* | `record__instructor_emails`: the athlete's own instructors, written by a database trigger (see the safety note under Zap 2) |
 | Gmail body | `record__user_id`, `record__created_at`, `record__duration_min` |
 
 Watch out: the webhook payload has its own top-level `type` (INSERT / UPDATE) **and** the row has `record__type` (strength / other). The Filter uses the first, Paths the second. Mixing them up is the most likely first bug — a good entry for the error log.
 
 ### Reliability (slide 18)
 
-- **Error handler** on each Gmail step → emails me the error text.
+- **Error handler** on each Gmail step → emails me the error text. *As built:* three handlers (two in Zap 1, one in Zap 2), all sending to one Zapier global variable, `ERROR_EMAIL`, so the address is set in one place and not typed into each step.
 - **Error test**: put a bad "To" address, log a strength workout, find "Handled error" in Zap history, restore the address.
 - **Owner**: name, email and date in the Zap description.
 - **Cost**: with 50 workouts a month, about 50 tasks — one Gmail action per workout; to my knowledge the trigger, Filter and Paths steps don't consume tasks. Verify against the rules from topics 23 and 26 and write the number and plan into Notion.
@@ -203,6 +204,8 @@ Watch out: the webhook payload has its own top-level `type` (INSERT / UPDATE) **
 4. **AI bonus**: an AI step in this Zap turns the numbers into a short written summary before the Gmail step.
 
 Safety: the recipient address must come from the athlete's instructor link (set by a database trigger), never from a free-text field — otherwise any signed-up user could make my Gmail send mail to arbitrary addresses.
+
+*As built:* the trigger `set_instructor_emails()` writes the athlete's linked instructors into an `instructor_emails` column on **both** `workouts` and `reports`, and both Zaps use it as Gmail's *To* (their Filters stop a run when it is empty, so an athlete who shares with nobody sends no email). No instructor address lives in Zapier. See [zapier.md](zapier.md#upgrading-zaps-that-are-already-published).
 
 ---
 

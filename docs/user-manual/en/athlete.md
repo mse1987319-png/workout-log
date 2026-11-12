@@ -117,7 +117,7 @@ Press **+ Log workout** on a plan card. (You can also arrive here from the *Log 
 
 ![Empty Log workout form](../images/en/20-log-form-empty.png)
 
-> Every saved workout automatically emails your instructor; strength workouts are flagged. This is why the form says so under **Type**.
+> Every saved workout automatically emails the instructor(s) you share with; strength workouts are flagged. This is why the form says so under **Type**. If you share with nobody, nobody is emailed (see [Share with your instructor](#7-share-with-your-instructor)).
 
 ### Strength workouts
 
@@ -188,7 +188,7 @@ To add one, fill in **Exercise**, **Target (kg)** and **Reach it by**, then pres
 
 ### Report to your instructor
 
-The card summarises your last 7 days. Press **Send report to instructor** to email it. You can send one about every 5 minutes; the card shows when you last sent one. The report text is written by the database and is always in English.
+The card summarises your last 7 days. Press **Send report to instructor** to email it to the instructor(s) you share with (if you share with nobody, it is saved but no email goes out). You can send one about every 5 minutes; the card shows when you last sent one. The report text is written by the database and is always in English.
 
 ![Report card](../images/en/64-report.png)
 
