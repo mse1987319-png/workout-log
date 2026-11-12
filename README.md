@@ -57,6 +57,7 @@ The full picture is in [docs/architecture.md](docs/architecture.md): the **ERD**
 | Tests | [Vitest](https://vitest.dev) + [Testing Library](https://testing-library.com) |
 | Lint | [oxlint](https://oxc.rs/docs/guide/usage/linter.html) |
 | Documentation | [Notion](https://www.notion.so) ([project page](https://app.notion.com/p/Workout-Log-Project-documentation-4150ecfaf117815bbf2dd6af5ee27323)) + this README; diagrams in [Mermaid](https://mermaid.js.org) |
+| AI tools | [Claude](https://claude.ai) through [Claude Code](https://claude.com/claude-code): Claude Opus 5.5, Claude Sonnet 5.5 |
 
 ## Run it locally
 
