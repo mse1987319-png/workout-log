@@ -15,6 +15,7 @@ Capstone project for the course *"The full cycle from idea to live product"*: on
 - **Log workout** (create): create a plan; log a workout under a plan with title, type (`strength` / `other`) and duration. For strength: exercises with sets of reps × kg, showing last time's result for each exercise. For cardio: activity and distance. Notes for both.
 - **Workout detail**: a workout's sets by exercise, each with the previous session; or duration, distance and pace for cardio.
 - **Progress**: the heaviest set per session of an exercise over time (line chart) and minutes per week, strength vs other (stacked columns), each with a one-line summary and a table view.
+- **Report to the instructor**: a button on Progress sends a summary of the last 7 days; the database builds it, and a second webhook → Zap 2 → Gmail delivers it.
 - **Email to the instructor**: each new workout → Supabase Database Webhook → Zapier → Gmail. Strength workouts arrive as *STRENGTH: title*, others as *New workout: title*; the email lists the sets (e.g. *Squat: 2 × 5 @ 100 kg, 5 @ 102.5 kg*).
 - **Four states** on every screen that loads or saves: Loading, Error (plain language, with *Try again*), Empty, Success.
 

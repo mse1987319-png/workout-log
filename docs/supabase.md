@@ -10,14 +10,15 @@ The Database Webhook to Zapier is a separate step in lecture 3: [zapier.md](zapi
 2. Paste the whole of [`supabase/schema.sql`](../supabase/schema.sql) and press **Run**.
    Expected: `Success. No rows returned`. Running it again later is safe.
 3. Check:
-   - **Table Editor** lists `plans`, `workouts` and `workout_sets`.
-   - **Authentication → Policies** (or **Database → Policies**) shows RLS **enabled** on all three tables, with 4 policies each:
+   - **Table Editor** lists `plans`, `workouts`, `workout_sets` and `reports`.
+   - **Authentication → Policies** (or **Database → Policies**) shows RLS **enabled** on all four tables, with these policies:
 
      | Table | Policies |
      |---|---|
      | `plans` | Read own plans · Add own plans · Edit own plans · Delete own plans |
      | `workouts` | Read own workouts · Add workouts to own plans · Edit own workouts · Delete own workouts |
      | `workout_sets` | Read own sets · Add sets to own workouts · Edit own sets · Delete own sets |
+     | `reports` | Read own reports (no write policy: only `send_report()` writes) |
 
 4. Take the submission screenshots now (checklist item 3): the Table Editor with both tables, and the Policies page.
 
@@ -33,6 +34,8 @@ What the schema does, in short:
 The app saves a workout through the database function **`log_workout()`**: the workout and its sets in one transaction, as the signed-in user (so every policy above applies). The INSERT into `workouts` still fires the Database Webhook once per workout; if anything fails, nothing is saved and nothing is sent. Because the webhook only sees the workout row, `log_workout()` also writes a one-line summary of the sets into it (`sets_summary`, built by **`format_sets()`**), so the instructor's email can list them.
 
 [`supabase/tests/sets_summary.test.sql`](../supabase/tests/sets_summary.test.sql) tests both functions. Paste it into the SQL Editor and run it: it always ends with an error that rolls everything back, reading *TESTS PASSED (…)* when all is well, so it never saves a workout or sends an email.
+
+**Progress reports.** **`report_stats(days)`** returns the caller's numbers for the last 7 calendar days with a one-line summary (the app's preview). **`send_report()`** is the only way to create a row in `reports`: it stores the caller's own numbers and email, at most once per 5 minutes, and the INSERT fires the second Database Webhook (`reports_to_zapier`, Zap 2 in [zapier.md](zapier.md#zap-2-progress-reports-extended)). [`supabase/tests/reports.test.sql`](../supabase/tests/reports.test.sql) tests both, the same rolled-back way.
 
 ## 2. Sign-up without email confirmation
 
