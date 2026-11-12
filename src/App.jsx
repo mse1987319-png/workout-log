@@ -5,6 +5,7 @@ import RequireAuth from './auth/RequireAuth'
 import Layout from './components/Layout'
 import Logo from './components/Logo'
 import { ErrorState, Loading } from './components/States'
+import { useLanguage } from './i18n/useLanguage'
 import { configError } from './lib/supabase'
 import AthletesPage from './pages/AthletesPage'
 import LoginPage from './pages/LoginPage'
@@ -24,6 +25,8 @@ function OnDemand({ loading, children }) {
 }
 
 export default function App() {
+  const { t } = useLanguage()
+
   if (configError) {
     return (
       <main className="page page-narrow">
@@ -31,7 +34,7 @@ export default function App() {
           <Logo large />
         </p>
         <ErrorState
-          message={`The app is not set up yet. ${configError}`}
+          message={t('app.notSetUp', { error: configError })}
           onRetry={() => window.location.reload()}
         />
       </main>
@@ -55,7 +58,7 @@ export default function App() {
           <Route
             path="workouts/:id"
             element={
-              <OnDemand loading="Loading the workout…">
+              <OnDemand loading={t('detail.loading')}>
                 <WorkoutDetailPage />
               </OnDemand>
             }
@@ -63,7 +66,7 @@ export default function App() {
           <Route
             path="progress"
             element={
-              <OnDemand loading="Loading your progress…">
+              <OnDemand loading={t('progress.loading')}>
                 <ProgressPage />
               </OnDemand>
             }
@@ -73,7 +76,7 @@ export default function App() {
           <Route
             path="athletes/:id"
             element={
-              <OnDemand loading="Loading the athlete…">
+              <OnDemand loading={t('athlete.loading')}>
                 <AthletePage />
               </OnDemand>
             }

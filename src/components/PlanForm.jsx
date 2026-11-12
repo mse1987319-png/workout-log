@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPlan, updatePlan } from '../api/plans'
+import { t } from '../i18n/i18n'
+import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
 import { ErrorState, SuccessMessage } from './States'
 
@@ -16,6 +18,7 @@ export default function PlanForm({ plan = null, onSaved, onCancel }) {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(null)
   const [created, setCreated] = useState(null)
+  useLanguage() // re-render when the language changes
 
   useEffect(() => {
     if (editing) nameRef.current?.focus()
@@ -26,7 +29,7 @@ export default function PlanForm({ plan = null, onSaved, onCancel }) {
     const cleanGoal = goal.trim() || null
     setSaveError(null)
     setCreated(null)
-    setProblem(cleanName ? '' : 'Enter a plan name.')
+    setProblem(cleanName ? '' : t('plan.enterName'))
     if (!cleanName) return
 
     setSaving(true)
@@ -52,29 +55,29 @@ export default function PlanForm({ plan = null, onSaved, onCancel }) {
     save()
   }
 
-  let submitLabel = editing ? 'Save plan' : 'Create plan'
-  if (saving) submitLabel = editing ? 'Saving…' : 'Creating…'
+  let submitLabel = editing ? t('plan.savePlan') : t('plan.createPlan')
+  if (saving) submitLabel = editing ? t('common.saving') : t('plan.creating')
 
   return (
     <form className="form" onSubmit={handleSubmit} noValidate>
       <div className="field">
-        <label htmlFor={`${id}-name`}>Plan name</label>
+        <label htmlFor={`${id}-name`}>{t('plan.nameLabel')}</label>
         <input
           id={`${id}-name`}
           ref={nameRef}
           value={name}
           maxLength={100}
-          placeholder="e.g. Strength block"
+          placeholder={t('plan.namePlaceholder')}
           onChange={(event) => setName(event.target.value)}
         />
       </div>
       <div className="field">
-        <label htmlFor={`${id}-goal`}>Goal (optional)</label>
+        <label htmlFor={`${id}-goal`}>{t('plan.goalLabel')}</label>
         <input
           id={`${id}-goal`}
           value={goal}
           maxLength={300}
-          placeholder="e.g. Squat 100 kg by March"
+          placeholder={t('plan.goalPlaceholder')}
           onChange={(event) => setGoal(event.target.value)}
         />
       </div>
@@ -85,7 +88,7 @@ export default function PlanForm({ plan = null, onSaved, onCancel }) {
         </p>
       )}
       {saveError && <ErrorState message={friendlyError(saveError)} onRetry={save} />}
-      {created && <SuccessMessage>Plan created: {created.name}.</SuccessMessage>}
+      {created && <SuccessMessage>{t('plan.created', { name: created.name })}</SuccessMessage>}
 
       <div className="form-actions">
         <button type="submit" className="button" disabled={saving}>
@@ -93,7 +96,7 @@ export default function PlanForm({ plan = null, onSaved, onCancel }) {
         </button>
         {editing && (
           <button type="button" className="button button-secondary" disabled={saving} onClick={onCancel}>
-            Cancel
+            {t('common.cancel')}
           </button>
         )}
       </div>

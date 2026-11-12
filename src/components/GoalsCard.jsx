@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { createGoal, deleteGoal } from '../api/goals'
+import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
 import { formatCalendarDay, formatKg } from '../lib/format'
 import { describeGoal, goalName, goalStatus, toYmd, validateGoal } from '../lib/goals'
@@ -11,8 +12,9 @@ import { ErrorState, SuccessMessage } from './States'
 function GoalRow({ goal, sets, onRemoved, readOnly }) {
   const [removing, setRemoving] = useState(false)
   const [removeError, setRemoveError] = useState(null)
+  const { t } = useLanguage()
   const status = goalStatus(goal, sets)
-  const label = `${goalName(goal)} by ${formatCalendarDay(goal.target_date)}`
+  const label = t('goals.by', { goal: goalName(goal), date: formatCalendarDay(goal.target_date) })
 
   async function remove() {
     setRemoveError(null)
@@ -41,7 +43,7 @@ function GoalRow({ goal, sets, onRemoved, readOnly }) {
         aria-valuemin={0}
         aria-valuemax={status.target}
         aria-valuenow={Math.min(status.best, status.target)}
-        aria-valuetext={`${formatKg(status.best)} of ${formatKg(status.target)} kg`}
+        aria-valuetext={t('goals.valueText', { best: formatKg(status.best), target: formatKg(status.target) })}
       >
         <div className="goal-fill" style={{ width: `${status.share * 100}%` }} />
       </div>
@@ -54,11 +56,11 @@ function GoalRow({ goal, sets, onRemoved, readOnly }) {
           <button
             type="button"
             className="button button-secondary button-small"
-            aria-label={`Remove goal: ${label}`}
+            aria-label={t('goals.removeLabel', { label })}
             disabled={removing}
             onClick={remove}
           >
-            {removing ? 'Removing…' : 'Remove'}
+            {removing ? t('goals.removing') : t('common.remove')}
           </button>
         )}
       </div>
@@ -68,6 +70,7 @@ function GoalRow({ goal, sets, onRemoved, readOnly }) {
 }
 
 function GoalForm({ exercises, onAdded }) {
+  const { t } = useLanguage()
   const [today] = useState(() => toYmd(new Date()))
   const [exercise, setExercise] = useState('')
   const [targetKg, setTargetKg] = useState('')
@@ -106,17 +109,17 @@ function GoalForm({ exercises, onAdded }) {
 
   return (
     <form className="form goal-form" onSubmit={handleSubmit} noValidate aria-labelledby="goal-form-title">
-      <h3 id="goal-form-title">New goal</h3>
+      <h3 id="goal-form-title">{t('goals.newTitle')}</h3>
       <div className="field-row">
         <div className="field">
-          <label htmlFor="goal-exercise">Exercise</label>
+          <label htmlFor="goal-exercise">{t('common.exercise')}</label>
           <input
             id="goal-exercise"
             list="goal-exercises"
             value={exercise}
             maxLength={60}
             autoComplete="off"
-            placeholder="e.g. Squat"
+            placeholder={t('common.exercisePlaceholder')}
             onChange={(event) => setExercise(event.target.value)}
           />
           <datalist id="goal-exercises">
@@ -126,7 +129,7 @@ function GoalForm({ exercises, onAdded }) {
           </datalist>
         </div>
         <div className="field">
-          <label htmlFor="goal-kg">Target (kg)</label>
+          <label htmlFor="goal-kg">{t('goals.targetKg')}</label>
           <input
             id="goal-kg"
             type="number"
@@ -134,12 +137,12 @@ function GoalForm({ exercises, onAdded }) {
             min="0"
             step="any"
             value={targetKg}
-            placeholder="e.g. 120"
+            placeholder={t('goals.targetPlaceholder')}
             onChange={(event) => setTargetKg(event.target.value)}
           />
         </div>
         <div className="field">
-          <label htmlFor="goal-date">Reach it by</label>
+          <label htmlFor="goal-date">{t('goals.reachBy')}</label>
           <input
             id="goal-date"
             type="date"
@@ -158,13 +161,13 @@ function GoalForm({ exercises, onAdded }) {
       {saveError && <ErrorState message={friendlyError(saveError)} onRetry={save} />}
       {added && (
         <SuccessMessage>
-          Goal added: {goalName(added)} by {formatCalendarDay(added.target_date)}.
+          {t('goals.added', { goal: goalName(added), date: formatCalendarDay(added.target_date) })}
         </SuccessMessage>
       )}
 
       <div>
         <button type="submit" className="button" disabled={saving}>
-          {saving ? 'Adding…' : 'Add goal'}
+          {saving ? t('goals.adding') : t('goals.add')}
         </button>
       </div>
     </form>
@@ -175,14 +178,15 @@ function GoalForm({ exercises, onAdded }) {
 // readOnly (the instructor's view of an athlete): bars only.
 export default function GoalsCard({ goals, sets, onAdded, onRemoved, readOnly = false }) {
   const exercises = useMemo(() => weightedExercises(sets), [sets])
+  const { t } = useLanguage()
 
   return (
     <section className="card stack" aria-labelledby="goals-title">
-      <h2 id="goals-title">Goals</h2>
+      <h2 id="goals-title">{t('goals.title')}</h2>
 
       {goals.length === 0 ? (
         <p className="muted">
-          {readOnly ? 'No goals yet.' : 'No goals yet. Set one below: an exercise, a weight and a date.'}
+          {readOnly ? t('goals.none') : t('goals.noneHint')}
         </p>
       ) : (
         <ul className="goal-list" aria-labelledby="goals-title">

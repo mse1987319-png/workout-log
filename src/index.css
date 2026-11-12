@@ -138,6 +138,51 @@ a {
   height: 4.5rem;
 }
 
+/* Language switcher: two radio buttons, LT and EN. In the header it is set
+   apart from the logo and the menu by a line on each side. */
+.lang-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.lang-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lang-option:has(input:checked) {
+  color: var(--accent);
+}
+
+.lang-option input {
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.app-header .lang-switch {
+  align-self: stretch;
+  padding: 0 1rem;
+  border-inline: 1px solid var(--border);
+}
+
+.login-lang {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
 .nav {
   display: flex;
   flex-wrap: wrap;
@@ -1123,6 +1168,11 @@ textarea {
 
   .account {
     order: 2;
+  }
+
+  .app-header .lang-switch {
+    align-self: auto;
+    padding: 0 0.5rem;
   }
 }
 

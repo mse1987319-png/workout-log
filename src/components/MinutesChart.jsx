@@ -1,6 +1,7 @@
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { useLanguage } from '../i18n/useLanguage'
 import { useChartColors } from '../lib/chartColors'
-import { formatCalendarDay } from '../lib/format'
+import { formatCalendarDay, typeLabel } from '../lib/format'
 import { minuteTicks } from '../lib/progress'
 
 const GAP = 2 // surface gap between stacked segments
@@ -22,18 +23,19 @@ function Segment({ x, y, width, height, fill, isTop }) {
 }
 
 function MinutesTooltip({ active, payload, colors }) {
+  const { t } = useLanguage()
   if (!active || !payload?.length) return null
   const row = payload[0].payload
   return (
     <div className="chart-tooltip">
-      <p className="chart-tooltip-title">Week of {formatCalendarDay(row.weekStart)}</p>
+      <p className="chart-tooltip-title">{t('progress.weekOfDate', { date: formatCalendarDay(row.weekStart) })}</p>
       <p>
         <span className="swatch" style={{ background: colors.strength }} aria-hidden="true" />
-        Strength: {row.strength} min
+        {t('progress.tooltipMinutes', { label: typeLabel('strength'), minutes: t('unit.min', { count: row.strength }) })}
       </p>
       <p>
         <span className="swatch" style={{ background: colors.other }} aria-hidden="true" />
-        Other: {row.other} min
+        {t('progress.tooltipMinutes', { label: typeLabel('other'), minutes: t('unit.min', { count: row.other }) })}
       </p>
     </div>
   )
@@ -43,6 +45,7 @@ function MinutesTooltip({ active, payload, colors }) {
 // week's total on its cap; every value also in the tooltip and the table.
 export default function MinutesChart({ weeks }) {
   const colors = useChartColors()
+  const { t } = useLanguage()
   const data = weeks.map((week) => ({
     ...week,
     total: week.strength + week.other,
@@ -53,14 +56,14 @@ export default function MinutesChart({ weeks }) {
 
   return (
     <div className="chart">
-      <ul className="legend" aria-label="Legend">
+      <ul className="legend" aria-label={t('progress.legend')}>
         <li>
           <span className="swatch" style={{ background: colors.strength }} aria-hidden="true" />
-          Strength
+          {typeLabel('strength')}
         </li>
         <li>
           <span className="swatch" style={{ background: colors.other }} aria-hidden="true" />
-          Other
+          {typeLabel('other')}
         </li>
       </ul>
       <ResponsiveContainer width="100%" height={240} initialDimension={{ width: 640, height: 240 }}>
@@ -111,7 +114,7 @@ export default function MinutesChart({ weeks }) {
                     fontSize={12}
                     fontWeight={600}
                   >
-                    {value} min
+                    {t('unit.min', { count: value })}
                   </text>
                 ) : null
               }

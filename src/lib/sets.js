@@ -1,10 +1,12 @@
 // Helpers for exercises, sets and cardio details. Pure functions, no I/O.
+import { t } from '../i18n/i18n'
+import { formatNumber } from './format'
 
 const MAX_SETS = 100
 const MAX_REPS = 1000
 const MAX_KG = 1000
 
-const kg = (value) => String(Number(value))
+const kg = (value) => formatNumber(value, 10)
 
 /** Sets of one workout, grouped by exercise in the order they were entered. */
 export function groupByExercise(sets) {
@@ -28,7 +30,7 @@ export function formatSets(sets) {
   return runs
     .map(({ reps, weight_kg, count }) => {
       const what = count > 1 ? `${count} × ${reps}` : `${reps}`
-      return Number(weight_kg) > 0 ? `${what} @ ${kg(weight_kg)} kg` : `${what} (bodyweight)`
+      return Number(weight_kg) > 0 ? `${what} @ ${kg(weight_kg)} kg` : `${what} ${t('sets.bodyweightParen')}`
     })
     .join(', ')
 }
@@ -58,22 +60,22 @@ export function validateExercises(exercises) {
   for (const [index, exercise] of exercises.entries()) {
     const n = index + 1
     const name = exercise.name.trim()
-    if (!name) return `Enter a name for exercise ${n}.`
-    if (exercise.sets.length === 0) return `Add at least one set to exercise ${n} (${name}).`
+    if (!name) return t('sets.enterName', { n })
+    if (exercise.sets.length === 0) return t('sets.addAtLeastOne', { n, name })
     for (const [setIndex, set] of exercise.sets.entries()) {
-      const where = `Exercise ${n} (${name}), set ${setIndex + 1}`
+      const where = t('sets.where', { n, name, m: setIndex + 1 })
       const reps = Number(set.reps)
       if (!/^\d+$/.test(String(set.reps).trim()) || reps < 1 || reps > MAX_REPS) {
-        return `${where}: enter the reps as a whole number from 1 to ${MAX_REPS}.`
+        return t('sets.badReps', { where, max: MAX_REPS })
       }
       const weight = set.weight === '' ? 0 : Number(set.weight)
       if (!Number.isFinite(weight) || weight < 0 || weight > MAX_KG) {
-        return `${where}: enter the weight in kg from 0 to ${MAX_KG}.`
+        return t('sets.badWeight', { where, max: MAX_KG })
       }
     }
   }
   const total = exercises.reduce((sum, exercise) => sum + exercise.sets.length, 0)
-  if (total > MAX_SETS) return `A workout can have at most ${MAX_SETS} sets.`
+  if (total > MAX_SETS) return t('sets.tooMany', { max: MAX_SETS })
   return ''
 }
 

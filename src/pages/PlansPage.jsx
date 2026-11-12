@@ -4,12 +4,14 @@ import { listPlans } from '../api/plans'
 import { useAuth } from '../auth/AuthContext'
 import PlanCard from '../components/PlanCard'
 import { EmptyState, ErrorState, Loading, SuccessMessage } from '../components/States'
+import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
 import { useLoad } from '../lib/useLoad'
 
 // The List screen: my plans (table A) and the workouts (table B) under each.
 export default function PlansPage() {
   const { user } = useAuth()
+  const { t } = useLanguage()
   const { status, data: plans, error, reload, setData } = useLoad(listPlans)
   const [deletedNotice, setDeletedNotice] = useState(false)
 
@@ -39,15 +41,15 @@ export default function PlansPage() {
   return (
     <section>
       <div className="page-head">
-        <h1>My plans</h1>
+        <h1>{t('nav.myPlans')}</h1>
         <Link className="button" to="/plans/new">
-          New plan
+          {t('plans.new')}
         </Link>
       </div>
 
-      {deletedNotice && <SuccessMessage>Plan deleted.</SuccessMessage>}
+      {deletedNotice && <SuccessMessage>{t('plans.deleted')}</SuccessMessage>}
 
-      {status === 'loading' && <Loading>Loading your plans…</Loading>}
+      {status === 'loading' && <Loading>{t('plans.loading')}</Loading>}
 
       {status === 'error' && <ErrorState message={friendlyError(error)} onRetry={reload} />}
 
@@ -55,11 +57,11 @@ export default function PlansPage() {
         <EmptyState
           action={
             <Link className="button" to="/plans/new">
-              Create your first plan
+              {t('plans.createFirst')}
             </Link>
           }
         >
-          No plans yet — create your first plan.
+          {t('plans.empty')}
         </EmptyState>
       )}
 

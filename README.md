@@ -24,6 +24,7 @@ Capstone project for the course *"The full cycle from idea to live product"*: on
 - **My athletes** (instructors): your code, each athlete's recent activity, and an athlete page with their suggestions, goals, recent workouts (with sets), reports and charts. It is read-only: only the athlete can change their data.
 - **Plan assignment**: an instructor assigns one plan to many athletes. Each logs their own workouts under it; it shows as *Assigned by your instructor* under My plans.
 - **Email to the instructor**: each new workout → Supabase Database Webhook → Zapier → Gmail. Strength workouts arrive as *STRENGTH: title*, others as *New workout: title*; the email lists the sets (e.g. *Squat: 2 × 5 @ 100 kg, 5 @ 102.5 kg*).
+- **Languages**: Lithuanian (default) and English. The **LT / EN** switch sits in the header between the logo and the menu (and on the login screen); the choice is kept in the browser, so it survives navigation and reloads. All texts live in `src/i18n/translations.js`. Data you enter (plan names, exercises, notes) is never translated, and neither are the report summary and set summary the database writes into its own rows (they also go into the emails).
 - **Four states** on every screen that loads or saves: Loading, Error (plain language, with *Try again*), Empty, Success.
 
 ## How it works
@@ -143,6 +144,7 @@ src/
   components/     header, plan card, workout row, forms, the four UI states
   auth/           session provider and route guard
   api/            Supabase queries for plans and workouts
+  i18n/           All UI texts in Lithuanian and English (translations.js), the language store and t()
   lib/            Supabase client, settings check, error messages, progress maths, goal and suggestion rules
   test/           test setup and fakes (no network)
 public/               logo.svg (the Logify logo) and favicon.svg

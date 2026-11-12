@@ -2,6 +2,8 @@
 // Returns an error message (instead of throwing) so the app can show
 // a readable Error state rather than a blank page.
 
+import { t } from '../i18n/i18n'
+
 const PLACEHOLDER = /YOUR-/i
 
 function clean(value) {
@@ -29,7 +31,7 @@ export function readSupabaseConfig(env) {
     return {
       url: null,
       key: null,
-      error: `Missing setting: ${missing.join(' and ')}. Add it to .env.local (or Vercel → Settings → Environment Variables), then restart or redeploy.`,
+      error: t('config.missing', { names: missing.join(t('config.and')) }),
     }
   }
 
@@ -37,7 +39,7 @@ export function readSupabaseConfig(env) {
     return {
       url: null,
       key: null,
-      error: 'VITE_SUPABASE_URL must be a full address, such as https://<project-ref>.supabase.co.',
+      error: t('config.badUrl'),
     }
   }
 

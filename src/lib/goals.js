@@ -1,6 +1,7 @@
 // Goals: an exercise, a target weight and a date. Pure functions, no I/O.
 // Whether a goal is reached is worked out from the sets every time, so there
 // is no stored flag that could go stale.
+import { t } from '../i18n/i18n'
 import { formatCalendarDay, formatDay, formatKg } from './format'
 
 const DAY = 24 * 60 * 60 * 1000
@@ -21,13 +22,13 @@ export function daysUntil(ymd, now = new Date()) {
 
 /** The first problem with a new goal, or '' when it can be saved. */
 export function validateGoal({ exercise, targetKg, targetDate }, now = new Date()) {
-  if (!exercise.trim()) return 'Enter the exercise.'
+  if (!exercise.trim()) return t('goals.enterExercise')
   const kg = Number(targetKg)
   if (String(targetKg).trim() === '' || !Number.isFinite(kg) || kg <= 0 || kg > MAX_KG) {
-    return `Enter the target weight in kg: more than 0, up to ${MAX_KG}.`
+    return t('goals.enterWeight', { max: MAX_KG })
   }
-  if (!targetDate) return 'Pick the date to reach it by.'
-  if (daysUntil(targetDate, now) < 0) return 'Pick today or a later date.'
+  if (!targetDate) return t('goals.pickDate')
+  if (daysUntil(targetDate, now) < 0) return t('goals.pickFuture')
   return ''
 }
 
@@ -61,11 +62,11 @@ export function goalStatus(goal, sets, now = new Date()) {
 
 /** The line under a goal's bar. */
 export function describeGoal(goal, status) {
-  if (status.state === 'reached') return `Reached on ${formatDay(status.reachedOn)}.`
+  if (status.state === 'reached') return t('goals.reached', { date: formatDay(status.reachedOn) })
   const toGo = formatKg(status.remaining)
-  if (status.state === 'overdue') return `Was due ${formatCalendarDay(goal.target_date)}: ${toGo} kg short.`
-  if (status.daysLeft === 0) return `${toGo} kg to go, due today.`
-  return `${toGo} kg to go, ${status.daysLeft} ${status.daysLeft === 1 ? 'day' : 'days'} left.`
+  if (status.state === 'overdue') return t('goals.overdue', { date: formatCalendarDay(goal.target_date), kg: toGo })
+  if (status.daysLeft === 0) return t('goals.dueToday', { kg: toGo })
+  return t('goals.toGo', { kg: toGo, count: status.daysLeft })
 }
 
 /** "Squat 120 kg" */

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { listPlanOptions } from '../api/plans'
 import { EmptyState, ErrorState, Loading } from '../components/States'
 import WorkoutForm from '../components/WorkoutForm'
+import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
 import { useLoad } from '../lib/useLoad'
 
@@ -10,6 +11,7 @@ import { useLoad } from '../lib/useLoad'
 // (/log?plan=<id>); plans are created on their own page.
 export default function LogWorkoutPage() {
   const { status, data: plans, error, reload } = useLoad(listPlanOptions)
+  const { t } = useLanguage()
   const [searchParams] = useSearchParams()
   const [chosenPlanId, setChosenPlanId] = useState(searchParams.get('plan') ?? '')
 
@@ -20,11 +22,11 @@ export default function LogWorkoutPage() {
 
   return (
     <section>
-      <h1>Log workout</h1>
+      <h1>{t('log.title')}</h1>
 
       <div className="card stack">
-        <h2>Workout</h2>
-        {status === 'loading' && <Loading>Loading your plans…</Loading>}
+        <h2>{t('log.workout')}</h2>
+        {status === 'loading' && <Loading>{t('plans.loading')}</Loading>}
 
         {status === 'error' && <ErrorState message={friendlyError(error)} onRetry={reload} />}
 
@@ -32,11 +34,11 @@ export default function LogWorkoutPage() {
           <EmptyState
             action={
               <Link className="button" to="/plans/new">
-                Create your first plan
+                {t('plans.createFirst')}
               </Link>
             }
           >
-            No plans yet — create a plan first, then log workouts under it.
+            {t('log.noPlans')}
           </EmptyState>
         )}
 

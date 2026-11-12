@@ -192,6 +192,7 @@ flowchart LR
 | Screens | `src/pages`, `src/components` | Show the four states (loading, error, empty, success); no data access of their own |
 | Data access | `src/api` | One function per question or write: `from(...)` queries and `rpc(...)` calls; the only place that knows table and function names |
 | Logic | `src/lib` | Pure functions without I/O: progress maths, goals, suggestions, formatting. Easy to test |
+| Texts | `src/i18n` | Every UI text lives in `translations.js` (Lithuanian and English, same keys). `t(key, params)` fills in `{placeholders}` and picks plural forms (Lithuanian has three); the chosen language is kept in `localStorage` and read by components through `useLanguage()`. Lithuanian is the default |
 | Auth | `src/auth` | Session provider; the role in the menu comes from the sign-up metadata |
 | Database | `supabase/schema.sql` | Tables, policies, functions, triggers; re-runnable. `seed.sql` adds demo data to an empty project |
 

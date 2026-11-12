@@ -6,15 +6,16 @@ import GoalsCard from '../components/GoalsCard'
 import { MinutesSection, WeightSection } from '../components/ProgressCharts'
 import { ErrorState, Loading, SuccessMessage } from '../components/States'
 import Suggestions from '../components/Suggestions'
+import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
-import { ACTIVITIES, formatDateTime, formatDay, formatKg, TYPE_LABELS } from '../lib/format'
+import { activityLabel, formatDateTime, formatDay, formatKg, typeLabel } from '../lib/format'
 import { suggest } from '../lib/recommendations'
 import { useLoad } from '../lib/useLoad'
 
 const RECENT = 10
-const activityLabel = (value) => ACTIVITIES.find(([key]) => key === value)?.[1]
 
 function AssignedPlans({ athleteId, plans, assignments, onAssigned, onUnassigned }) {
+  const { t } = useLanguage()
   const available = plans.filter((plan) => !assignments.some((assignment) => assignment.plan_id === plan.id))
   const [chosen, setChosen] = useState('')
   const planId = available.some((plan) => plan.id === chosen) ? chosen : (available[0]?.id ?? '')
@@ -60,10 +61,10 @@ function AssignedPlans({ athleteId, plans, assignments, onAssigned, onUnassigned
 
   return (
     <section className="card stack" aria-labelledby="assigned-title">
-      <h2 id="assigned-title">Plans you assigned</h2>
+      <h2 id="assigned-title">{t('athlete.assignedTitle')}</h2>
 
       {assignments.length === 0 ? (
-        <p className="muted">No plans assigned yet.</p>
+        <p className="muted">{t('athlete.noAssigned')}</p>
       ) : (
         <ul className="person-list" aria-labelledby="assigned-title">
           {assignments.map((assignment) => (
@@ -72,11 +73,11 @@ function AssignedPlans({ athleteId, plans, assignments, onAssigned, onUnassigned
               <button
                 type="button"
                 className="button button-secondary button-small"
-                aria-label={`Unassign ${assignment.plan.name}`}
+                aria-label={t('athlete.unassignLabel', { name: assignment.plan.name })}
                 disabled={unassigning === assignment.plan_id}
                 onClick={() => unassign(assignment.plan_id)}
               >
-                {unassigning === assignment.plan_id ? 'Unassigning…' : 'Unassign'}
+                {unassigning === assignment.plan_id ? t('athlete.unassigning') : t('athlete.unassign')}
               </button>
             </li>
           ))}
@@ -88,16 +89,17 @@ function AssignedPlans({ athleteId, plans, assignments, onAssigned, onUnassigned
 
       {plans.length === 0 && (
         <p className="muted">
-          <Link to="/plans/new">Create a plan</Link> first, then assign it here.
+          <Link to="/plans/new">{t('athlete.createPlanLink')}</Link>
+          {t('athlete.createPlanRest')}
         </p>
       )}
       {plans.length > 0 && available.length === 0 && (
-        <p className="muted">All your plans are assigned to this athlete.</p>
+        <p className="muted">{t('athlete.allAssigned')}</p>
       )}
       {available.length > 0 && (
         <form className="assign-form" onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="assign-plan">Plan</label>
+            <label htmlFor="assign-plan">{t('athlete.plan')}</label>
             <select id="assign-plan" value={planId} onChange={(event) => setChosen(event.target.value)}>
               {available.map((plan) => (
                 <option key={plan.id} value={plan.id}>
@@ -108,41 +110,42 @@ function AssignedPlans({ athleteId, plans, assignments, onAssigned, onUnassigned
           </div>
           <div>
             <button type="submit" className="button" disabled={assigning}>
-              {assigning ? 'Assigning…' : 'Assign'}
+              {assigning ? t('athlete.assigning') : t('athlete.assign')}
             </button>
           </div>
         </form>
       )}
       {assignError && <ErrorState message={friendlyError(assignError)} onRetry={assign} />}
-      {assigned && <SuccessMessage>Assigned {assigned.plan.name}: the athlete sees it under My plans.</SuccessMessage>}
+      {assigned && <SuccessMessage>{t('athlete.assigned', { name: assigned.plan.name })}</SuccessMessage>}
     </section>
   )
 }
 
 function RecentWorkouts({ workouts }) {
+  const { t } = useLanguage()
   const recent = [...workouts].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, RECENT)
 
   return (
     <section className="card stack" aria-labelledby="recent-title">
-      <h2 id="recent-title">Recent workouts</h2>
+      <h2 id="recent-title">{t('athlete.recentTitle')}</h2>
       {recent.length === 0 ? (
-        <p className="muted">No workouts yet.</p>
+        <p className="muted">{t('athlete.noWorkouts')}</p>
       ) : (
         <ul className="person-list" aria-labelledby="recent-title">
           {recent.map((workout) => (
             <li key={workout.id} className="person-row">
               <p className="workout-meta">
                 <span className="person-email">{workout.title}</span>
-                <span className={`badge badge-${workout.type}`}>{TYPE_LABELS[workout.type] ?? workout.type}</span>
+                <span className={`badge badge-${workout.type}`}>{typeLabel(workout.type)}</span>
               </p>
               <p className="muted">
-                {formatDay(workout.created_at)} · {workout.duration_min} min
-                {workout.activity && ` · ${activityLabel(workout.activity) ?? workout.activity}`}
+                {formatDay(workout.created_at)} · {t('unit.min', { count: workout.duration_min })}
+                {workout.activity && ` · ${activityLabel(workout.activity)}`}
                 {workout.distance_km && ` · ${formatKg(workout.distance_km)} km`}
                 {workout.plan_name && ` · ${workout.plan_name}`}
               </p>
               {workout.sets_summary && <p>{workout.sets_summary}</p>}
-              {workout.notes && <p className="muted">“{workout.notes}”</p>}
+              {workout.notes && <p className="muted">{t('common.quoted', { text: workout.notes })}</p>}
             </li>
           ))}
         </ul>
@@ -152,16 +155,17 @@ function RecentWorkouts({ workouts }) {
 }
 
 function Reports({ reports }) {
+  const { t } = useLanguage()
   return (
     <section className="card stack" aria-labelledby="reports-title">
-      <h2 id="reports-title">Reports</h2>
+      <h2 id="reports-title">{t('athlete.reportsTitle')}</h2>
       {reports.length === 0 ? (
-        <p className="muted">No reports sent yet.</p>
+        <p className="muted">{t('athlete.noReports')}</p>
       ) : (
         <ul className="person-list" aria-labelledby="reports-title">
           {reports.map((report) => (
             <li key={report.created_at} className="person-row">
-              <p className="muted">Sent {formatDateTime(report.created_at)}</p>
+              <p className="muted">{t('athlete.reportSent', { date: formatDateTime(report.created_at) })}</p>
               <p>{report.summary}</p>
             </li>
           ))}
@@ -184,7 +188,10 @@ export default function AthletePage() {
     [id],
   )
   const { status, data, error, reload, setData } = useLoad(load)
-  const suggestions = useMemo(() => (data ? suggest(data.progress) : []), [data])
+  const { language, t } = useLanguage()
+  // The suggestions are worded in the current language, so they are redone when it changes.
+  // oxlint-disable-next-line react-hooks/exhaustive-deps
+  const suggestions = useMemo(() => (data ? suggest(data.progress) : []), [data, language])
 
   function addAssignment(assignment) {
     setData((current) => ({ ...current, assignments: [...current.assignments, assignment] }))
@@ -201,15 +208,16 @@ export default function AthletePage() {
     <section>
       <p className="back-link">
         <Link to="/athletes">
-          <span aria-hidden="true">← </span>Back to My athletes
+          <span aria-hidden="true">← </span>
+          {t('athlete.back')}
         </Link>
       </p>
 
-      {status === 'loading' && <Loading>Loading the athlete…</Loading>}
+      {status === 'loading' && <Loading>{t('athlete.loading')}</Loading>}
 
       {status === 'error' &&
         (error?.code === '42501' ? (
-          <ErrorState message="This athlete isn't sharing with you." />
+          <ErrorState message={t('athlete.notSharing')} />
         ) : (
           <ErrorState message={friendlyError(error)} onRetry={reload} />
         ))}
@@ -217,7 +225,7 @@ export default function AthletePage() {
       {status === 'success' && (
         <>
           <h1>{data.progress.athlete.email}</h1>
-          <p className="page-intro">Sharing with you since {formatDay(data.progress.linked_at)}.</p>
+          <p className="page-intro">{t('athlete.sharingSince', { date: formatDay(data.progress.linked_at) })}</p>
           <div className="stack">
             <AssignedPlans
               athleteId={id}
@@ -226,11 +234,11 @@ export default function AthletePage() {
               onAssigned={addAssignment}
               onUnassigned={removeAssignment}
             />
-            <Suggestions items={suggestions} title="Suggestions for this athlete" readOnly />
+            <Suggestions items={suggestions} title={t('athlete.suggestionsTitle')} readOnly />
             <GoalsCard goals={data.progress.goals} sets={data.progress.sets} readOnly />
             <RecentWorkouts workouts={data.progress.workouts} />
             <Reports reports={data.progress.reports} />
-            <WeightSection sets={data.progress.sets} emptyText="No strength workouts with weights yet." />
+            <WeightSection sets={data.progress.sets} emptyText={t('athlete.noWeights')} />
             <MinutesSection workouts={data.progress.workouts} />
           </div>
         </>

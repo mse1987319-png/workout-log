@@ -1,5 +1,6 @@
 // Rule-based suggestions, each with the reason it was made (implementation
 // plan §6). Pure functions over the athlete's own history: no I/O, no AI.
+import { t } from '../i18n/i18n'
 import { formatCalendarDay, formatDay, formatKg } from './format'
 import { daysUntil, goalName, goalStatus, sortGoals, toYmd } from './goals'
 import { heaviestPerSession } from './progress'
@@ -10,19 +11,10 @@ const IDLE_DAYS = 7
 const WINDOW_DAYS = 28
 const DAY = 24 * 60 * 60 * 1000
 
-/** Every rule in plain words, in the order its suggestions are listed. */
-export const RULES = [
-  { kind: 'back', text: 'Pick up where you left off: no workout logged for 7 days or more.' },
-  { kind: 'hold', text: 'Hold the weight: at the same top weight, your reps dropped two sessions in a row.' },
-  {
-    kind: 'pace',
-    text: "Aim for more per week: a goal's kg still to go, spread over the weeks left, is more than your heaviest set gained per week over the last 4 weeks.",
-  },
-  {
-    kind: 'add',
-    text: 'Add 2.5 kg: in your last two sessions of an exercise, every set at the top weight had the same reps, and the second session matched or beat the first.',
-  },
-]
+const RULE_KINDS = ['back', 'hold', 'pace', 'add']
+
+/** Every rule in plain words (current language), in the order its suggestions are listed. */
+export const getRules = () => RULE_KINDS.map((kind) => ({ kind, text: t(`rules.${kind}`) }))
 
 const keyOf = (exercise) => exercise.trim().toLowerCase()
 const daysSince = (iso, now) => -daysUntil(toYmd(new Date(iso)), now)
@@ -72,8 +64,8 @@ function backRule(workouts, now) {
   return {
     key: 'back',
     kind: 'back',
-    title: 'Pick up where you left off.',
-    because: `Your last workout was ${days} days ago (${formatDay(last.created_at)}).`,
+    title: t('rec.back.title'),
+    because: t('rec.back.because', { count: days, date: formatDay(last.created_at) }),
     link: '/log',
   }
 }
@@ -87,8 +79,8 @@ function holdRule({ key, sessions }) {
   return {
     key: `hold:${key}`,
     kind: 'hold',
-    title: `${c.name}: hold ${formatKg(kg)} kg or take a lighter week.`,
-    because: `Your reps at ${formatKg(kg)} kg dropped two sessions in a row: ${a.totalReps} → ${b.totalReps} → ${c.totalReps}.`,
+    title: t('rec.hold.title', { name: c.name, kg: formatKg(kg) }),
+    because: t('rec.hold.because', { kg: formatKg(kg), a: a.totalReps, b: b.totalReps, c: c.totalReps }),
   }
 }
 
@@ -103,10 +95,9 @@ function recentGain(sets, exercise, now) {
 }
 
 function timeLeft(days) {
-  if (days === 0) return 'today'
-  if (days === 1) return 'in 1 day'
-  if (days < 14) return `in ${days} days`
-  return `in ${Math.round(days / 7)} weeks`
+  if (days === 0) return t('rec.time.today')
+  if (days < 14) return t('rec.time.days', { count: days })
+  return t('rec.time.weeks', { count: Math.round(days / 7) })
 }
 
 function paceRule(goal, sets, now) {
@@ -117,13 +108,21 @@ function paceRule(goal, sets, now) {
   if (gained >= needed) return null
   const lately =
     gained > 0
-      ? `your sessions in the last 4 weeks gained +${perWeek(gained)} kg a week.`
-      : "your heaviest set hasn't gone up in the last 4 weeks."
+      ? t('rec.pace.gained', { kg: perWeek(gained) })
+      : t('rec.pace.flat')
   return {
     key: `pace:${goal.id}`,
     kind: 'pace',
-    title: `${goalName(goal)} by ${formatCalendarDay(goal.target_date)}: aim for +${perWeek(needed)} kg a week.`,
-    because: `${formatKg(status.remaining)} kg to go ${timeLeft(status.daysLeft)}; ${lately}`,
+    title: t('rec.pace.title', {
+      goal: goalName(goal),
+      date: formatCalendarDay(goal.target_date),
+      kg: perWeek(needed),
+    }),
+    because: t('rec.pace.because', {
+      remaining: formatKg(status.remaining),
+      time: timeLeft(status.daysLeft),
+      lately,
+    }),
   }
 }
 
@@ -137,10 +136,10 @@ function addRule({ key, sessions }) {
   return {
     key: `add:${key}`,
     kind: 'add',
-    title: `${last.name}: add ${formatKg(STEP_KG)} kg next time (${formatKg(kg + STEP_KG)} kg).`,
+    title: t('rec.add.title', { name: last.name, step: formatKg(STEP_KG), total: formatKg(kg + STEP_KG) }),
     because: same
-      ? `You did ${formatSets(last.sets)} in each of your last two sessions.`
-      : `You did ${formatSets(before.sets)}, then ${formatSets(last.sets)}.`,
+      ? t('rec.add.becauseSame', { sets: formatSets(last.sets) })
+      : t('rec.add.becauseMore', { before: formatSets(before.sets), after: formatSets(last.sets) }),
   }
 }
 

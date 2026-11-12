@@ -1,8 +1,10 @@
 import { CartesianGrid, LabelList, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { useLanguage } from '../i18n/useLanguage'
 import { useChartColors } from '../lib/chartColors'
 import { formatDay, formatKg } from '../lib/format'
 
 function WeightTooltip({ active, payload }) {
+  const { t } = useLanguage()
   if (!active || !payload?.length) return null
   const point = payload[0].payload
   return (
@@ -10,7 +12,7 @@ function WeightTooltip({ active, payload }) {
       <p className="chart-tooltip-title">{formatDay(point.date)}</p>
       <p>
         <span className="swatch" style={{ background: payload[0].color }} aria-hidden="true" />
-        Heaviest set: {formatKg(point.kg)} kg
+        {t('progress.tooltipHeaviest', { kg: formatKg(point.kg) })}
       </p>
     </div>
   )

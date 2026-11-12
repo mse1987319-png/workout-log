@@ -1,21 +1,24 @@
 // The shared UI states (implementation plan §6): every screen that
 // loads or saves data uses these, so they look and behave the same.
+import { useLanguage } from '../i18n/useLanguage'
 
-export function Loading({ children = 'Loading…' }) {
+export function Loading({ children }) {
+  const { t } = useLanguage()
   return (
     <p className="state state-loading" role="status">
-      {children}
+      {children ?? t('common.loading')}
     </p>
   )
 }
 
 export function ErrorState({ message, onRetry }) {
+  const { t } = useLanguage()
   return (
     <div className="state state-error" role="alert">
       <p>{message}</p>
       {onRetry && (
         <button type="button" className="button" onClick={onRetry}>
-          Try again
+          {t('common.tryAgain')}
         </button>
       )}
     </div>

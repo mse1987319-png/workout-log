@@ -1,6 +1,7 @@
 // Numbers behind the Progress screen. Pure functions, no I/O.
+import { t } from '../i18n/i18n'
+import { formatKg as kg } from './format'
 
-const kg = (value) => String(Number(Number(value).toFixed(2)))
 const keyOf = (exercise) => exercise.trim().toLowerCase()
 const pad = (n) => String(n).padStart(2, '0')
 const ymd = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
@@ -70,17 +71,17 @@ export function minuteTicks(maxMinutes) {
 /** "Squat: 95 kg → 110 kg over 3 sessions (+15 kg)." */
 export function describeTrend(exercise, points) {
   if (points.length === 0) return ''
-  if (points.length === 1) return `${exercise}: ${kg(points[0].kg)} kg in 1 session.`
+  if (points.length === 1) return t('progress.trendOne', { exercise, kg: kg(points[0].kg) })
   const first = points[0].kg
   const last = points.at(-1).kg
   const change = last - first
   const signed = change >= 0 ? `+${kg(change)}` : `−${kg(-change)}`
-  return `${exercise}: ${kg(first)} kg → ${kg(last)} kg over ${points.length} sessions (${signed} kg).`
+  return t('progress.trendMany', { exercise, first: kg(first), last: kg(last), count: points.length, change: signed })
 }
 
 /** "This week: 95 min (60 strength, 35 other)." */
 export function describeWeek({ strength, other }) {
   const total = strength + other
-  if (total === 0) return 'This week: no workouts yet.'
-  return `This week: ${total} min (${strength} strength, ${other} other).`
+  if (total === 0) return t('progress.weekNone')
+  return t('progress.week', { total, strength, other })
 }
