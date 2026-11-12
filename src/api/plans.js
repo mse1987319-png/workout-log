@@ -25,6 +25,26 @@ export async function listPlanOptions() {
   return data
 }
 
+const PLAN_COLUMNS = 'id, user_id, name, goal, created_at'
+
+/** Renames my plan / changes its goal. Row Level Security leaves other people's plans alone (no row → PGRST116). */
+export async function updatePlan({ id, name, goal }) {
+  const { data, error } = await supabase.from('plans').update({ name, goal }).eq('id', id).select(PLAN_COLUMNS).single()
+  if (error) throw error
+  return data
+}
+
+/**
+ * Deletes my plan and, with it, my workouts and their sets. The database
+ * refuses a plan that athletes have logged workouts under; a plan that isn't
+ * mine (or is already gone) deletes nothing, which is reported as PGRST116.
+ */
+export async function deletePlan(id) {
+  const { data, error } = await supabase.from('plans').delete().eq('id', id).select('id')
+  if (error) throw error
+  if (data.length === 0) throw Object.assign(new Error('Nothing was deleted.'), { code: 'PGRST116' })
+}
+
 /** Inserts into table A; user_id is filled in by the database (auth.uid()). */
 export async function createPlan({ name, goal }) {
   const { data, error } = await supabase

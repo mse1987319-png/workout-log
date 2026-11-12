@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -122,10 +122,7 @@ describe('PlansPage', () => {
     renderPlans()
 
     expect(await screen.findByText('No plans yet — create your first plan.')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Create your first plan' })).toHaveAttribute(
-      'href',
-      '/log',
-    )
+    expect(screen.getByRole('link', { name: 'Create your first plan' })).toHaveAttribute('href', '/plans/new')
   })
 
   it('shows the Error state and loads again on Try again', async () => {
@@ -212,5 +209,187 @@ describe('PlansPage', () => {
     expect(screen.getByText('Leg day')).toBeInTheDocument()
     expect(screen.queryByText('Leg day (draft)')).not.toBeInTheDocument()
     expect(backend.requests.some((request) => request.method === 'PATCH')).toBe(false)
+  })
+
+  it('has a New plan button that opens the plan creation page, and no Log workout button', async () => {
+    backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+    renderPlans()
+
+    await screen.findByRole('heading', { name: 'Strength block' })
+    expect(screen.getByRole('link', { name: 'New plan' })).toHaveAttribute('href', '/plans/new')
+    expect(screen.queryByRole('link', { name: 'Log workout' })).not.toBeInTheDocument()
+  })
+
+  describe('editing and deleting a plan', () => {
+    const planCard = async (name) => within((await screen.findByRole('heading', { name })).closest('li'))
+    const UPDATED = { ...PLANS[0], name: 'Heavy block', goal: 'Squat 120 kg' }
+
+    it('offers Edit and Delete on my own plans only', async () => {
+      const assigned = {
+        id: 'plan-3',
+        user_id: 'instructor-1',
+        name: 'Coach plan',
+        goal: null,
+        created_at: '2026-11-11T08:00:00+00:00',
+        workouts: [],
+      }
+      backend.reply('GET', '/rest/v1/plans', 200, [assigned, ...PLANS])
+      renderPlans()
+
+      const mine = await planCard('Strength block')
+      expect(mine.getByRole('button', { name: 'Edit plan Strength block' })).toBeInTheDocument()
+      expect(mine.getByRole('button', { name: 'Delete plan Strength block' })).toBeInTheDocument()
+      const coach = await planCard('Coach plan')
+      expect(coach.queryByRole('button', { name: /^(Edit|Delete) plan/ })).not.toBeInTheDocument()
+      expect(coach.getByRole('link', { name: 'Log workout under Coach plan' })).toBeInTheDocument()
+    })
+
+    it('edits the name and goal', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      backend.reply('PATCH', '/rest/v1/plans', 200, UPDATED)
+      const user = renderPlans()
+
+      const card = await planCard('Strength block')
+      await user.click(card.getByRole('button', { name: 'Edit plan Strength block' }))
+      expect(card.getByLabelText('Plan name')).toHaveValue('Strength block')
+      expect(card.getByLabelText('Goal (optional)')).toHaveValue('Squat 100 kg')
+      await user.clear(card.getByLabelText('Plan name'))
+      await user.type(card.getByLabelText('Plan name'), '  Heavy block ')
+      await user.clear(card.getByLabelText('Goal (optional)'))
+      await user.type(card.getByLabelText('Goal (optional)'), 'Squat 120 kg')
+      await user.click(card.getByRole('button', { name: 'Save plan' }))
+
+      expect(await screen.findByRole('heading', { name: 'Heavy block' })).toBeInTheDocument()
+      expect(screen.getByText('Goal: Squat 120 kg')).toBeInTheDocument()
+      expect(screen.getByText('Plan updated.')).toBeInTheDocument()
+      const patch = backend.requests.find((request) => request.method === 'PATCH')
+      expect(patch.query.get('id')).toBe('eq.plan-1')
+      expect(patch.body).toEqual({ name: 'Heavy block', goal: 'Squat 120 kg' })
+      // The workouts under the plan are still there.
+      expect(screen.getByRole('link', { name: 'Leg day' })).toBeInTheDocument()
+    })
+
+    it('cancels an edit without saving', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      const user = renderPlans()
+
+      const card = await planCard('Strength block')
+      await user.click(card.getByRole('button', { name: 'Edit plan Strength block' }))
+      await user.type(card.getByLabelText('Plan name'), ' changed')
+      await user.click(card.getByRole('button', { name: 'Cancel' }))
+
+      expect(await screen.findByRole('heading', { name: 'Strength block' })).toBeInTheDocument()
+      expect(backend.requests.filter((request) => request.method === 'PATCH')).toHaveLength(0)
+    })
+
+    it('needs a plan name when editing', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      const user = renderPlans()
+
+      const card = await planCard('Strength block')
+      await user.click(card.getByRole('button', { name: 'Edit plan Strength block' }))
+      await user.clear(card.getByLabelText('Plan name'))
+      await user.click(card.getByRole('button', { name: 'Save plan' }))
+
+      expect(card.getByRole('alert')).toHaveTextContent('Enter a plan name.')
+      expect(backend.requests.filter((request) => request.method === 'PATCH')).toHaveLength(0)
+    })
+
+    it('explains a failed edit and tries again', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      backend.networkDown('PATCH', '/rest/v1/plans')
+      backend.reply('PATCH', '/rest/v1/plans', 200, UPDATED)
+      const user = renderPlans()
+
+      const card = await planCard('Strength block')
+      await user.click(card.getByRole('button', { name: 'Edit plan Strength block' }))
+      await user.click(card.getByRole('button', { name: 'Save plan' }))
+      expect(await card.findByRole('alert')).toHaveTextContent("Can't reach the server")
+
+      await user.click(card.getByRole('button', { name: 'Try again' }))
+      expect(await screen.findByRole('heading', { name: 'Heavy block' })).toBeInTheDocument()
+    })
+
+    it('asks before deleting and says what goes with the plan', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      const user = renderPlans()
+
+      const card = await planCard('Strength block')
+      await user.click(card.getByRole('button', { name: 'Delete plan Strength block' }))
+
+      expect(
+        card.getByText('Delete “Strength block” and its 2 workouts, with their sets? This can’t be undone.'),
+      ).toBeInTheDocument()
+      await user.click(card.getByRole('button', { name: 'Cancel' }))
+      expect(card.queryByText(/This can’t be undone/)).not.toBeInTheDocument()
+      expect(backend.requests.filter((request) => request.method === 'DELETE')).toHaveLength(0)
+
+      const empty = await planCard('5K plan')
+      await user.click(empty.getByRole('button', { name: 'Delete plan 5K plan' }))
+      expect(empty.getByText('Delete “5K plan”? This can’t be undone.')).toBeInTheDocument()
+    })
+
+    it('deletes the plan once confirmed', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      backend.reply('DELETE', '/rest/v1/plans', 200, [{ id: 'plan-1' }])
+      const user = renderPlans()
+
+      const card = await planCard('Strength block')
+      await user.click(card.getByRole('button', { name: 'Delete plan Strength block' }))
+      await user.click(card.getByRole('button', { name: 'Yes, delete plan' }))
+
+      await waitFor(() => expect(screen.queryByRole('heading', { name: 'Strength block' })).not.toBeInTheDocument())
+      expect(screen.getByRole('heading', { name: '5K plan' })).toBeInTheDocument()
+      expect(screen.getByText('Plan deleted.')).toBeInTheDocument()
+      expect(backend.requests.find((request) => request.method === 'DELETE').query.get('id')).toBe('eq.plan-1')
+    })
+
+    it('shows Deleting… while the plan is deleted', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      backend.hang('DELETE', '/rest/v1/plans')
+      const user = renderPlans()
+
+      const card = await planCard('Strength block')
+      await user.click(card.getByRole('button', { name: 'Delete plan Strength block' }))
+      await user.click(card.getByRole('button', { name: 'Yes, delete plan' }))
+
+      expect(card.getByRole('button', { name: 'Deleting…' })).toBeDisabled()
+    })
+
+    it('keeps the plan and says why when the database refuses', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      backend.reply('DELETE', '/rest/v1/plans', 409, {
+        code: '23503',
+        message: "Athletes have logged workouts under this plan, so it can't be deleted.",
+        details: null,
+        hint: null,
+      })
+      const user = renderPlans()
+
+      const card = await planCard('Strength block')
+      await user.click(card.getByRole('button', { name: 'Delete plan Strength block' }))
+      await user.click(card.getByRole('button', { name: 'Yes, delete plan' }))
+
+      expect(await card.findByRole('alert')).toHaveTextContent(
+        "Athletes have logged workouts under this plan, so it can't be deleted.",
+      )
+      expect(card.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Strength block' })).toBeInTheDocument()
+    })
+
+    it('explains a failed delete and tries again', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      backend.networkDown('DELETE', '/rest/v1/plans')
+      backend.reply('DELETE', '/rest/v1/plans', 200, [{ id: 'plan-1' }])
+      const user = renderPlans()
+
+      const card = await planCard('Strength block')
+      await user.click(card.getByRole('button', { name: 'Delete plan Strength block' }))
+      await user.click(card.getByRole('button', { name: 'Yes, delete plan' }))
+      expect(await card.findByRole('alert')).toHaveTextContent("Can't reach the server")
+
+      await user.click(card.getByRole('button', { name: 'Try again' }))
+      await waitFor(() => expect(screen.queryByRole('heading', { name: 'Strength block' })).not.toBeInTheDocument())
+    })
   })
 })

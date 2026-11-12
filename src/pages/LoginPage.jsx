@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import Logo from '../components/Logo'
 import { Loading, SuccessMessage } from '../components/States'
 import { friendlyError } from '../lib/errors'
 
@@ -72,8 +73,13 @@ export default function LoginPage() {
   return (
     <main className="page page-narrow">
       <div className="login-intro">
-        <p className="brand">Workout Log</p>
-        <p>Log your strength and cardio workouts. Your instructor gets an email about every new one.</p>
+        <p className="login-logo">
+          <Logo large />
+        </p>
+        <p>
+          <span aria-hidden="true">💪 </span>Log your strength and cardio workouts. Your instructor gets an email about
+          every new one.
+        </p>
       </div>
 
       <section className="card">

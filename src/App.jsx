@@ -3,11 +3,13 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import AuthProvider from './auth/AuthProvider'
 import RequireAuth from './auth/RequireAuth'
 import Layout from './components/Layout'
+import Logo from './components/Logo'
 import { ErrorState, Loading } from './components/States'
 import { configError } from './lib/supabase'
 import AthletesPage from './pages/AthletesPage'
 import LoginPage from './pages/LoginPage'
 import LogWorkoutPage from './pages/LogWorkoutPage'
+import NewPlanPage from './pages/NewPlanPage'
 import PlansPage from './pages/PlansPage'
 import SharingPage from './pages/SharingPage'
 
@@ -25,7 +27,9 @@ export default function App() {
   if (configError) {
     return (
       <main className="page page-narrow">
-        <p className="brand">Workout Log</p>
+        <p className="login-logo">
+          <Logo large />
+        </p>
         <ErrorState
           message={`The app is not set up yet. ${configError}`}
           onRetry={() => window.location.reload()}
@@ -46,6 +50,7 @@ export default function App() {
           }
         >
           <Route index element={<PlansPage />} />
+          <Route path="plans/new" element={<NewPlanPage />} />
           <Route path="log" element={<LogWorkoutPage />} />
           <Route
             path="workouts/:id"

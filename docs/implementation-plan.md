@@ -135,6 +135,8 @@ RLS additions (owner policies are never loosened):
 | **Plans** (list) | My plans and the workouts logged under each | `select` from `plans` and `workouts` |
 | **Log workout** (create) | Form: new plan, and new workout with title, type, duration | `insert` into `plans` and `workouts` |
 
+*As built:* the plan form is its own page (**New plan**, opened from My plans), and **Log workout** is reached from a plan card rather than the menu. Plans can be edited and deleted by their owner.
+
 ### The four states — on every screen that loads or saves
 
 | State | What the user sees |

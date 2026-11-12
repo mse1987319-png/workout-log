@@ -110,7 +110,7 @@ Restart `npm run dev` after editing `.env.local`.
 
 1. Open `http://localhost:5173`, choose **Create an account** and sign up as user A.
    Expected: you land on **My plans** with *No plans yet — create your first plan.* (the Empty state). **Authentication → Users** lists user A. *(Test 1)*
-2. **Log workout** → create a plan → log a workout.
+2. **My plans → New plan** → create a plan, then **+ Log workout** on its card → log a workout.
    Expected: *Workout saved*. In the Table Editor, both new rows carry user A's id in `user_id`.
 3. **Log out**. In a private/incognito window, sign up as user B.
    Expected: user B sees the Empty state, with nothing of user A's. *(Test 4: RLS works)*
