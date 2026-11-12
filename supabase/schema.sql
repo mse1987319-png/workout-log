@@ -296,5 +296,151 @@ revoke execute on function public.log_workout(uuid, text, text, integer, text, n
 grant execute on function public.log_workout(uuid, text, text, integer, text, numeric, text, jsonb)
   to authenticated;
 
+-- ===========================================================================
+-- Extended tier: progress reports for the instructor (Zap 2)
+-- ===========================================================================
+-- A report is created only by send_report(), from the caller's own data, so
+-- its numbers and text can't be forged. Its INSERT fires the second Database
+-- Webhook (reports_to_zapier → Zap 2 → Gmail). The recipient lives in
+-- Zapier, never in the database.
+create table if not exists public.reports (
+  id             uuid        primary key default gen_random_uuid(),
+  user_id        uuid        not null references auth.users (id) on delete cascade,
+  athlete_email  text,
+  period_start   date        not null,
+  period_end     date        not null,
+  summary        text        not null,
+  stats          jsonb       not null,
+  created_at     timestamptz not null default now()
+);
+
+comment on table public.reports is
+  'Progress reports sent to the instructor. Written only by send_report(); one row = one email (Zap 2).';
+
+create index if not exists reports_user_created_idx on public.reports (user_id, created_at desc);
+
+grant select on public.reports to authenticated;
+
+alter table public.reports enable row level security;
+
+-- Read your own reports. There is no insert/update policy: only send_report() writes.
+drop policy if exists "Read own reports" on public.reports;
+create policy "Read own reports" on public.reports
+  for select to authenticated
+  using (user_id = auth.uid());
+
+-- The numbers of the last p_days calendar days (today and the days before),
+-- for the signed-in user only, plus a one-line summary for the email:
+-- "Nov 6 – Nov 12: 4 workouts (3 strength, 1 other), 215 min, 42 sets.
+--  Heaviest: Squat 110 kg, Deadlift 120 kg. Distance: 9 km."
+-- Filters on auth.uid() itself, so it is also safe inside send_report().
+create or replace function public.report_stats(p_days integer default 7)
+returns jsonb
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  with period as (
+    select current_date - (p_days - 1) as start_day, current_date as end_day
+  ),
+  w as (
+    select w.* from public.workouts w, period
+    where w.user_id = auth.uid() and w.created_at >= period.start_day::timestamptz
+  ),
+  s as (
+    select s.* from public.workout_sets s, period
+    where s.user_id = auth.uid() and s.created_at >= period.start_day::timestamptz
+  ),
+  heaviest as (
+    select (array_agg(btrim(s.exercise) order by s.created_at desc))[1] as exercise,
+           max(s.weight_kg) as kg
+    from s
+    where s.weight_kg > 0
+    group by lower(btrim(s.exercise))
+    order by max(s.weight_kg) desc
+    limit 3
+  ),
+  n as (
+    select
+      (select count(*) from w)::int as workouts,
+      (select count(*) from w where w.type = 'strength')::int as strength_workouts,
+      (select count(*) from w where w.type = 'other')::int as other_workouts,
+      (select coalesce(sum(w.duration_min), 0) from w)::int as minutes,
+      (select coalesce(sum(w.duration_min), 0) from w where w.type = 'strength')::int as strength_minutes,
+      (select coalesce(sum(w.duration_min), 0) from w where w.type = 'other')::int as other_minutes,
+      (select coalesce(sum(w.distance_km), 0) from w) as distance_km,
+      (select count(*) from s)::int as sets
+  ),
+  heaviest_text as (
+    select string_agg(h.exercise || ' ' || trim_scale(h.kg)::text || ' kg', ', ' order by h.kg desc) as text,
+           coalesce(jsonb_agg(jsonb_build_object('exercise', h.exercise, 'kg', h.kg) order by h.kg desc),
+                    '[]'::jsonb) as list
+    from heaviest h
+  )
+  select jsonb_build_object(
+    'days', p_days,
+    'period_start', to_char(period.start_day, 'YYYY-MM-DD'),
+    'period_end', to_char(period.end_day, 'YYYY-MM-DD'),
+    'workouts', n.workouts,
+    'strength_workouts', n.strength_workouts,
+    'other_workouts', n.other_workouts,
+    'minutes', n.minutes,
+    'strength_minutes', n.strength_minutes,
+    'other_minutes', n.other_minutes,
+    'distance_km', trim_scale(n.distance_km),
+    'sets', n.sets,
+    'heaviest', heaviest_text.list,
+    'summary',
+      to_char(period.start_day, 'Mon FMDD') || ' – ' || to_char(period.end_day, 'Mon FMDD') || ': '
+      || case
+           when n.workouts = 0 then 'no workouts logged.'
+           else n.workouts || case when n.workouts = 1 then ' workout' else ' workouts' end
+                || ' (' || n.strength_workouts || ' strength, ' || n.other_workouts || ' other), '
+                || n.minutes || ' min'
+                || case when n.sets = 0 then '' when n.sets = 1 then ', 1 set' else ', ' || n.sets || ' sets' end
+                || '.'
+                || coalesce(' Heaviest: ' || heaviest_text.text || '.', '')
+                || case when n.distance_km > 0 then ' Distance: ' || trim_scale(n.distance_km)::text || ' km.' else '' end
+         end
+  )
+  from period, n, heaviest_text;
+$$;
+
+-- Saves the caller's report (at most one per 5 minutes, so the instructor's
+-- inbox can't be flooded). Runs as the table owner because users may not
+-- insert into reports themselves; everything it reads is filtered to auth.uid().
+create or replace function public.send_report()
+returns public.reports
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  me uuid := auth.uid();
+  numbers jsonb;
+  saved public.reports;
+begin
+  if me is null then
+    raise exception 'Log in to send a report.' using errcode = '42501';
+  end if;
+  if exists (select 1 from public.reports r where r.user_id = me and r.created_at > now() - interval '5 minutes') then
+    raise exception 'You sent a report a few minutes ago. Wait a little before sending another.';
+  end if;
+
+  numbers := public.report_stats(7);
+  insert into public.reports (user_id, athlete_email, period_start, period_end, summary, stats)
+  values (me, auth.jwt() ->> 'email', (numbers ->> 'period_start')::date, (numbers ->> 'period_end')::date,
+          numbers ->> 'summary', numbers - 'summary')
+  returning * into saved;
+  return saved;
+end;
+$$;
+
+revoke execute on function public.report_stats(integer) from public, anon;
+grant execute on function public.report_stats(integer) to authenticated;
+revoke execute on function public.send_report() from public, anon;
+grant execute on function public.send_report() to authenticated;
+
 -- Let the REST API see the new tables right away.
 notify pgrst, 'reload schema';

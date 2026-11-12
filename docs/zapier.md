@@ -196,6 +196,33 @@ Only successful action steps count as tasks. The trigger, Filter and Paths steps
 2. Supabase → Database Webhooks → delete `workouts_to_zapier`.
 3. Supabase → **Authentication → Users** → delete the test users. Their plans and workouts are deleted with them (`on delete cascade`).
 
+## Zap 2: progress reports (Extended)
+
+When an athlete presses **Send report to instructor** on the Progress screen, the database function `send_report()` stores a row in `reports`: their own numbers for the last 7 days, at most one report per 5 minutes. A second Database Webhook sends that row to Zap 2, which emails the instructor. As in Zap 1, the instructor's address lives only in Zapier.
+
+1. **Trigger:** Zapier → **Create → Zaps**, name it `Workout Log: progress report`. Trigger: **Webhooks by Zapier → Catch Hook**; copy the URL (a secret, like Zap 1's).
+2. **Supabase:** **Database Webhooks → Create a new hook**. Name `reports_to_zapier`, table `reports`, events **Insert** only (reports are never edited), `POST` to the Catch Hook URL.
+3. **Sample:** in the app, send a report; in Zapier press **Test trigger**. The fields:
+
+   | Zapier field | Example |
+   |---|---|
+   | `record__athlete_email` | `athlete@example.com` |
+   | `record__period_start`, `record__period_end` | `2026-11-06`, `2026-11-12` |
+   | `record__summary` | `Nov 6 – Nov 12: 4 workouts (3 strength, 1 other), 215 min, 42 sets. Heaviest: Squat 110 kg.` |
+   | `record__stats__workouts`, `record__stats__minutes`, `record__stats__sets`, … | the numbers behind the summary |
+
+4. **Gmail → Send Email:** To = the instructor's address; Subject = `Progress report: ` + `Record Athlete Email` + ` (` + `Record Period Start` + ` – ` + `Record Period End` + `)`; Body = `Record Summary`.
+5. **AI summary (optional bonus, deck slide 4):** before the Gmail step, add an AI step (for example **AI by Zapier** or **ChatGPT**) with the prompt *"Write a short, encouraging note (3–4 sentences) for a fitness instructor about this athlete's week. Use only these numbers: {{Record Summary}}"*, and put its output above the numbers in the email body. The AI key stays in Zapier, never in the app or the repo.
+6. **Reliability:** an error handler on the Gmail step, the owner in the Zap description, then **Publish**.
+
+**Cost:** 1 task per report (2 with the AI step). With a report per athlete per week, that is about 4 tasks a month per athlete.
+
+**Copilot prompt** (in the new Zap, after creating the Catch Hook trigger):
+
+```text
+This Zap's trigger is a Webhooks by Zapier Catch Hook that receives Supabase Database Webhook events for the "reports" table, with the row under "record" (record__athlete_email, record__period_start, record__period_end, record__summary); keep this trigger and after it add a Filter by Zapier step that only continues when the top-level "type" field exactly matches INSERT, then a Gmail "Send Email" step to <instructor email> with the subject "Progress report: " followed by record__athlete_email and the period from record__period_start to record__period_end, and record__summary as the body.
+```
+
 ## Troubleshooting
 
 | Symptom | Cause | Fix |

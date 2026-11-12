@@ -44,6 +44,9 @@ function replyWith(workouts, sets) {
 describe('ProgressPage', () => {
   beforeEach(() => {
     backend.reset()
+    // The report card (tested on its own) loads alongside the charts.
+    backend.reply('POST', '/rest/v1/rpc/report_stats', 200, { days: 7, workouts: 1, summary: 'Report preview.' })
+    backend.reply('GET', '/rest/v1/reports', 200, [])
   })
 
   it('shows the Loading state while the data loads', () => {
