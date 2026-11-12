@@ -115,6 +115,12 @@ RLS additions (owner policies are never loosened):
 - `workouts`, `workout_sets`, `goals`, `reports`: extra `select` for the athlete's linked instructor.
 - Writes stay owner-only everywhere. Put the "is this my athlete?" check in one `security definer` SQL function to avoid policies that reference each other recursively.
 
+*As built (PR #11):* how the built version differs from the plan above:
+- **No extra `select` policies for instructors.** Instructors read through two functions instead (`my_athletes()`, `athlete_progress()`), and both check `is_my_athlete()` first.
+- **Why.** Extra policies would have mixed athletes' rows into an instructor's own screens. The app would then need user filters in React, against the "RLS, not filters" decision.
+- **What stays as planned.** Only the additive policies for assigned plans were kept: an athlete reads an assigned plan and logs workouts under it.
+- **Linking.** It works by the instructor's code, without a pending status.
+
 ---
 
 ## 6. Interface
