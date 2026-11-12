@@ -9,13 +9,18 @@ async function signIn(email, password) {
 
 // Resolves { needsConfirmation: true } when the Supabase project has
 // "Confirm email" turned on (sign-up then returns no session).
-async function signUp(email, password) {
+// role ('athlete' | 'instructor') goes into the user's metadata; a database
+// trigger copies it into their profile (supabase/schema.sql).
+async function signUp(email, password, role = 'athlete') {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    // The confirmation link must come back to this deployment
-    // (localhost in development, the Vercel URL in production).
-    options: { emailRedirectTo: window.location.origin },
+    options: {
+      // The confirmation link must come back to this deployment
+      // (localhost in development, the Vercel URL in production).
+      emailRedirectTo: window.location.origin,
+      data: { role },
+    },
   })
   if (error) throw error
   return { needsConfirmation: !data.session }
@@ -43,6 +48,8 @@ export default function AuthProvider({ children }) {
       status: auth.status,
       session: auth.session,
       user: auth.session?.user ?? null,
+      // Decides the menu only; what anyone may read is decided by the database.
+      role: auth.session?.user?.user_metadata?.role === 'instructor' ? 'instructor' : 'athlete',
       signIn,
       signUp,
       signOut,

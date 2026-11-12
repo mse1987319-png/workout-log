@@ -61,8 +61,9 @@ export function createFakeAuth({ session = null, confirmEmail = false } = {}) {
       emit('SIGNED_IN')
       return { data: { user: current.user, session: current }, error: null }
     }),
-    signUp: vi.fn(async ({ email }) => {
-      const user = userFor(email)
+    signUp: vi.fn(async ({ email, options }) => {
+      // Like Supabase: options.data becomes the user's metadata.
+      const user = { ...userFor(email), user_metadata: options?.data ?? {} }
       if (confirmEmail) return { data: { user, session: null }, error: null }
       current = sessionFor(user)
       emit('SIGNED_IN')
