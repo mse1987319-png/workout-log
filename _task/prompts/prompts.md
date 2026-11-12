@@ -23,4 +23,20 @@ Create high-level implementation plan that covers all the requirements mentioned
 
 ___
 
+based on the initial _task pptx requirements, create new pptx that answers answers
+task  questions. put it  in _task/results folder. You can also describe implemented
+solution (use existing MD/Notion docs), the idea, user flow, architecture, ERD and
+deployment diagrams, etc. Simplify when possible, add slide notes and links to
+sources and existing documentation. Create appendix  section "Live Demo" with the
+script for demo when user logs workout, or sends a report to instructor. Use live
+production version and log strength workout for demo.athlete.a@example.com, add
+exercises. Uuse creds from keys.md. Also demo progress tab and sending Create both
+Lithuanian and English versions. Then show instructor's gmail inbox and open emails
+with report and workout logs  (mse1987319@gmail.com). Take screenshots on every
+steps. Add another appendix with all relevant links and sources used. Create LT and
+EN versions of the resulting presentation. When taking screenshots, ensure that the
+language switch in the UI is set to the language of presentation created. The main
+presendation (apart from appendix with live demo) should take 5-10min. Apply
+sport-inspided theme.
+Stop and ask if you have any questions or alternate paths.
 
