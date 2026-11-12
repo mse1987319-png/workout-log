@@ -1,6 +1,6 @@
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useChartColors } from '../lib/chartColors'
-import { formatWeekStart } from '../lib/format'
+import { formatCalendarDay } from '../lib/format'
 import { minuteTicks } from '../lib/progress'
 
 const GAP = 2 // surface gap between stacked segments
@@ -26,7 +26,7 @@ function MinutesTooltip({ active, payload, colors }) {
   const row = payload[0].payload
   return (
     <div className="chart-tooltip">
-      <p className="chart-tooltip-title">Week of {formatWeekStart(row.weekStart)}</p>
+      <p className="chart-tooltip-title">Week of {formatCalendarDay(row.weekStart)}</p>
       <p>
         <span className="swatch" style={{ background: colors.strength }} aria-hidden="true" />
         Strength: {row.strength} min
@@ -46,7 +46,7 @@ export default function MinutesChart({ weeks }) {
   const data = weeks.map((week) => ({
     ...week,
     total: week.strength + week.other,
-    label: formatWeekStart(week.weekStart),
+    label: formatCalendarDay(week.weekStart),
   }))
   const last = data.length - 1
   const ticks = minuteTicks(Math.max(0, ...data.map((week) => week.total)))

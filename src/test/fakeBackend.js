@@ -57,6 +57,10 @@ export function createFakeBackend() {
     reply(method, path, status, body) {
       queue(method, path, () => json(status, body))
     },
+    /** 204 No Content: what PostgREST answers a write that returns nothing. */
+    noContent(method, path) {
+      queue(method, path, () => new Response(null, { status: 204 }))
+    },
     /** Like reply(), but only for requests where when(request) is true. */
     replyWhen(method, path, when, status, body) {
       queue(method, path, () => json(status, body), when)

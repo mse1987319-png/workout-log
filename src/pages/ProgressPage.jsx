@@ -1,13 +1,17 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listProgress } from '../api/progress'
+import GoalsCard from '../components/GoalsCard'
 import MinutesChart from '../components/MinutesChart'
 import ReportCard from '../components/ReportCard'
 import { EmptyState, ErrorState, Loading } from '../components/States'
+import Suggestions from '../components/Suggestions'
 import WeightChart from '../components/WeightChart'
 import { friendlyError } from '../lib/errors'
-import { formatDay, formatKg, formatWeekStart } from '../lib/format'
+import { formatCalendarDay, formatDay, formatKg } from '../lib/format'
+import { sortGoals } from '../lib/goals'
 import { describeTrend, describeWeek, heaviestPerSession, weeklyMinutes, weightedExercises } from '../lib/progress'
+import { suggest } from '../lib/recommendations'
 import { useLoad } from '../lib/useLoad'
 
 const WEEKS = 8
@@ -86,7 +90,7 @@ function MinutesSection({ workouts }) {
           <tbody>
             {weeks.map((week) => (
               <tr key={week.weekStart}>
-                <th scope="row">{formatWeekStart(week.weekStart)}</th>
+                <th scope="row">{formatCalendarDay(week.weekStart)}</th>
                 <td>{week.strength}</td>
                 <td>{week.other}</td>
                 <td>{week.strength + week.other}</td>
@@ -99,9 +103,19 @@ function MinutesSection({ workouts }) {
   )
 }
 
-// Progress: the heaviest set per session of one exercise, and minutes per week.
+// Progress: suggestions, goals and the report to the instructor, then the
+// heaviest set per session of one exercise and minutes per week.
 export default function ProgressPage() {
-  const { status, data, error, reload } = useLoad(listProgress)
+  const { status, data, error, reload, setData } = useLoad(listProgress)
+  const suggestions = useMemo(() => (data ? suggest(data) : []), [data])
+
+  function addGoal(goal) {
+    setData((current) => ({ ...current, goals: sortGoals([...current.goals, goal]) }))
+  }
+
+  function removeGoal(id) {
+    setData((current) => ({ ...current, goals: current.goals.filter((goal) => goal.id !== id) }))
+  }
 
   return (
     <section className="progress">
@@ -125,6 +139,8 @@ export default function ProgressPage() {
 
       {status === 'success' && data.workouts.length > 0 && (
         <div className="stack">
+          <Suggestions items={suggestions} />
+          <GoalsCard goals={data.goals} sets={data.sets} onAdded={addGoal} onRemoved={removeGoal} />
           <ReportCard />
           <WeightSection sets={data.sets} />
           <MinutesSection workouts={data.workouts} />
