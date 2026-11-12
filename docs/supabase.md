@@ -9,7 +9,12 @@ The Database Webhook to Zapier is a separate step in lecture 3: [zapier.md](zapi
 1. Supabase → your project → **SQL Editor** → **New query**.
 2. Paste the whole of [`supabase/schema.sql`](../supabase/schema.sql) and press **Run**.
    Expected: `Success. No rows returned`. Running it again later is safe.
-3. Check:
+3. **Demo data** (recommended for a new project): **New query** → paste the whole of [`supabase/seed.sql`](../supabase/seed.sql) → **Run**.
+   - **What it adds:** on an empty project, the three demo accounts from the [README](../README.md#demo-accounts) (password `WorkoutLog-demo-2026`). They come with plans, workouts and sets, goals, a progress report, and instructor sharing.
+   - **Dates:** they count back from today, so the charts and suggestions look current.
+   - **Safe to re-run:** if the project already has users, it changes nothing.
+   - **No emails:** if the Zapier webhooks already exist, they're switched off while it runs.
+4. Check:
    - **Table Editor** lists `plans`, `workouts`, `workout_sets`, `reports`, `goals`, `profiles`, `instructor_links` and `plan_assignments`.
    - **Authentication → Policies** (or **Database → Policies**) shows RLS **enabled** on all eight tables, with these policies:
 
@@ -26,7 +31,7 @@ The Database Webhook to Zapier is a separate step in lecture 3: [zapier.md](zapi
 
      The policies in *italics* are the additive sharing policies (see **Instructor sharing** below).
 
-4. Take the submission screenshots now (checklist item 3): the Table Editor with both tables, and the Policies page.
+5. Take the submission screenshots now (checklist item 3): the Table Editor with both tables, and the Policies page.
 
 What the schema does, in short:
 
