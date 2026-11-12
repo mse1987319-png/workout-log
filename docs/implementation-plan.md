@@ -73,9 +73,11 @@ flowchart LR
   S -->|Database Webhook<br/>INSERT into workouts| Z[Zapier<br/>Catch Hook → Filter → Paths]
   Z -->|Path A: strength| G1[Gmail<br/>STRENGTH: …]
   Z -->|Fallback: other| G2[Gmail<br/>New workout: …]
-  S -.->|Extended: INSERT into reports| Z2[Zapier<br/>report Zap] -.-> G3[Gmail<br/>progress report]
+  S -->|Extended: INSERT into reports| Z2[Zapier<br/>report Zap] --> G3[Gmail<br/>progress report]
   N[Notion<br/>documentation, written by hand]
 ```
+
+*As built:* the report webhook (`reports_to_zapier`) exists, as does everything in the Extended scope. The finished ERD, the deployment and infrastructure diagram and the access model are in [architecture.md](architecture.md).
 
 Data flow: browser → Supabase → webhook → Zapier → Gmail. Code flow, separately: GitHub → Vercel → public URL.
 

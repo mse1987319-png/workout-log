@@ -4,7 +4,7 @@ A web workout log. Athletes follow workout plans (their own, or ones an instruct
 
 Capstone project for the course *"The full cycle from idea to live product"*: one app that runs online, stores data, separates users, and reports every important event by email.
 
-> **Status: Core tier live.** Sign-up/login, the plans list and workout logging run on Vercel against Supabase, and a Supabase Database Webhook sends every new or edited workout to Zapier. Still to do: confirm the Zap's paths and emails, the reliability checks (error handler, cost) and the demo.
+> **Status: Core and Extended tiers built.** Sign-up/login, plans, workouts with sets, progress charts, goals and suggestions, reports, and instructor sharing are in the code. Supabase Database Webhooks send every new or edited workout (Zap 1) and every report (Zap 2) to Zapier. Still to do: the reliability checks (error handler, cost) and the demo.
 >
 > **Live:** https://workout-log-murex-three.vercel.app/
 
@@ -26,22 +26,20 @@ Capstone project for the course *"The full cycle from idea to live product"*: on
 
 ## How it works
 
+```mermaid
+flowchart LR
+  GH[GitHub<br/>pull requests] --> V[Vercel<br/>build + env vars] --> B[Browser<br/>React + Vite]
+  B -->|supabase-js, anon key + user JWT| S[(Supabase<br/>Auth + tables + RLS + functions)]
+  S -->|webhook: INSERT into workouts| Z1[Zap 1<br/>Filter → Paths]
+  Z1 -->|strength| G1[Gmail<br/>STRENGTH: title]
+  Z1 -->|other| G2[Gmail<br/>New workout: title]
+  S -->|webhook: INSERT into reports| Z2[Zap 2] --> G3[Gmail<br/>progress report]
 ```
-browser (React + Vite)
-   │  supabase-js, anon key
-   ▼
-Supabase  (Auth + tables + RLS)
-   │  Database Webhook: INSERT into workouts
-   ▼
-Zapier  (Catch Hook → Filter → Paths)
-   ├─ Path A, type = strength → Gmail "STRENGTH: <title>"
-   └─ Fallback, type = other  → Gmail "New workout: <title>"
 
-Code path (separate): GitHub → Vercel → public URL
-```
+The full picture is in [docs/architecture.md](docs/architecture.md): the **ERD** of all eight tables (the two from the initial task, `plans` and `workouts`, are highlighted), the **deployment and infrastructure diagram**, and who may read what.
 
 - **Data**: table A `plans` → table B `workouts` (`plan_id → plans.id`), plus `workout_sets` for the sets of a strength workout, `reports` for the reports sent to the instructor, `goals`, and for sharing `profiles` (role), `instructor_links` and `plan_assignments`, all defined in [`supabase/schema.sql`](supabase/schema.sql).
-- **Event**: a logged workout is one `INSERT` into `workouts`.
+- **Events**: a logged workout is one `INSERT` into `workouts` (Zap 1); a sent report is one `INSERT` into `reports` (Zap 2).
 - **Routing field**: `workouts.type` is `strength` or `other` (cardio, mobility, etc.); Zapier Paths picks the email from it.
 
 ## Stack
@@ -50,9 +48,9 @@ Code path (separate): GitHub → Vercel → public URL
 |---|---|
 | Code | GitHub (feature branches + pull requests) |
 | Interface | React 19 + Vite, JavaScript, React Router, plain CSS; Recharts for the Progress charts |
-| Data and auth | Supabase (Auth, 2 tables, RLS) |
+| Data and auth | Supabase (Auth, 8 tables, RLS, SQL functions) |
 | Deployment | Vercel |
-| Automation | Zapier (Webhook → Filter → Paths → Gmail) |
+| Automation | Zapier (2 Zaps: Webhook → Filter → Paths → Gmail; report webhook → Gmail) |
 | Tests | Vitest + Testing Library |
 | Documentation | Notion + this README |
 
@@ -102,6 +100,7 @@ The Supabase `service_role` key and the Zapier Catch Hook URL must **never** go 
 
 | File | Contents |
 |---|---|
+| [docs/architecture.md](docs/architecture.md) | **ERD**, **deployment and infrastructure diagram**, code layers, data flows, access model (as built) |
 | [docs/implementation-plan.md](docs/implementation-plan.md) | Scope tiers, data model, Zapier design, test table, lecture plan |
 | [docs/setup.md](docs/setup.md) | Tools, packages and environment setup |
 | [docs/supabase.md](docs/supabase.md) | Tables, Row Level Security, sign-up and URL settings; tests 1 and 4 |
@@ -136,4 +135,4 @@ Built in four lectures, one `feature/…` branch and pull request per feature:
 3. **Deployment and automation:** Vercel with env vars, Supabase webhook, Zap with Filter and Paths, Gmail. *Live on Vercel; the webhook delivers to Zapier.*
 4. **Verification and presentation:** test table, error handling, README and Notion, 5-minute demo.
 
-Extended ideas (exercises/sets/reps, instructor role, plan assignment, progress reports by email, charts) are tracked in the implementation plan.
+The Extended scope (exercises/sets/reps, charts, goals and suggestions, progress reports by email, instructor role and plan assignment) is built; see the implementation plan and [docs/architecture.md](docs/architecture.md).
