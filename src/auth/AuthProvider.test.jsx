@@ -67,8 +67,26 @@ describe('AuthProvider', () => {
     expect(supabase.auth.signUp).toHaveBeenCalledWith({
       email: 'new@example.com',
       password: 'secret1',
-      options: { emailRedirectTo: 'http://localhost:5173' },
+      options: { emailRedirectTo: 'http://localhost:5173', data: { role: 'athlete' } },
     })
+  })
+
+  it('stores the role picked at sign-up and reports it', async () => {
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+
+    await act(() => result.current.signUp('coach@example.com', 'secret1', 'instructor'))
+
+    expect(supabase.auth.signUp.mock.calls[0][0].options.data).toEqual({ role: 'instructor' })
+    expect(result.current.role).toBe('instructor')
+  })
+
+  it('treats a user without a role as an athlete', async () => {
+    supabase.auth = createFakeAuth({ session: sessionFor(ATHLETE) })
+    const { result } = renderAuth()
+
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    expect(result.current.role).toBe('athlete')
   })
 
   it('tells the caller whether the email must be confirmed first', async () => {

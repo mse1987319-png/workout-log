@@ -9,25 +9,67 @@ The Database Webhook to Zapier is a separate step in lecture 3: [zapier.md](zapi
 1. Supabase → your project → **SQL Editor** → **New query**.
 2. Paste the whole of [`supabase/schema.sql`](../supabase/schema.sql) and press **Run**.
    Expected: `Success. No rows returned`. Running it again later is safe.
-3. Check:
-   - **Table Editor** lists `plans` and `workouts`.
-   - **Authentication → Policies** (or **Database → Policies**) shows RLS **enabled** on both tables, with 4 policies each:
+3. **Demo data** (recommended for a new project): **New query** → paste the whole of [`supabase/seed.sql`](../supabase/seed.sql) → **Run**.
+   - **What it adds:** on an empty project, the three demo accounts from the [README](../README.md#demo-accounts) (password `WorkoutLog-demo-2026`). They come with plans, workouts and sets, goals, a progress report, and instructor sharing.
+   - **Dates:** they count back from today, so the charts and suggestions look current.
+   - **Safe to re-run:** if the project already has users, it changes nothing.
+   - **No emails:** if the Zapier webhooks already exist, they're switched off while it runs.
+4. Check:
+   - **Table Editor** lists `plans`, `workouts`, `workout_sets`, `reports`, `goals`, `profiles`, `instructor_links` and `plan_assignments`.
+   - **Authentication → Policies** (or **Database → Policies**) shows RLS **enabled** on all eight tables, with these policies:
 
      | Table | Policies |
      |---|---|
-     | `plans` | Read own plans · Add own plans · Edit own plans · Delete own plans |
-     | `workouts` | Read own workouts · Add workouts to own plans · Edit own workouts · Delete own workouts |
+     | `plans` | Read own plans · Add own plans · Edit own plans · Delete own plans · *Read plans assigned to me* |
+     | `workouts` | Read own workouts · Add workouts to own plans · Edit own workouts · Delete own workouts · *Add workouts to assigned plans* · *Edit own workouts on assigned plans* |
+     | `workout_sets` | Read own sets · Add sets to own workouts · Edit own sets · Delete own sets |
+     | `reports` | Read own reports (no write policy: only `send_report()` writes) |
+     | `goals` | Read own goals · Add own goals · Edit own goals · Delete own goals |
+     | `profiles` | Read own profile (no write policy: a trigger creates it at sign-up) |
+     | `instructor_links` | Read own links · End own links (no insert policy: only `link_instructor()` links) |
+     | `plan_assignments` | Read own assignments · Assign own plans to own athletes · Unassign own assignments |
 
-4. Take the submission screenshots now (checklist item 3): the Table Editor with both tables, and the Policies page.
+     The policies in *italics* are the additive sharing policies (see **Instructor sharing** below).
+
+5. Take the submission screenshots now (checklist item 3): the Table Editor with both tables, and the Policies page.
 
 What the schema does, in short:
 
-| | `plans` (table A) | `workouts` (table B) |
-|---|---|---|
-| Key fields | `name`, `goal` | `plan_id → plans.id`, `title`, `type`, `duration_min` |
-| `user_id` | `default auth.uid()`; the app never sends it | same |
-| Checks | name 1–100 characters | `type` is `strength` or `other`; duration 1–1440 min |
-| RLS | `user_id = auth.uid()` for select, insert, update, delete | same, and a workout can only be filed under one of your own plans |
+| | `plans` (table A) | `workouts` (table B) | `workout_sets` (Extended) |
+|---|---|---|---|
+| Key fields | `name`, `goal` | `plan_id → plans.id`, `title`, `type`, `duration_min`; optional `activity`, `distance_km`, `notes`, `sets_summary` | `workout_id → workouts.id`, `exercise`, `set_no`, `reps`, `weight_kg` |
+| `user_id` | `default auth.uid()`; the app never sends it | same | same |
+| Checks | name 1–100 characters | `type` is `strength` or `other`; duration 1–1440 min; `activity` is run/bike/swim/walk/row/other | reps 1–1000; weight 0–1000 kg (0 = bodyweight); up to 100 sets per workout |
+| RLS | `user_id = auth.uid()` for select, insert, update, delete | same, and a workout can only be filed under one of your own plans | same, and sets can only be added to your own workouts |
+
+The app saves a workout through the database function **`log_workout()`**: the workout and its sets in one transaction, as the signed-in user (so every policy above applies). The INSERT into `workouts` still fires the Database Webhook once per workout; if anything fails, nothing is saved and nothing is sent. Because the webhook only sees the workout row, `log_workout()` also writes a one-line summary of the sets into it (`sets_summary`, built by **`format_sets()`**), so the instructor's email can list them.
+
+[`supabase/tests/sets_summary.test.sql`](../supabase/tests/sets_summary.test.sql) tests both functions. Paste it into the SQL Editor and run it: it always ends with an error that rolls everything back, reading *TESTS PASSED (…)* when all is well, so it never saves a workout or sends an email.
+
+**Progress reports.** **`report_stats(days)`** returns the caller's numbers for the last 7 calendar days with a one-line summary (the app's preview). **`send_report()`** is the only way to create a row in `reports`: it stores the caller's own numbers and email, at most once per 5 minutes, and the INSERT fires the second Database Webhook (`reports_to_zapier`, Zap 2 in [zapier.md](zapier.md#zap-2-progress-reports-extended)). [`supabase/tests/reports.test.sql`](../supabase/tests/reports.test.sql) tests both, the same rolled-back way.
+
+**Goals.** `goals` holds an exercise, a target weight (`target_kg`, more than 0 and up to 1000) and a date (`target_date`), with the same four owner-only policies as `plans`. Whether a goal is reached or overdue is worked out in the app from `workout_sets`, so no column has to be kept up to date. The suggestions on the Progress screen are worked out in the browser too, from the same data. [`supabase/tests/goals.test.sql`](../supabase/tests/goals.test.sql) tests the policies and the checks, the same rolled-back way.
+
+**Instructor sharing.** The roles and links work like this:
+- **Roles.** Each user has a **profile** with the role chosen on the sign-up form (`athlete` or `instructor`). The trigger `on_auth_user_created` creates it; users who signed up earlier became athletes. Instructors get a 6-character **invite code**.
+- **Linking.** An athlete shares by typing that code (`link_instructor()`), and either side can end the link.
+
+What a linked instructor can read:
+- **Through two functions only.** `my_athletes()` and `athlete_progress()` are `security definer` functions that first check the link with `is_my_athlete()`.
+- **Tables unchanged.** `workouts`, `workout_sets`, `goals` and `reports` keep their *own rows only* policies, so an instructor's own screens never mix in athletes' rows. The "RLS, not filters in React" rule still holds.
+- **The one widening is additive.** An instructor assigns their own plan to athletes who share with them (`plan_assignments`). An athlete can then read that plan and log their own workouts under it. The owner policies above are untouched, because permissive policies are OR-ed.
+
+[`supabase/tests/sharing.test.sql`](../supabase/tests/sharing.test.sql) checks all of this, rolled back. It creates a test instructor inside the transaction.
+
+To make an **existing** account an instructor (the role is normally chosen at sign-up), run this in the SQL Editor with its email:
+
+```sql
+update public.profiles set role = 'instructor', invite_code = public.new_invite_code()
+where email = 'coach@example.com';
+-- the app's menu reads the role from the user's metadata:
+update auth.users set raw_user_meta_data = raw_user_meta_data || '{"role": "instructor"}'
+where email = 'coach@example.com';
+```
 
 ## 2. Sign-up without email confirmation
 

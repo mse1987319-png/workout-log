@@ -22,6 +22,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [role, setRole] = useState('athlete')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -48,7 +49,7 @@ export default function LoginPage() {
     setSubmitting(true)
     try {
       if (isSignup) {
-        const { needsConfirmation } = await signUp(cleanEmail, password)
+        const { needsConfirmation } = await signUp(cleanEmail, password, role)
         if (needsConfirmation) {
           setMode('login')
           setPassword('')
@@ -106,6 +107,32 @@ export default function LoginPage() {
               </p>
             )}
           </div>
+
+          {isSignup && (
+            <fieldset className="role-choice">
+              <legend>I am signing up as</legend>
+              {[
+                ['athlete', 'Athlete', 'Log workouts and share them with an instructor.'],
+                ['instructor', 'Instructor', 'See the athletes who share with you and assign them plans.'],
+              ].map(([value, label, hint]) => (
+                <div key={value} className="role-option">
+                  <input
+                    id={`role-${value}`}
+                    type="radio"
+                    name="role"
+                    value={value}
+                    checked={role === value}
+                    aria-describedby={`role-${value}-hint`}
+                    onChange={() => setRole(value)}
+                  />
+                  <label htmlFor={`role-${value}`}>{label}</label>
+                  <p className="hint" id={`role-${value}-hint`}>
+                    {hint}
+                  </p>
+                </div>
+              ))}
+            </fieldset>
+          )}
 
           {error && (
             <p className="form-error" role="alert">

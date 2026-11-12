@@ -107,6 +107,40 @@ describe('LoginPage', () => {
     expect(supabase.auth.signUp).toHaveBeenCalledTimes(1)
   })
 
+  it('signs up as an athlete unless Instructor is picked', async () => {
+    const user = renderLogin()
+    await openSignUp(user)
+
+    expect(screen.getByRole('radio', { name: 'Athlete' })).toBeChecked()
+    await fillIn(user, { email: 'new@example.com', password: 'secret1' })
+    await user.click(screen.getByRole('button', { name: 'Sign up' }))
+
+    await screen.findByText('my plans page')
+    expect(supabase.auth.signUp.mock.calls[0][0].options.data).toEqual({ role: 'athlete' })
+  })
+
+  it('signs up as an instructor', async () => {
+    const user = renderLogin()
+    await openSignUp(user)
+
+    await user.click(screen.getByRole('radio', { name: 'Instructor' }))
+    await fillIn(user, { email: 'coach@example.com', password: 'secret1' })
+    await user.click(screen.getByRole('button', { name: 'Sign up' }))
+
+    await screen.findByText('my plans page')
+    expect(supabase.auth.signUp.mock.calls[0][0].options.data).toEqual({ role: 'instructor' })
+  })
+
+  it('asks for the role only when signing up', async () => {
+    const user = renderLogin()
+
+    await screen.findByRole('button', { name: 'Log in' })
+    expect(screen.queryByRole('group', { name: 'I am signing up as' })).not.toBeInTheDocument()
+
+    await openSignUp(user)
+    expect(screen.getByRole('group', { name: 'I am signing up as' })).toBeInTheDocument()
+  })
+
   it('asks a new user to confirm their email when Supabase requires it', async () => {
     supabase.auth = createFakeAuth({ confirmEmail: true })
     const user = renderLogin()

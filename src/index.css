@@ -114,6 +114,7 @@ a {
 
 .nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.25rem;
 }
 
@@ -123,6 +124,13 @@ a {
   color: var(--muted);
   font-weight: 500;
   text-decoration: none;
+  white-space: nowrap; /* a label never breaks; the row wraps instead */
+}
+
+@media (max-width: 480px) {
+  .nav a {
+    padding: 0.4rem 0.6rem;
+  }
 }
 
 .nav a:hover {
@@ -434,7 +442,14 @@ textarea:focus {
 
 .workout-title {
   font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
   overflow-wrap: anywhere;
+}
+
+a.workout-title:hover {
+  color: var(--accent);
+  text-decoration: underline;
 }
 
 .workout-meta {
@@ -526,4 +541,490 @@ textarea:focus {
 .choice:has(input:checked) {
   background: var(--accent-soft);
   border-color: var(--accent);
+}
+
+/* ---------- Exercises and cardio on the Log workout form ---------- */
+
+textarea {
+  resize: vertical;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 1rem;
+}
+
+.exercises {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.exercises > legend {
+  margin-bottom: 0.35rem;
+  padding: 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.exercise {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.exercise-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.exercise-head input {
+  flex: 1;
+  font-weight: 600;
+}
+
+.exercise .last-time {
+  margin: 0;
+}
+
+.sets {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.set {
+  display: grid;
+  grid-template-columns: 3.2rem minmax(0, 1fr) auto minmax(0, 1fr) auto 1.6rem;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.set-label,
+.set .unit {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.exercise > .button-small {
+  justify-self: start;
+}
+
+/* ---------- Workout detail ---------- */
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--text);
+}
+
+.workout-detail h1 {
+  margin-bottom: 0.4rem;
+  overflow-wrap: anywhere;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stats li {
+  display: grid;
+  padding: 0.45rem 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.notes {
+  padding: 0.75rem 1rem;
+  white-space: pre-wrap;
+  background: var(--surface);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+}
+
+.exercise-sets h2 {
+  margin-bottom: 0.5rem;
+}
+
+.exercise-sets .last-time {
+  margin: 0.6rem 0 0;
+}
+
+.sets-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* same column widths in every exercise */
+  font-variant-numeric: tabular-nums;
+}
+
+.sets-table th,
+.sets-table td {
+  padding: 0.4rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.sets-table thead th {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.sets-table tbody th {
+  font-weight: 500;
+}
+
+.sets-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+/* ---------- Progress charts ---------- */
+
+.chart-summary {
+  margin: 0;
+  font-weight: 600;
+}
+
+.chart-filter {
+  max-width: 20rem;
+}
+
+.chart {
+  width: 100%;
+  min-width: 0;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin: 0 0 0.25rem;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  list-style: none;
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.swatch {
+  display: inline-block;
+  flex: none;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 2px;
+}
+
+.chart-tooltip {
+  padding: 0.5rem 0.75rem;
+  color: var(--text);
+  font-size: 0.85rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.chart-tooltip p {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.chart-tooltip .chart-tooltip-title {
+  margin-bottom: 0.2rem;
+  color: var(--muted);
+}
+
+.table-view summary {
+  color: var(--accent);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.data-table {
+  width: 100%;
+  margin-top: 0.5rem;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table thead th {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.data-table tbody th {
+  font-weight: 500;
+}
+
+/* ---------- Goals and suggestions ---------- */
+
+.goal-list,
+.suggestion-list {
+  display: grid;
+  gap: 1.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.goal {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.goal-head,
+.goal-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+}
+
+.goal-name {
+  font-weight: 600;
+}
+
+/* A meter: 8px, fully rounded; the track is a lighter step of the fill's color. */
+.goal-track {
+  height: 8px;
+  overflow: hidden;
+  background: var(--strength-soft);
+  border-radius: 999px;
+}
+
+.goal-fill {
+  height: 100%;
+  background: var(--strength);
+  border-radius: inherit;
+}
+
+.goal-reached .goal-track {
+  background: var(--success-soft);
+}
+
+.goal-reached .goal-fill {
+  background: var(--success);
+}
+
+.goal-status {
+  margin: 0;
+  color: var(--muted);
+}
+
+.goal-reached .goal-status {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.goal-overdue .goal-status {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.goal-form {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.goal-form h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.suggestion {
+  display: grid;
+  gap: 0.2rem;
+  padding-left: 0.85rem;
+  border-left: 3px solid var(--accent);
+}
+
+.suggestion p {
+  margin: 0;
+}
+
+.suggestion-title {
+  font-weight: 600;
+}
+
+.suggestion .button {
+  justify-self: start;
+  margin-top: 0.4rem;
+}
+
+.rules {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  color: var(--muted);
+}
+
+/* ---------- Sharing: roles, codes, athletes and instructors ---------- */
+
+.page-intro {
+  margin: -0.5rem 0 1.25rem;
+  color: var(--muted);
+}
+
+.role-choice {
+  display: grid;
+  gap: 0.6rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.role-choice > legend {
+  margin-bottom: 0.35rem;
+  padding: 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.role-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 0.6rem;
+}
+
+.role-option input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.role-option label {
+  font-weight: 600;
+}
+
+.role-option .hint {
+  grid-column: 2;
+}
+
+.plan-tag {
+  display: inline-block;
+  margin: 0.3rem 0 0;
+  padding: 0.1rem 0.55rem;
+  color: var(--accent-strong);
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--accent-soft);
+  border-radius: 999px;
+}
+
+.invite-code {
+  margin: 0;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+.code-field input {
+  max-width: 14rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.code-field input::placeholder {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.person-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person-row {
+  display: grid;
+  gap: 0.2rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.person-row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.person-row p,
+.person-head p {
+  margin: 0;
+}
+
+.person-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.person-email {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.assign-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.assign-form .field {
+  flex: 1 1 14rem;
+}
+
+.back-link {
+  margin: 0 0 0.75rem;
 }

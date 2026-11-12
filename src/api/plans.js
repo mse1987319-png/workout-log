@@ -1,13 +1,14 @@
 import { supabase } from '../lib/supabase'
 
 // No user filter here on purpose: Row Level Security returns only the
-// signed-in user's rows (deck test 4 checks exactly that).
+// signed-in user's rows (deck test 4 checks exactly that), plus plans an
+// instructor assigned to them.
 
-/** My plans, newest first, each with its workouts (newest first). */
+/** My plans (and plans assigned to me), newest first, each with my workouts (newest first). */
 export async function listPlans() {
   const { data, error } = await supabase
     .from('plans')
-    .select('id, name, goal, created_at, workouts(id, title, type, duration_min, created_at)')
+    .select('id, user_id, name, goal, created_at, workouts(id, title, type, duration_min, created_at)')
     .order('created_at', { ascending: false })
     .order('created_at', { referencedTable: 'workouts', ascending: false })
   if (error) throw error

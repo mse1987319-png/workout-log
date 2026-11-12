@@ -13,6 +13,13 @@ export const ATHLETE = {
   created_at: '2026-11-01T09:00:00.000Z',
 }
 
+export const INSTRUCTOR = {
+  ...ATHLETE,
+  id: '00000000-0000-4000-8000-000000000002',
+  email: 'coach@example.com',
+  user_metadata: { role: 'instructor' },
+}
+
 export function sessionFor(user) {
   return {
     access_token: 'test-access-token',
@@ -61,8 +68,9 @@ export function createFakeAuth({ session = null, confirmEmail = false } = {}) {
       emit('SIGNED_IN')
       return { data: { user: current.user, session: current }, error: null }
     }),
-    signUp: vi.fn(async ({ email }) => {
-      const user = userFor(email)
+    signUp: vi.fn(async ({ email, options }) => {
+      // Like Supabase: options.data becomes the user's metadata.
+      const user = { ...userFor(email), user_metadata: options?.data ?? {} }
       if (confirmEmail) return { data: { user, session: null }, error: null }
       current = sessionFor(user)
       emit('SIGNED_IN')

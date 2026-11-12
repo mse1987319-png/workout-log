@@ -28,7 +28,7 @@ describe('plans API', () => {
 
     const [request] = backend.requests
     expect(request.query.get('select')).toBe(
-      'id,name,goal,created_at,workouts(id,title,type,duration_min,created_at)',
+      'id,user_id,name,goal,created_at,workouts(id,title,type,duration_min,created_at)',
     )
     expect(request.query.get('order')).toBe('created_at.desc')
     expect(request.query.get('workouts.order')).toBe('created_at.desc')

@@ -73,9 +73,11 @@ flowchart LR
   S -->|Database Webhook<br/>INSERT into workouts| Z[Zapier<br/>Catch Hook → Filter → Paths]
   Z -->|Path A: strength| G1[Gmail<br/>STRENGTH: …]
   Z -->|Fallback: other| G2[Gmail<br/>New workout: …]
-  S -.->|Extended: INSERT into reports| Z2[Zapier<br/>report Zap] -.-> G3[Gmail<br/>progress report]
+  S -->|Extended: INSERT into reports| Z2[Zapier<br/>report Zap] --> G3[Gmail<br/>progress report]
   N[Notion<br/>documentation, written by hand]
 ```
+
+*As built:* the report webhook (`reports_to_zapier`) exists, as does everything in the Extended scope. The finished ERD, the deployment and infrastructure diagram and the access model are in [architecture.md](architecture.md).
 
 Data flow: browser → Supabase → webhook → Zapier → Gmail. Code flow, separately: GitHub → Vercel → public URL.
 
@@ -114,6 +116,12 @@ RLS additions (owner policies are never loosened):
 - `plans`: extra `select` when the plan is assigned to me, or its owner is my linked athlete.
 - `workouts`, `workout_sets`, `goals`, `reports`: extra `select` for the athlete's linked instructor.
 - Writes stay owner-only everywhere. Put the "is this my athlete?" check in one `security definer` SQL function to avoid policies that reference each other recursively.
+
+*As built (PR #11):* how the built version differs from the plan above:
+- **No extra `select` policies for instructors.** Instructors read through two functions instead (`my_athletes()`, `athlete_progress()`), and both check `is_my_athlete()` first.
+- **Why.** Extra policies would have mixed athletes' rows into an instructor's own screens. The app would then need user filters in React, against the "RLS, not filters" decision.
+- **What stays as planned.** Only the additive policies for assigned plans were kept: an athlete reads an assigned plan and logs workouts under it.
+- **Linking.** It works by the instructor's code, without a pending status.
 
 ---
 

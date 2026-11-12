@@ -51,10 +51,16 @@ In the app, log a **Strength** workout (for example *Test strength*, 30 min). In
 | `record__title` | `Test strength` | |
 | `record__type` | `strength` | The routing field: `strength` or `other` |
 | `record__duration_min` | `30` | |
+| `record__activity` | `run` | Cardio only; may be empty |
+| `record__distance_km` | `5` | Cardio only; may be empty |
+| `record__notes` | `Felt easy` | May be empty |
+| `record__sets_summary` | `Squat: 2 × 5 @ 100 kg; Pull-up: 3 × 8 (bodyweight)` | Strength workouts with sets; empty otherwise |
 | `record__user_id` | `3f6c…` | Who logged it |
 | `record__plan_id` | `9a1e…` | |
 | `record__created_at` | `2026-11-11T18:00:00.123+00:00` | |
 | `old_record…` | (empty) | Filled only for UPDATE |
+
+The sets themselves live in their own table (`workout_sets`), which the webhook does not watch. So that the email can list them anyway, `log_workout()` also writes a one-line summary into the workout row it inserts: `record__sets_summary`. If your Zap was set up before this field existed, log a strength workout with sets and press **Test trigger** again so Zapier learns the new field.
 
 > **Watch out:** `type` (INSERT / UPDATE) and `record__type` (strength / other) are different fields. The Filter uses `type`, Paths use `record__type`. Mixing them up is the most likely first bug; if it happens, put it in the Notion error log.
 
@@ -72,7 +78,7 @@ Before you prompt:
 **Prompt 1: Filter, Paths and both emails** (one sentence on purpose: Zapier advises combining related instructions so Copilot treats them as one task)
 
 ```text
-This Zap's trigger is a Webhooks by Zapier Catch Hook that receives Supabase Database Webhook events for the "workouts" table, where the top-level field "type" is INSERT or UPDATE and the row is under "record" (Record Title = record__title, Record Type = record__type, plus record__duration_min, record__user_id and record__created_at); keep this trigger and after it add a Filter by Zapier step that only continues when the top-level "type" field exactly matches INSERT (not record__type), then add Paths by Zapier with two branches: path A named "Strength", whose rule is that record__type exactly matches strength (lowercase) and which uses Gmail to send an email to <instructor email> with the subject "STRENGTH: " followed by record__title, and a second branch set as the Fallback path, which runs whenever path A does not match and uses Gmail to send an email to <instructor email> with the subject "New workout: " followed by record__title; in both emails the body lists the title, type, duration in minutes, user id and created-at time from the record.
+This Zap's trigger is a Webhooks by Zapier Catch Hook that receives Supabase Database Webhook events for the "workouts" table, where the top-level field "type" is INSERT or UPDATE and the row is under "record" (Record Title = record__title, Record Type = record__type, plus record__duration_min, record__user_id and record__created_at); keep this trigger and after it add a Filter by Zapier step that only continues when the top-level "type" field exactly matches INSERT (not record__type), then add Paths by Zapier with two branches: path A named "Strength", whose rule is that record__type exactly matches strength (lowercase) and which uses Gmail to send an email to <instructor email> with the subject "STRENGTH: " followed by record__title, and a second branch set as the Fallback path, which runs whenever path A does not match and uses Gmail to send an email to <instructor email> with the subject "New workout: " followed by record__title; in both emails the body lists the title, type, duration in minutes, the sets (record__sets_summary), user id and created-at time from the record.
 ```
 
 **Prompt 2: error handlers** (deck slide 18)
@@ -90,6 +96,12 @@ Rename this Zap to "Workout Log: new workout" and set its description to "Owner:
 ```
 
 If Copilot can't change these, set them in the Zap's settings.
+
+**Prompt 4: add the sets to a Zap you already built**
+
+```text
+In both Gmail "Send Email" steps, add a line to the body that reads "Sets: " followed by record__sets_summary (Record Sets Summary), right after the duration line.
+```
 
 **If the check finds a mistake**, these fix-up prompts target the usual ones:
 
@@ -142,6 +154,7 @@ A new workout was logged in Workout Log.
 Title: {{Record Title}}
 Type: {{Record Type}}
 Duration: {{Record Duration Min}} min
+Sets: {{Record Sets Summary}}
 User id: {{Record User Id}}
 Logged at: {{Record Created At}}
 ```
@@ -182,6 +195,33 @@ Only successful action steps count as tasks. The trigger, Filter and Paths steps
 1. Turn the Zap **off**.
 2. Supabase → Database Webhooks → delete `workouts_to_zapier`.
 3. Supabase → **Authentication → Users** → delete the test users. Their plans and workouts are deleted with them (`on delete cascade`).
+
+## Zap 2: progress reports (Extended)
+
+When an athlete presses **Send report to instructor** on the Progress screen, the database function `send_report()` stores a row in `reports`: their own numbers for the last 7 days, at most one report per 5 minutes. A second Database Webhook sends that row to Zap 2, which emails the instructor. As in Zap 1, the instructor's address lives only in Zapier.
+
+1. **Trigger:** Zapier → **Create → Zaps**, name it `Workout Log: progress report`. Trigger: **Webhooks by Zapier → Catch Hook**; copy the URL (a secret, like Zap 1's).
+2. **Supabase:** **Database Webhooks → Create a new hook**. Name `reports_to_zapier`, table `reports`, events **Insert** only (reports are never edited), `POST` to the Catch Hook URL.
+3. **Sample:** in the app, send a report; in Zapier press **Test trigger**. The fields:
+
+   | Zapier field | Example |
+   |---|---|
+   | `record__athlete_email` | `athlete@example.com` |
+   | `record__period_start`, `record__period_end` | `2026-11-06`, `2026-11-12` |
+   | `record__summary` | `Nov 6 – Nov 12: 4 workouts (3 strength, 1 other), 215 min, 42 sets. Heaviest: Squat 110 kg.` |
+   | `record__stats__workouts`, `record__stats__minutes`, `record__stats__sets`, … | the numbers behind the summary |
+
+4. **Gmail → Send Email:** To = the instructor's address; Subject = `Progress report: ` + `Record Athlete Email` + ` (` + `Record Period Start` + ` – ` + `Record Period End` + `)`; Body = `Record Summary`.
+5. **AI summary (optional bonus, deck slide 4):** before the Gmail step, add an AI step (for example **AI by Zapier** or **ChatGPT**) with the prompt *"Write a short, encouraging note (3–4 sentences) for a fitness instructor about this athlete's week. Use only these numbers: {{Record Summary}}"*, and put its output above the numbers in the email body. The AI key stays in Zapier, never in the app or the repo.
+6. **Reliability:** an error handler on the Gmail step, the owner in the Zap description, then **Publish**.
+
+**Cost:** 1 task per report (2 with the AI step). With a report per athlete per week, that is about 4 tasks a month per athlete.
+
+**Copilot prompt** (in the new Zap, after creating the Catch Hook trigger):
+
+```text
+This Zap's trigger is a Webhooks by Zapier Catch Hook that receives Supabase Database Webhook events for the "reports" table, with the row under "record" (record__athlete_email, record__period_start, record__period_end, record__summary); keep this trigger and after it add a Filter by Zapier step that only continues when the top-level "type" field exactly matches INSERT, then a Gmail "Send Email" step to <instructor email> with the subject "Progress report: " followed by record__athlete_email and the period from record__period_start to record__period_end, and record__summary as the body.
+```
 
 ## Troubleshooting
 

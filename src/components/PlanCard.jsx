@@ -1,11 +1,15 @@
 import { Link } from 'react-router-dom'
 import WorkoutItem from './WorkoutItem'
 
-export default function PlanCard({ plan, onWorkoutRenamed }) {
+// assigned: an instructor's plan assigned to me; I log my own workouts under it.
+export default function PlanCard({ plan, assigned = false, onWorkoutRenamed }) {
   return (
     <li className="card plan">
       <div className="plan-head">
-        <h2>{plan.name}</h2>
+        <div>
+          <h2>{plan.name}</h2>
+          {assigned && <p className="plan-tag">Assigned by your instructor</p>}
+        </div>
         <Link
           className="button button-secondary button-small"
           to={`/log?plan=${plan.id}`}

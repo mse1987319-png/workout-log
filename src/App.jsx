@@ -1,12 +1,25 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import AuthProvider from './auth/AuthProvider'
 import RequireAuth from './auth/RequireAuth'
 import Layout from './components/Layout'
-import { ErrorState } from './components/States'
+import { ErrorState, Loading } from './components/States'
 import { configError } from './lib/supabase'
+import AthletesPage from './pages/AthletesPage'
 import LoginPage from './pages/LoginPage'
 import LogWorkoutPage from './pages/LogWorkoutPage'
 import PlansPage from './pages/PlansPage'
+import SharingPage from './pages/SharingPage'
+
+// Screens that are never the first one shown load on demand, keeping the
+// first download small (Progress and an athlete's page carry the charts library).
+const ProgressPage = lazy(() => import('./pages/ProgressPage'))
+const WorkoutDetailPage = lazy(() => import('./pages/WorkoutDetailPage'))
+const AthletePage = lazy(() => import('./pages/AthletePage'))
+
+function OnDemand({ loading, children }) {
+  return <Suspense fallback={<Loading>{loading}</Loading>}>{children}</Suspense>
+}
 
 export default function App() {
   if (configError) {
@@ -34,6 +47,32 @@ export default function App() {
         >
           <Route index element={<PlansPage />} />
           <Route path="log" element={<LogWorkoutPage />} />
+          <Route
+            path="workouts/:id"
+            element={
+              <OnDemand loading="Loading the workout…">
+                <WorkoutDetailPage />
+              </OnDemand>
+            }
+          />
+          <Route
+            path="progress"
+            element={
+              <OnDemand loading="Loading your progress…">
+                <ProgressPage />
+              </OnDemand>
+            }
+          />
+          <Route path="sharing" element={<SharingPage />} />
+          <Route path="athletes" element={<AthletesPage />} />
+          <Route
+            path="athletes/:id"
+            element={
+              <OnDemand loading="Loading the athlete…">
+                <AthletePage />
+              </OnDemand>
+            }
+          />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
