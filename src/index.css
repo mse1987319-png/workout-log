@@ -114,6 +114,7 @@ a {
 
 .nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.25rem;
 }
 
@@ -123,6 +124,13 @@ a {
   color: var(--muted);
   font-weight: 500;
   text-decoration: none;
+  white-space: nowrap; /* a label never breaks; the row wraps instead */
+}
+
+@media (max-width: 480px) {
+  .nav a {
+    padding: 0.4rem 0.6rem;
+  }
 }
 
 .nav a:hover {
