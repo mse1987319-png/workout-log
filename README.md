@@ -57,7 +57,29 @@ The full picture is in [docs/architecture.md](docs/architecture.md): the **ERD**
 | Tests | [Vitest](https://vitest.dev) + [Testing Library](https://testing-library.com) |
 | Lint | [oxlint](https://oxc.rs/docs/guide/usage/linter.html) |
 | Documentation | [Notion](https://www.notion.so) ([project page](https://app.notion.com/p/Workout-Log-Project-documentation-4150ecfaf117815bbf2dd6af5ee27323)) + this README; diagrams in [Mermaid](https://mermaid.js.org) |
-| AI tools | [Claude](https://claude.ai) through [Claude Code](https://claude.com/claude-code): Claude Opus 5.5, Claude Sonnet 5.5 |
+| AI tools | [Claude](https://claude.ai) through [Claude Code](https://claude.com/claude-code): Claude Opus 5.5, Claude Sonnet 5.5; [Google Gemini](https://gemini.google.com) |
+
+## Browsers and devices
+
+Logify is a web app: nothing to install, it runs in the browser on a desktop, tablet or phone. It is built for current evergreen browsers; the minimums come from Vite's default build target (`baseline-widely-available`) and the CSS the app uses.
+
+| Browser | Minimum version |
+|---|---|
+| Chrome (desktop and Android) | 111 |
+| Edge | 111 |
+| Firefox | 121 (the selected-option highlight uses `:has()`) |
+| Safari (macOS and iOS / iPadOS) | 16.4 |
+
+Internet Explorer and older versions of these browsers are not supported. Cookies and JavaScript must be on: the app signs you in through Supabase Auth.
+
+**Mobile friendly.** The app is meant to be used on a phone, for example to log a set in the gym:
+
+- The page sets a mobile viewport (`width=device-width`), so it is not shrunk like a desktop page.
+- The header reflows on small screens: at 640 px and below the menu moves to its own row under the logo and account; at 480 px and below the spacing and the account email are tightened.
+- Buttons and the plan and exercise choices are at least 44 px tall, a comfortable touch target.
+- Light and dark theme follow the device setting, and the browser's address bar takes the app's teal (`theme-color`).
+
+It has not been tested on every device; if something looks wrong on yours, please open an issue with the browser, its version and the screen size.
 
 ## Run it locally
 
