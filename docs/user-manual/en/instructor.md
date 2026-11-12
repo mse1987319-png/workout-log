@@ -134,7 +134,7 @@ Logify emails you automatically, without anyone pressing anything:
 | An athlete saves any **other** workout | `New workout: <title>` | The same details without sets |
 | An athlete presses **Send report to instructor** | `Progress report: <athlete> (<period>)` | The numbers for the athlete's last 7 days |
 
-Renaming a workout does not send another email. Emails go to the instructor address set up in the project's Zapier automation; this address is not chosen per account.
+You only receive emails about athletes who **share with you** (they typed your code under **Sharing**). If an athlete shares with several instructors, each of them gets the email; if an athlete stops sharing, the emails stop too. Renaming a workout does not send another email. The emails are sent to the address you signed up with.
 
 ## 8. Messages and what to do
 

@@ -100,7 +100,7 @@ erDiagram
 | Lentelė | Lygis | Paskirtis |
 |---|---|---|
 | `plans` | **Pradinė užduotis (A)** | Treniruočių planas. Priklauso vienam naudotojui; trenerio planą galima priskirti sportininkams |
-| `workouts` | **Pradinė užduotis (B)** | Viena įrašyta treniruotė pagal planą. **Jos INSERT paleidžia pirmąjį webhook** (Zap 1) |
+| `workouts` | **Pradinė užduotis (B)** | Viena įrašyta treniruotė pagal planą. **Jos INSERT paleidžia pirmąjį webhook** (Zap 1); `instructor_emails` (nustato trigeris) nurodo, kam siunčiamas laiškas |
 | `workout_sets` | Išplėstinė | Jėgos treniruotės pratimas, serijos numeris, pakartojimai ir kg |
 | `goals` | Išplėstinė | Pratimas, tikslinis svoris ir data; ar tikslas pasiektas ar pavėluotas, apskaičiuojama iš serijų |
 | `reports` | Išplėstinė | Pažangos ataskaita, rašoma tik per `send_report()`. **Jos INSERT paleidžia antrąjį webhook** (Zap 2) |
@@ -205,6 +205,8 @@ Testai veikia be tinklo: tikras `supabase-js` klientas kalbasi su netikru `fetch
 **Treniruotės įrašymas.** Forma kviečia `log_workout()` (viena transakcija: treniruotė ir jos serijos). `INSERT` į `workouts` vieną kartą paleidžia webhook, o `sets_summary` jau yra eilutėje, todėl Zap 1 gali įtraukti serijas į laišką. Jei kas nors nepavyksta, nieko neišsaugoma ir nieko nesiunčiama.
 
 **Ataskaitos siuntimas.** Mygtukas kviečia `send_report()`, kuri sudaro skaičius iš kvietėjo paties pastarųjų 7 dienų, išsaugo `reports` eilutę (daugiausia vieną per 5 minutes) ir taip paleidžia antrąjį webhook.
+
+**Kas gauna laiškus.** `BEFORE INSERT` trigeris (`set_instructor_emails()`) lentelėse `workouts` ir `reports` nukopijuoja sportininko susietų trenerių (`instructor_links`) el. paštus į eilutės stulpelį `instructor_emails`. Webhook jį atsiunčia, o kiekvieno Zap Filter sustabdo paleidimą, kai jis tuščias, kitu atveju naudoja jį kaip Gmail *To*. Taigi gavėjas yra paties sportininko treneris, kurį parenka duomenų bazė: jo niekada neįveda naudotojas ir nelaiko Zapier.
 
 **Tikslai ir pasiūlymai.** Tikslai saugomi duomenų bazėje; ar tikslas pasiektas ar pavėluotas, ir kiekvienas pasiūlymas skaičiuojami naršyklėje iš sportininko serijų, todėl kiekvienas gali nurodyti savo priežastį. Jokio DI rakto niekur.
 

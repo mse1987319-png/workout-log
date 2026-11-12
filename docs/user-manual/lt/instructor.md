@@ -134,7 +134,7 @@ Mygtukas **Atgal į „Mano sportininkai“** grąžina į sąrašą. Jei matote
 | Sportininkas išsaugo bet kokią **kitą** treniruotę | `New workout: <pavadinimas>` | Tos pačios detalės be serijų |
 | Sportininkas paspaudžia **Siųsti ataskaitą treneriui** | `Progress report: <sportininkas> (<laikotarpis>)` | Sportininko pastarųjų 7 dienų skaičiai |
 
-Pervadinus treniruotę kitas laiškas nesiunčiamas. Laiškai siunčiami į trenerio adresą, nustatytą projekto „Zapier“ automatizacijoje; šis adresas nepasirenkamas kiekvienai paskyrai atskirai. Laiškų temos ir turinys visada angliški.
+Laiškus gaunate tik apie sportininkus, kurie **dalijasi su jumis** (jie skiltyje **Dalijimasis** įvedė jūsų kodą). Jei sportininkas dalijasi su keliais treneriais, laišką gauna kiekvienas; jei sportininkas nustoja dalytis, laiškai nustoja ateiti. Pervadinus treniruotę kitas laiškas nesiunčiamas. Laiškai siunčiami adresu, kuriuo užsiregistravote. Laiškų temos ir turinys visada angliški.
 
 ## 8. Pranešimai ir ką daryti
 

@@ -180,16 +180,17 @@ Kiekviena nurodo savo priežastį, kad naudotojas matytų, kodėl:
 |---|---|
 | Trigeris | Webhooks by Zapier → Catch Hook |
 | Supabase | Database Webhook lentelėje `workouts`, HTTP POST į Catch Hook adresą |
-| Filter | Tęsti tik jei `type` = `INSERT` |
+| Filter | Tęsti tik jei `type` = `INSERT` **ir** `record__instructor_emails` egzistuoja |
 | Paths – A: Strength | `record__type` = `strength` → Gmail: tema „STRENGTH: “ + `record__title` |
 | Paths – Fallback: Other | Neatitinka A → Gmail: tema „New workout: “ + `record__title` |
+| Gmail *To* | `record__instructor_emails`: paties sportininko treneriai, kuriuos įrašo duomenų bazės trigeris (žr. saugumo pastabą po Zap 2) |
 | Gmail turinys | `record__user_id`, `record__created_at`, `record__duration_min` |
 
 Atsargiai: webhook turinys turi savo aukščiausio lygio `type` (INSERT / UPDATE) **ir** eilutė turi `record__type` (strength / other). Filter naudoja pirmąjį, Paths – antrąjį. Jų sumaišymas yra labiausiai tikėtina pirmoji klaida – geras įrašas klaidų žurnalui.
 
 ### Patikimumas (18 skaidrė)
 
-- **Klaidų tvarkyklė** kiekviename Gmail žingsnyje → atsiunčia man klaidos tekstą.
+- **Klaidų tvarkyklė** kiekviename Gmail žingsnyje → atsiunčia man klaidos tekstą. *Kaip sukurta:* trys tvarkyklės (dvi Zap 1, viena Zap 2), visos siunčia į vieną Zapier globalų kintamąjį `ERROR_EMAIL`, todėl adresas nustatomas vienoje vietoje, o ne įvedamas kiekvienam žingsniui.
 - **Klaidos testas**: įrašykite blogą „To“ adresą, įrašykite jėgos treniruotę, Zap istorijoje suraskite „Handled error“, atkurkite adresą.
 - **Savininkas**: vardas, el. paštas ir data Zap aprašyme.
 - **Kaina**: su 50 treniruočių per mėnesį – apie 50 užduočių (tasks), po vieną Gmail veiksmą kiekvienai treniruotei; kiek žinau, trigeris, Filter ir Paths žingsniai užduočių nenaudoja. Patikrinkite pagal 23 ir 26 temų taisykles ir skaičių bei planą įrašykite į Notion.
@@ -203,6 +204,8 @@ Atsargiai: webhook turinys turi savo aukščiausio lygio `type` (INSERT / UPDATE
 4. **DI priedas**: šio Zap DI žingsnis prieš Gmail žingsnį paverčia skaičius trumpa parašyta santrauka.
 
 Sauga: gavėjo adresas turi būti imamas iš sportininko ryšio su treneriu (nustatomo duomenų bazės trigeriu), niekada ne iš laisvo teksto lauko – kitaip bet kuris užsiregistravęs naudotojas galėtų priversti mano Gmail siųsti laiškus bet kokiais adresais.
+
+*Kaip sukurta:* trigeris `set_instructor_emails()` įrašo sportininko susietus trenerius į stulpelį `instructor_emails` **abiejose** lentelėse `workouts` ir `reports`, o abu Zap naudoja jį kaip Gmail *To* (jų Filter sustabdo paleidimą, kai jis tuščias, todėl sportininkas, kuris nesidalija su niekuo, laiško nesiunčia). Zapier jokio trenerio adreso nelaikoma. Žr. [zapier.md](zapier.md#jau-publikuotų-zap-atnaujinimas).
 
 ---
 

@@ -117,7 +117,7 @@ Plano kortelėje paspauskite **+ Įrašyti treniruotę**. (Čia galite patekti i
 
 ![Tuščia treniruotės įrašymo forma](../images/lt/20-log-form-empty.png)
 
-> Kiekviena išsaugota treniruotė automatiškai išsiunčiama el. paštu jūsų treneriui; jėgos treniruotės pažymimos. Todėl prie **Tipo** yra atitinkama pastaba.
+> Kiekviena išsaugota treniruotė automatiškai išsiunčiama el. paštu treneriui (treneriams), su kuriuo dalijatės; jėgos treniruotės pažymimos. Todėl prie **Tipo** yra atitinkama pastaba. Jei nesidalijate su niekuo, laiško negauna niekas (žr. [Dalijimasis su treneriu](#7-dalijimasis-su-treneriu)).
 
 ### Jėgos treniruotės
 
@@ -188,7 +188,7 @@ Norėdami pridėti tikslą, užpildykite **Pratimas**, **Tikslas (kg)** ir **Pas
 
 ### Ataskaita treneriui
 
-Kortelėje apibendrintos jūsų pastarosios 7 dienos. Paspauskite **Siųsti ataskaitą treneriui**, kad ji būtų išsiųsta el. paštu. Siųsti galima maždaug kas 5 minutes; kortelėje matyti, kada paskutinį kartą siuntėte. Ataskaitos tekstą parašo duomenų bazė, todėl jis visada angliškas.
+Kortelėje apibendrintos jūsų pastarosios 7 dienos. Paspauskite **Siųsti ataskaitą treneriui**, kad ji būtų išsiųsta el. paštu treneriui (treneriams), su kuriuo dalijatės (jei nesidalijate su niekuo, ataskaita išsaugoma, bet laiškas nesiunčiamas). Siųsti galima maždaug kas 5 minutes; kortelėje matyti, kada paskutinį kartą siuntėte. Ataskaitos tekstą parašo duomenų bazė, todėl jis visada angliškas.
 
 ![Ataskaitos kortelė](../images/lt/64-report.png)
 

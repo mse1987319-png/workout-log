@@ -301,8 +301,8 @@ grant execute on function public.log_workout(uuid, text, text, integer, text, nu
 -- ===========================================================================
 -- A report is created only by send_report(), from the caller's own data, so
 -- its numbers and text can't be forged. Its INSERT fires the second Database
--- Webhook (reports_to_zapier → Zap 2 → Gmail). The recipient lives in
--- Zapier, never in the database.
+-- Webhook (reports_to_zapier → Zap 2 → Gmail). The recipients are the
+-- athlete's instructors, filled in by a trigger (instructor_emails, below).
 create table if not exists public.reports (
   id             uuid        primary key default gen_random_uuid(),
   user_id        uuid        not null references auth.users (id) on delete cascade,
@@ -845,6 +845,58 @@ drop trigger if exists plans_protect_shared on public.plans;
 create trigger plans_protect_shared
   before delete on public.plans
   for each row execute function public.protect_shared_plan();
+
+-- Who gets the email: the athlete's own instructors -------------------------------
+-- The Database Webhook only sees the row that was inserted, so the recipients
+-- are written into that row: instructor_emails = the emails of every instructor
+-- the athlete shares with ("coach@example.com, other@example.com"), or NULL when
+-- the athlete shares with nobody. Zapier uses it as the Gmail "To" and does not
+-- send when it is empty. The value is set by this trigger only, never by the
+-- app or the user, so nobody can aim Gmail at an arbitrary address.
+alter table public.workouts add column if not exists instructor_emails text;
+alter table public.reports  add column if not exists instructor_emails text;
+
+comment on column public.workouts.instructor_emails is
+  'Emails of the instructors the athlete shared with when the workout was logged. Set by a trigger; Zap 1 sends to it.';
+comment on column public.reports.instructor_emails is
+  'Emails of the instructors the athlete shared with when the report was sent. Set by a trigger; Zap 2 sends to it.';
+
+-- Runs as the table owner: the athlete cannot read other users' profiles
+-- themselves. BEFORE triggers run before the AFTER ones the webhooks use, so
+-- the webhook payload already carries the value. An UPDATE keeps the stored
+-- value, so an edit can't change who was emailed.
+create or replace function public.set_instructor_emails()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if tg_op = 'UPDATE' then
+    new.instructor_emails := old.instructor_emails;
+    return new;
+  end if;
+  new.instructor_emails := (
+    select string_agg(p.email, ', ' order by l.created_at, p.email)
+    from public.instructor_links l
+    join public.profiles p on p.id = l.instructor_id
+    where l.athlete_id = new.user_id and p.email is not null
+  );
+  return new;
+end;
+$$;
+
+revoke execute on function public.set_instructor_emails() from public, anon, authenticated;
+
+drop trigger if exists workouts_set_instructor_emails on public.workouts;
+create trigger workouts_set_instructor_emails
+  before insert or update on public.workouts
+  for each row execute function public.set_instructor_emails();
+
+drop trigger if exists reports_set_instructor_emails on public.reports;
+create trigger reports_set_instructor_emails
+  before insert on public.reports
+  for each row execute function public.set_instructor_emails();
 
 -- Let the REST API see the new tables right away.
 notify pgrst, 'reload schema';
