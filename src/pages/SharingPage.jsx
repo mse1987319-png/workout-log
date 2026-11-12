@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { linkInstructor, listMyInstructors, stopSharing } from '../api/sharing'
 import { ErrorState, Loading, SuccessMessage } from '../components/States'
+import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
 import { formatDay } from '../lib/format'
 import { useLoad } from '../lib/useLoad'
@@ -9,6 +10,7 @@ import { useLoad } from '../lib/useLoad'
 const REFUSED = new Set(['P0002', '22023'])
 
 function InstructorRow({ instructor, onStopped }) {
+  const { t } = useLanguage()
   const [stopping, setStopping] = useState(false)
   const [stopError, setStopError] = useState(null)
 
@@ -29,16 +31,16 @@ function InstructorRow({ instructor, onStopped }) {
       <div className="person-head">
         <div>
           <p className="person-email">{instructor.email}</p>
-          <p className="muted">Sharing since {formatDay(instructor.linked_at)}</p>
+          <p className="muted">{t('sharing.since', { date: formatDay(instructor.linked_at) })}</p>
         </div>
         <button
           type="button"
           className="button button-secondary button-small"
-          aria-label={`Stop sharing with ${instructor.email}`}
+          aria-label={t('sharing.stopLabel', { email: instructor.email })}
           disabled={stopping}
           onClick={stop}
         >
-          {stopping ? 'Stopping…' : 'Stop sharing'}
+          {stopping ? t('sharing.stopping') : t('sharing.stop')}
         </button>
       </div>
       {stopError && <ErrorState message={friendlyError(stopError)} onRetry={stop} />}
@@ -47,6 +49,7 @@ function InstructorRow({ instructor, onStopped }) {
 }
 
 function ShareForm({ onLinked }) {
+  const { t } = useLanguage()
   const [code, setCode] = useState('')
   const [problem, setProblem] = useState('')
   const [saving, setSaving] = useState(false)
@@ -57,7 +60,7 @@ function ShareForm({ onLinked }) {
     const clean = code.trim()
     setSaveError(null)
     setLinked(null)
-    setProblem(clean ? '' : 'Enter the code your instructor gave you.')
+    setProblem(clean ? '' : t('sharing.enterCode'))
     if (!clean) return
 
     setSaving(true)
@@ -67,7 +70,7 @@ function ShareForm({ onLinked }) {
       setLinked(instructor)
       onLinked(instructor)
     } catch (error) {
-      if (REFUSED.has(error.code)) setProblem(error.message)
+      if (REFUSED.has(error.code)) setProblem(friendlyError(error))
       else setSaveError(error)
     } finally {
       setSaving(false)
@@ -82,7 +85,7 @@ function ShareForm({ onLinked }) {
   return (
     <form className="form" onSubmit={handleSubmit} noValidate>
       <div className="field code-field">
-        <label htmlFor="instructor-code">Instructor&apos;s code</label>
+        <label htmlFor="instructor-code">{t('sharing.codeLabel')}</label>
         <input
           id="instructor-code"
           value={code}
@@ -90,12 +93,12 @@ function ShareForm({ onLinked }) {
           autoComplete="off"
           autoCapitalize="characters"
           spellCheck={false}
-          placeholder="e.g. K7P2QX"
+          placeholder={t('sharing.codePlaceholder')}
           aria-describedby="instructor-code-hint"
           onChange={(event) => setCode(event.target.value)}
         />
         <p className="hint" id="instructor-code-hint">
-          Six letters and digits; your instructor sees it on their My athletes screen.
+          {t('sharing.codeHint')}
         </p>
       </div>
 
@@ -105,11 +108,11 @@ function ShareForm({ onLinked }) {
         </p>
       )}
       {saveError && <ErrorState message={friendlyError(saveError)} onRetry={save} />}
-      {linked && <SuccessMessage>You now share with {linked.email}.</SuccessMessage>}
+      {linked && <SuccessMessage>{t('sharing.nowShare', { email: linked.email })}</SuccessMessage>}
 
       <div>
         <button type="submit" className="button" disabled={saving}>
-          {saving ? 'Sharing…' : 'Share'}
+          {saving ? t('sharing.sharing') : t('sharing.share')}
         </button>
       </div>
     </form>
@@ -120,6 +123,7 @@ function ShareForm({ onLinked }) {
 // with, and stop. Instructors can read what you share, never change it.
 export default function SharingPage() {
   const { status, data: instructors, error, reload, setData } = useLoad(listMyInstructors)
+  const { t } = useLanguage()
 
   function addInstructor(linked) {
     setData((current) =>
@@ -133,27 +137,26 @@ export default function SharingPage() {
 
   return (
     <section>
-      <h1>Sharing</h1>
+      <h1>{t('nav.sharing')}</h1>
       <p className="page-intro">
-        Share your workouts, sets, goals and reports with an instructor. They can read them, never change them, and
-        you can stop at any time.
+        {t('sharing.intro')}
       </p>
 
       <div className="stack">
         <section className="card stack" aria-labelledby="share-title">
-          <h2 id="share-title">Share with an instructor</h2>
+          <h2 id="share-title">{t('sharing.shareTitle')}</h2>
           <ShareForm onLinked={addInstructor} />
         </section>
 
         <section className="card stack" aria-labelledby="shared-title">
-          <h2 id="shared-title">Who you share with</h2>
+          <h2 id="shared-title">{t('sharing.whoTitle')}</h2>
 
-          {status === 'loading' && <Loading>Loading who you share with…</Loading>}
+          {status === 'loading' && <Loading>{t('sharing.loading')}</Loading>}
 
           {status === 'error' && <ErrorState message={friendlyError(error)} onRetry={reload} />}
 
           {status === 'success' && instructors.length === 0 && (
-            <p className="muted">You don&apos;t share with an instructor yet.</p>
+            <p className="muted">{t('sharing.none')}</p>
           )}
 
           {status === 'success' && instructors.length > 0 && (

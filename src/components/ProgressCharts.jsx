@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { formatCalendarDay, formatDay, formatKg } from '../lib/format'
+import { useLanguage } from '../i18n/useLanguage'
+import { formatCalendarDay, formatDay, formatKg, typeLabel } from '../lib/format'
 import { describeTrend, describeWeek, heaviestPerSession, weeklyMinutes, weightedExercises } from '../lib/progress'
 import MinutesChart from './MinutesChart'
 import WeightChart from './WeightChart'
@@ -9,7 +10,8 @@ import WeightChart from './WeightChart'
 
 const WEEKS = 8
 
-export function WeightSection({ sets, emptyText = 'Log a strength workout with weights to see how your lifts change.' }) {
+export function WeightSection({ sets, emptyText }) {
+  const { t } = useLanguage()
   const exercises = useMemo(() => weightedExercises(sets), [sets])
   const [chosen, setChosen] = useState('')
   const exercise = exercises.includes(chosen) ? chosen : (exercises[0] ?? '')
@@ -17,13 +19,13 @@ export function WeightSection({ sets, emptyText = 'Log a strength workout with w
 
   return (
     <section className="card stack" aria-labelledby="weight-title">
-      <h2 id="weight-title">Heaviest set per session</h2>
+      <h2 id="weight-title">{t('progress.heaviestTitle')}</h2>
       {exercises.length === 0 ? (
-        <p className="muted">{emptyText}</p>
+        <p className="muted">{emptyText ?? t('progress.weightEmpty')}</p>
       ) : (
         <>
           <div className="field chart-filter">
-            <label htmlFor="progress-exercise">Exercise</label>
+            <label htmlFor="progress-exercise">{t('common.exercise')}</label>
             <select id="progress-exercise" value={exercise} onChange={(event) => setChosen(event.target.value)}>
               {exercises.map((name) => (
                 <option key={name} value={name}>
@@ -35,13 +37,13 @@ export function WeightSection({ sets, emptyText = 'Log a strength workout with w
           <p className="chart-summary">{describeTrend(exercise, points)}</p>
           <WeightChart points={points} />
           <details className="table-view">
-            <summary>Show as a table</summary>
+            <summary>{t('progress.showTable')}</summary>
             <table className="data-table">
-              <caption className="visually-hidden">Heaviest set per session: {exercise}</caption>
+              <caption className="visually-hidden">{t('progress.heaviestCaption', { exercise })}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Session</th>
-                  <th scope="col">Heaviest set</th>
+                  <th scope="col">{t('progress.session')}</th>
+                  <th scope="col">{t('progress.heaviestSet')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -61,23 +63,24 @@ export function WeightSection({ sets, emptyText = 'Log a strength workout with w
 }
 
 export function MinutesSection({ workouts }) {
+  const { t } = useLanguage()
   const weeks = useMemo(() => weeklyMinutes(workouts, { weeks: WEEKS }), [workouts])
 
   return (
     <section className="card stack" aria-labelledby="minutes-title">
-      <h2 id="minutes-title">Minutes per week</h2>
+      <h2 id="minutes-title">{t('progress.minutesTitle')}</h2>
       <p className="chart-summary">{describeWeek(weeks.at(-1))}</p>
       <MinutesChart weeks={weeks} />
       <details className="table-view">
-        <summary>Show as a table</summary>
+        <summary>{t('progress.showTable')}</summary>
         <table className="data-table">
-          <caption className="visually-hidden">Minutes per week</caption>
+          <caption className="visually-hidden">{t('progress.minutesTitle')}</caption>
           <thead>
             <tr>
-              <th scope="col">Week of</th>
-              <th scope="col">Strength</th>
-              <th scope="col">Other</th>
-              <th scope="col">Total</th>
+              <th scope="col">{t('progress.weekOf')}</th>
+              <th scope="col">{typeLabel('strength')}</th>
+              <th scope="col">{typeLabel('other')}</th>
+              <th scope="col">{t('progress.total')}</th>
             </tr>
           </thead>
           <tbody>

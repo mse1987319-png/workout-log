@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
-import { RULES } from '../lib/recommendations'
+import { getRules } from '../lib/recommendations'
 import Suggestions from './Suggestions'
 
 const ITEMS = [
@@ -69,6 +69,6 @@ describe('Suggestions', () => {
     renderSuggestions([])
 
     const rules = within(screen.getByRole('list', { name: 'How suggestions work' })).getAllByRole('listitem')
-    expect(rules.map((rule) => rule.textContent)).toEqual(RULES.map((rule) => rule.text))
+    expect(rules.map((rule) => rule.textContent)).toEqual(getRules().map((rule) => rule.text))
   })
 })

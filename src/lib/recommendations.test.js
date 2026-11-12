@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { formatCalendarDay, formatDay } from './format'
 import { toYmd } from './goals'
-import { RULES, suggest } from './recommendations'
+import { getRules, suggest } from './recommendations'
 
 // Thursday, Nov 12, 2026, 18:30 local time.
 const NOW = new Date(2026, 10, 12, 18, 30)
@@ -197,9 +197,9 @@ describe('suggest: order', () => {
   })
 })
 
-describe('RULES', () => {
+describe('getRules', () => {
   it('explains every kind of suggestion, in the order they are listed', () => {
-    expect(RULES.map((rule) => rule.kind)).toEqual(['back', 'hold', 'pace', 'add'])
-    for (const rule of RULES) expect(rule.text).toMatch(/^[A-Z].+\.$/)
+    expect(getRules().map((rule) => rule.kind)).toEqual(['back', 'hold', 'pace', 'add'])
+    for (const rule of getRules()) expect(rule.text).toMatch(/^[A-Z].+\.$/)
   })
 })

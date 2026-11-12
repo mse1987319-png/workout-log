@@ -3,32 +3,33 @@ import { Link, useParams } from 'react-router-dom'
 import { getWorkout } from '../api/workouts'
 import LastTime from '../components/LastTime'
 import { EmptyState, ErrorState, Loading } from '../components/States'
+import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
-import { ACTIVITIES, formatDateTime, TYPE_LABELS } from '../lib/format'
+import { activityLabel, formatDateTime, formatNumber, typeLabel } from '../lib/format'
 import { formatPace, groupByExercise } from '../lib/sets'
 import { useLoad } from '../lib/useLoad'
 
-const ACTIVITY_LABELS = Object.fromEntries(ACTIVITIES)
-const number = (value) => String(Number(value))
+const number = (value) => formatNumber(value, 10)
 
 function ExerciseSets({ group, before }) {
+  const { t } = useLanguage()
   return (
     <section className="card exercise-sets">
       <h2>{group.exercise}</h2>
       <table className="sets-table">
         <thead>
           <tr>
-            <th scope="col">Set</th>
-            <th scope="col">Reps</th>
-            <th scope="col">Weight</th>
+            <th scope="col">{t('detail.set')}</th>
+            <th scope="col">{t('detail.reps')}</th>
+            <th scope="col">{t('detail.weight')}</th>
           </tr>
         </thead>
         <tbody>
           {group.sets.map((set, index) => (
             <tr key={set.set_no}>
-              <th scope="row">Set {index + 1}</th>
+              <th scope="row">{t('sets.setN', { n: index + 1 })}</th>
               <td>{set.reps}</td>
-              <td>{Number(set.weight_kg) > 0 ? `${number(set.weight_kg)} kg` : 'bodyweight'}</td>
+              <td>{Number(set.weight_kg) > 0 ? `${number(set.weight_kg)} kg` : t('sets.bodyweight')}</td>
             </tr>
           ))}
         </tbody>
@@ -39,6 +40,7 @@ function ExerciseSets({ group, before }) {
 }
 
 function Workout({ workout }) {
+  const { t } = useLanguage()
   const pace = formatPace(workout.duration_min, workout.distance_km)
   const groups = groupByExercise(workout.workout_sets ?? [])
 
@@ -46,28 +48,29 @@ function Workout({ workout }) {
     <>
       <h1>{workout.title}</h1>
       <p className="workout-meta">
-        <span className={`badge badge-${workout.type}`}>{TYPE_LABELS[workout.type] ?? workout.type}</span>
+        <span className={`badge badge-${workout.type}`}>{typeLabel(workout.type)}</span>
         {workout.plan && <span>{workout.plan.name}</span>}
         <span>{formatDateTime(workout.created_at)}</span>
       </p>
 
-      <ul className="stats" aria-label="Workout details">
+      <ul className="stats" aria-label={t('detail.details')}>
         <li>
-          <span className="stat-label">Duration</span> <span>{workout.duration_min} min</span>
+          <span className="stat-label">{t('detail.duration')}</span>{' '}
+          <span>{t('unit.min', { count: workout.duration_min })}</span>
         </li>
         {workout.activity && (
           <li>
-            <span className="stat-label">Activity</span> <span>{ACTIVITY_LABELS[workout.activity] ?? workout.activity}</span>
+            <span className="stat-label">{t('detail.activity')}</span> <span>{activityLabel(workout.activity)}</span>
           </li>
         )}
         {workout.distance_km && (
           <li>
-            <span className="stat-label">Distance</span> <span>{number(workout.distance_km)} km</span>
+            <span className="stat-label">{t('detail.distance')}</span> <span>{number(workout.distance_km)} km</span>
           </li>
         )}
         {pace && (
           <li>
-            <span className="stat-label">Pace</span> <span>{pace}</span>
+            <span className="stat-label">{t('detail.pace')}</span> <span>{pace}</span>
           </li>
         )}
       </ul>
@@ -76,7 +79,7 @@ function Workout({ workout }) {
 
       {workout.type === 'strength' &&
         (groups.length === 0 ? (
-          <p className="muted">No sets were logged for this workout.</p>
+          <p className="muted">{t('detail.noSets')}</p>
         ) : (
           <div className="stack">
             {groups.map((group) => (
@@ -93,15 +96,16 @@ export default function WorkoutDetailPage() {
   const { id } = useParams()
   const load = useCallback(() => getWorkout(id), [id])
   const { status, data: workout, error, reload } = useLoad(load)
+  const { t } = useLanguage()
   const notFound = status === 'error' && error?.code === 'PGRST116'
 
   return (
     <article className="workout-detail">
       <Link to="/" className="back-link">
-        ← My plans
+        {t('detail.back')}
       </Link>
-      {status === 'loading' && <Loading>Loading the workout…</Loading>}
-      {notFound && <EmptyState>This workout doesn't exist, or it isn't yours.</EmptyState>}
+      {status === 'loading' && <Loading>{t('detail.loading')}</Loading>}
+      {notFound && <EmptyState>{t('detail.notFound')}</EmptyState>}
       {status === 'error' && !notFound && <ErrorState message={friendlyError(error)} onRetry={reload} />}
       {status === 'success' && <Workout workout={workout} />}
     </article>

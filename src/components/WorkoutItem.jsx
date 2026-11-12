@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { renameWorkout } from '../api/workouts'
+import { t } from '../i18n/i18n'
+import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
-import { formatDateTime, TYPE_LABELS } from '../lib/format'
+import { formatDateTime, typeLabel } from '../lib/format'
 import { ErrorState, SuccessMessage } from './States'
 
 // One logged workout, with an inline "Edit title" form. Renaming is an
@@ -14,6 +16,7 @@ export default function WorkoutItem({ workout, onRenamed }) {
   const [problem, setProblem] = useState('')
   const [saveError, setSaveError] = useState(null)
   const [renamed, setRenamed] = useState(false)
+  useLanguage() // re-render when the language changes
 
   function startEditing() {
     setDraft(workout.title)
@@ -26,7 +29,7 @@ export default function WorkoutItem({ workout, onRenamed }) {
   async function save() {
     const title = draft.trim()
     setSaveError(null)
-    setProblem(title ? '' : 'Enter a title.')
+    setProblem(title ? '' : t('workout.enterTitle'))
     if (!title) return
 
     setSaving(true)
@@ -49,8 +52,8 @@ export default function WorkoutItem({ workout, onRenamed }) {
 
   const meta = (
     <p className="workout-meta">
-      <span className={`badge badge-${workout.type}`}>{TYPE_LABELS[workout.type] ?? workout.type}</span>
-      <span>{workout.duration_min} min</span>
+      <span className={`badge badge-${workout.type}`}>{typeLabel(workout.type)}</span>
+      <span>{t('unit.min', { count: workout.duration_min })}</span>
       <span>{formatDateTime(workout.created_at)}</span>
     </p>
   )
@@ -61,7 +64,7 @@ export default function WorkoutItem({ workout, onRenamed }) {
       <li className="workout">
         <form className="rename-form" onSubmit={handleSubmit} noValidate>
           <label htmlFor={inputId} className="visually-hidden">
-            Workout title
+            {t('workout.titleLabelHidden')}
           </label>
           <input
             id={inputId}
@@ -71,7 +74,7 @@ export default function WorkoutItem({ workout, onRenamed }) {
           />
           <div className="rename-actions">
             <button type="submit" className="button button-small" disabled={saving}>
-              {saving ? 'Saving…' : 'Save'}
+              {saving ? t('common.saving') : t('common.save')}
             </button>
             <button
               type="button"
@@ -79,7 +82,7 @@ export default function WorkoutItem({ workout, onRenamed }) {
               onClick={() => setEditing(false)}
               disabled={saving}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
           {problem && (
@@ -103,14 +106,14 @@ export default function WorkoutItem({ workout, onRenamed }) {
         <button
           type="button"
           className="link-button"
-          aria-label={`Edit title of ${workout.title}`}
+          aria-label={t('workout.editTitleLabel', { title: workout.title })}
           onClick={startEditing}
         >
-          Edit title
+          {t('workout.editTitle')}
         </button>
       </div>
       {meta}
-      {renamed && <SuccessMessage>Title updated.</SuccessMessage>}
+      {renamed && <SuccessMessage>{t('workout.titleUpdated')}</SuccessMessage>}
     </li>
   )
 }

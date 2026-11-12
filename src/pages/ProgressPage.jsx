@@ -6,6 +6,7 @@ import { MinutesSection, WeightSection } from '../components/ProgressCharts'
 import ReportCard from '../components/ReportCard'
 import { EmptyState, ErrorState, Loading } from '../components/States'
 import Suggestions from '../components/Suggestions'
+import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
 import { sortGoals } from '../lib/goals'
 import { suggest } from '../lib/recommendations'
@@ -15,7 +16,10 @@ import { useLoad } from '../lib/useLoad'
 // heaviest set per session of one exercise and minutes per week.
 export default function ProgressPage() {
   const { status, data, error, reload, setData } = useLoad(listProgress)
-  const suggestions = useMemo(() => (data ? suggest(data) : []), [data])
+  const { language, t } = useLanguage()
+  // The suggestions are worded in the current language, so they are redone when it changes.
+  // oxlint-disable-next-line react-hooks/exhaustive-deps
+  const suggestions = useMemo(() => (data ? suggest(data) : []), [data, language])
 
   function addGoal(goal) {
     setData((current) => ({ ...current, goals: sortGoals([...current.goals, goal]) }))
@@ -27,9 +31,9 @@ export default function ProgressPage() {
 
   return (
     <section className="progress">
-      <h1>Progress</h1>
+      <h1>{t('nav.progress')}</h1>
 
-      {status === 'loading' && <Loading>Loading your progress…</Loading>}
+      {status === 'loading' && <Loading>{t('progress.loading')}</Loading>}
 
       {status === 'error' && <ErrorState message={friendlyError(error)} onRetry={reload} />}
 
@@ -37,11 +41,11 @@ export default function ProgressPage() {
         <EmptyState
           action={
             <Link className="button" to="/log">
-              Log a workout
+              {t('common.logWorkout')}
             </Link>
           }
         >
-          No workouts yet — log one to see your progress.
+          {t('progress.empty')}
         </EmptyState>
       )}
 

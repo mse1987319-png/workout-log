@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { getMyProfile, listMyAthletes } from '../api/sharing'
 import { ErrorState, Loading } from '../components/States'
+import { t } from '../i18n/i18n'
+import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
 import { formatDay } from '../lib/format'
 import { useLoad } from '../lib/useLoad'
@@ -9,44 +11,44 @@ const loadAthletes = () =>
   Promise.all([getMyProfile(), listMyAthletes()]).then(([profile, athletes]) => ({ profile, athletes }))
 
 function activity({ workouts_last_7_days: count }) {
-  if (count === 0) return 'No workouts in the last 7 days'
-  return `${count} ${count === 1 ? 'workout' : 'workouts'} in the last 7 days`
+  if (count === 0) return t('athletes.noWorkouts7')
+  return t('athletes.workouts7', { count })
 }
 
 // My athletes (instructors): my invite code, and the athletes who share with me.
 export default function AthletesPage() {
   const { status, data, error, reload } = useLoad(loadAthletes)
+  useLanguage() // re-render when the language changes
   const code = data?.profile.invite_code
 
   return (
     <section>
-      <h1>My athletes</h1>
+      <h1>{t('nav.myAthletes')}</h1>
 
-      {status === 'loading' && <Loading>Loading your athletes…</Loading>}
+      {status === 'loading' && <Loading>{t('athletes.loading')}</Loading>}
 
       {status === 'error' && <ErrorState message={friendlyError(error)} onRetry={reload} />}
 
       {status === 'success' && (
         <div className="stack">
           <section className="card stack" aria-labelledby="code-title">
-            <h2 id="code-title">Your code</h2>
+            <h2 id="code-title">{t('athletes.codeTitle')}</h2>
             {code ? (
               <>
                 <p className="invite-code">{code}</p>
                 <p className="muted">
-                  Athletes type this code under Sharing. Then you can follow their workouts, goals and reports here,
-                  and assign them your plans.
+                  {t('athletes.codeHelp')}
                 </p>
               </>
             ) : (
-              <p className="muted">Only instructor accounts have a code: this account signed up as an athlete.</p>
+              <p className="muted">{t('athletes.noCode')}</p>
             )}
           </section>
 
           <section className="card stack" aria-labelledby="athletes-title">
-            <h2 id="athletes-title">Athletes who share with you</h2>
+            <h2 id="athletes-title">{t('athletes.sharingTitle')}</h2>
             {data.athletes.length === 0 ? (
-              <p className="muted">{code ? `No athletes yet. Give them your code: ${code}.` : 'No athletes yet.'}</p>
+              <p className="muted">{code ? t('athletes.noneWithCode', { code }) : t('athletes.none')}</p>
             ) : (
               <ul className="person-list" aria-labelledby="athletes-title">
                 {data.athletes.map((athlete) => (
@@ -56,9 +58,13 @@ export default function AthletesPage() {
                     </Link>
                     <p>{activity(athlete)}</p>
                     <p className="muted">
-                      {athlete.last_workout_at ? `Last workout: ${formatDay(athlete.last_workout_at)}` : 'No workouts yet'}
+                      {athlete.last_workout_at
+                        ? t('athletes.lastWorkout', { date: formatDay(athlete.last_workout_at) })
+                        : t('athletes.noWorkoutsYet')}
                       {' · '}
-                      {athlete.last_report_at ? `Last report: ${formatDay(athlete.last_report_at)}` : 'No report yet'}
+                      {athlete.last_report_at
+                        ? t('athletes.lastReport', { date: formatDay(athlete.last_report_at) })
+                        : t('athletes.noReportYet')}
                     </p>
                   </li>
                 ))}

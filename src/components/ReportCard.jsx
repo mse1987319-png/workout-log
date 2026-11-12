@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { lastReport, previewReport, sendReport } from '../api/reports'
+import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
 import { formatDateTime } from '../lib/format'
 import { useLoad } from '../lib/useLoad'
@@ -11,6 +12,7 @@ const loadCard = () => Promise.all([previewReport(), lastReport()]).then(([stats
 // report went out, and the button. The database builds and stores the report.
 export default function ReportCard() {
   const { status, data, error, reload, setData } = useLoad(loadCard)
+  const { t } = useLanguage()
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState(null)
   const [sent, setSent] = useState(false)
@@ -32,9 +34,9 @@ export default function ReportCard() {
 
   return (
     <section className="card stack" aria-labelledby="report-title">
-      <h2 id="report-title">Report to your instructor</h2>
+      <h2 id="report-title">{t('report.title')}</h2>
 
-      {status === 'loading' && <Loading>Loading your report…</Loading>}
+      {status === 'loading' && <Loading>{t('report.loading')}</Loading>}
 
       {status === 'error' && <ErrorState message={friendlyError(error)} onRetry={reload} />}
 
@@ -42,16 +44,16 @@ export default function ReportCard() {
         <>
           <p className="chart-summary">{data.stats.summary}</p>
           <p className="muted">
-            {data.last ? `Last sent: ${formatDateTime(data.last.created_at)}.` : "You haven't sent a report yet."}
+            {data.last ? t('report.lastSent', { date: formatDateTime(data.last.created_at) }) : t('report.none')}
           </p>
           {sendError && <ErrorState message={friendlyError(sendError)} onRetry={send} />}
-          {sent && <SuccessMessage>Report sent. Your instructor gets it by email.</SuccessMessage>}
+          {sent && <SuccessMessage>{t('report.sent')}</SuccessMessage>}
           <div>
             <button type="button" className="button" disabled={sending || data.stats.workouts === 0} onClick={send}>
-              {sending ? 'Sending…' : 'Send report to instructor'}
+              {sending ? t('report.sending') : t('report.send')}
             </button>
           </div>
-          {data.stats.workouts === 0 && <p className="hint">Log a workout first: the report covers the last 7 days.</p>}
+          {data.stats.workouts === 0 && <p className="hint">{t('report.logFirst')}</p>}
         </>
       )}
     </section>

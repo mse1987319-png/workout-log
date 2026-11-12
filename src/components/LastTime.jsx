@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { lastSession } from '../api/sets'
+import { useLanguage } from '../i18n/useLanguage'
 import { formatDay } from '../lib/format'
 import { formatSets } from '../lib/sets'
 
@@ -10,7 +11,9 @@ import { formatSets } from '../lib/sets'
  * the lookup fails: it is a hint, not essential.
  */
 export default function LastTime({ name, before }) {
-  const [result, setResult] = useState({ key: '', text: '' })
+  // session: the sets of the last workout, null if there is none, undefined if the lookup failed.
+  const [result, setResult] = useState({ key: '', session: undefined })
+  const { t } = useLanguage()
   const key = `${name}|${before ?? ''}`
 
   useEffect(() => {
@@ -18,14 +21,10 @@ export default function LastTime({ name, before }) {
     let current = true
     lastSession(name, { before }).then(
       (session) => {
-        if (!current) return
-        const text = session
-          ? `Last time (${formatDay(session.date)}): ${formatSets(session.sets)}`
-          : `First time logging ${name}.`
-        setResult({ key: `${name}|${before ?? ''}`, text })
+        if (current) setResult({ key: `${name}|${before ?? ''}`, session })
       },
       () => {
-        if (current) setResult({ key: `${name}|${before ?? ''}`, text: '' })
+        if (current) setResult({ key: `${name}|${before ?? ''}`, session: undefined })
       },
     )
     return () => {
@@ -33,6 +32,10 @@ export default function LastTime({ name, before }) {
     }
   }, [name, before])
 
-  if (!name || result.key !== key || !result.text) return null
-  return <p className="hint last-time">{result.text}</p>
+  if (!name || result.key !== key || result.session === undefined) return null
+  // Worded here, not when the lookup finishes, so it follows the language.
+  const text = result.session
+    ? t('lastTime.last', { date: formatDay(result.session.date), sets: formatSets(result.session.sets) })
+    : t('lastTime.first', { name })
+  return <p className="hint last-time">{text}</p>
 }

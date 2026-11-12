@@ -1,16 +1,18 @@
 import { Link } from 'react-router-dom'
-import { RULES } from '../lib/recommendations'
+import { useLanguage } from '../i18n/useLanguage'
+import { getRules } from '../lib/recommendations'
 
 // Rule-based suggestions (lib/recommendations.js), each with its reason, and
 // every rule spelled out below them, so nothing is a black box.
 // readOnly (the instructor's view of an athlete): no action links.
-export default function Suggestions({ items, title = 'Suggestions', readOnly = false }) {
+export default function Suggestions({ items, title, readOnly = false }) {
+  const { t } = useLanguage()
   return (
     <section className="card stack" aria-labelledby="suggestions-title">
-      <h2 id="suggestions-title">{title}</h2>
+      <h2 id="suggestions-title">{title ?? t('suggestions.title')}</h2>
 
       {items.length === 0 ? (
-        <p className="muted">Nothing to suggest right now: suggestions appear when one of the rules below applies.</p>
+        <p className="muted">{t('suggestions.none')}</p>
       ) : (
         <ul className="suggestion-list" aria-labelledby="suggestions-title">
           {items.map((item) => (
@@ -19,7 +21,7 @@ export default function Suggestions({ items, title = 'Suggestions', readOnly = f
               <p className="muted">{item.because}</p>
               {item.link && !readOnly && (
                 <Link className="button button-small" to={item.link}>
-                  Log a workout
+                  {t('common.logWorkout')}
                 </Link>
               )}
             </li>
@@ -28,9 +30,9 @@ export default function Suggestions({ items, title = 'Suggestions', readOnly = f
       )}
 
       <details className="table-view">
-        <summary>How suggestions work</summary>
-        <ul className="rules" aria-label="How suggestions work">
-          {RULES.map((rule) => (
+        <summary>{t('suggestions.how')}</summary>
+        <ul className="rules" aria-label={t('suggestions.how')}>
+          {getRules().map((rule) => (
             <li key={rule.kind}>{rule.text}</li>
           ))}
         </ul>

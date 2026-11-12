@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { createWorkout } from '../api/workouts'
+import { t } from '../i18n/i18n'
+import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
-import { ACTIVITIES } from '../lib/format'
+import { ACTIVITY_VALUES, activityLabel, typeLabel } from '../lib/format'
 import { toSetsPayload, validateExercises } from '../lib/sets'
 import ExercisesEditor from './ExercisesEditor'
 import { ErrorState, SuccessMessage } from './States'
@@ -11,14 +13,14 @@ const MAX_MINUTES = 1440
 const MAX_KM = 1000
 
 function validate({ title, type, minutes, distance, exercises }) {
-  if (!title) return 'Enter a title.'
-  if (!type) return 'Choose a type: Strength or Other.'
+  if (!title) return t('workout.enterTitle')
+  if (!type) return t('workout.chooseType')
   if (!Number.isInteger(minutes) || minutes < 1 || minutes > MAX_MINUTES) {
-    return `Enter the duration in whole minutes (1–${MAX_MINUTES}).`
+    return t('workout.badDuration', { max: MAX_MINUTES })
   }
   if (type === 'strength') return validateExercises(exercises)
   if (distance !== '' && !(Number(distance) > 0 && Number(distance) <= MAX_KM)) {
-    return `Enter the distance in km (more than 0, up to ${MAX_KM}), or leave it empty.`
+    return t('workout.badDistance', { max: MAX_KM })
   }
   return ''
 }
@@ -37,6 +39,7 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(null)
   const [saved, setSaved] = useState(null)
+  useLanguage() // re-render when the language changes
 
   async function save() {
     // Number('') is 0, so an empty duration fails the 1–1440 check too.
@@ -83,7 +86,7 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
   return (
     <form className="form" onSubmit={handleSubmit} noValidate>
       <div className="field">
-        <label htmlFor="workout-plan">Plan</label>
+        <label htmlFor="workout-plan">{t('workout.plan')}</label>
         <select id="workout-plan" value={planId} onChange={(event) => onPlanChange(event.target.value)}>
           {plans.map((plan) => (
             <option key={plan.id} value={plan.id}>
@@ -94,18 +97,18 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
       </div>
 
       <div className="field">
-        <label htmlFor="workout-title">Title</label>
+        <label htmlFor="workout-title">{t('workout.titleLabel')}</label>
         <input
           id="workout-title"
           value={title}
           maxLength={100}
-          placeholder="e.g. Leg day, 5 km run"
+          placeholder={t('workout.titlePlaceholder')}
           onChange={(event) => setTitle(event.target.value)}
         />
       </div>
 
       <fieldset className="field choice-group">
-        <legend>Type</legend>
+        <legend>{t('workout.type')}</legend>
         <div className="choices">
           <label className="choice">
             <input
@@ -115,7 +118,7 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
               checked={type === 'strength'}
               onChange={() => setType('strength')}
             />
-            Strength
+            {typeLabel('strength')}
           </label>
           <label className="choice">
             <input
@@ -125,14 +128,14 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
               checked={type === 'other'}
               onChange={() => setType('other')}
             />
-            Other (cardio, mobility…)
+            {t('workout.typeOtherLong')}
           </label>
         </div>
-        <p className="hint">Your instructor gets an email about every workout; strength ones are flagged.</p>
+        <p className="hint">{t('workout.typeHint')}</p>
       </fieldset>
 
       <div className="field">
-        <label htmlFor="workout-duration">Duration (minutes)</label>
+        <label htmlFor="workout-duration">{t('workout.duration')}</label>
         <input
           id="workout-duration"
           type="number"
@@ -150,18 +153,18 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
       {type === 'other' && (
         <div className="field-row">
           <div className="field">
-            <label htmlFor="workout-activity">Activity</label>
+            <label htmlFor="workout-activity">{t('workout.activity')}</label>
             <select id="workout-activity" value={activity} onChange={(event) => setActivity(event.target.value)}>
               <option value="">—</option>
-              {ACTIVITIES.map(([value, label]) => (
+              {ACTIVITY_VALUES.map((value) => (
                 <option key={value} value={value}>
-                  {label}
+                  {activityLabel(value)}
                 </option>
               ))}
             </select>
           </div>
           <div className="field">
-            <label htmlFor="workout-distance">Distance (km)</label>
+            <label htmlFor="workout-distance">{t('workout.distance')}</label>
             <input
               id="workout-distance"
               type="number"
@@ -177,7 +180,7 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
       )}
 
       <div className="field">
-        <label htmlFor="workout-notes">Notes (optional)</label>
+        <label htmlFor="workout-notes">{t('workout.notes')}</label>
         <textarea
           id="workout-notes"
           rows={2}
@@ -195,14 +198,14 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
       {saveError && <ErrorState message={friendlyError(saveError)} onRetry={save} />}
       {saved && (
         <SuccessMessage>
-          Workout saved: {saved.title}. <Link to={`/workouts/${saved.id}`}>Open it</Link> ·{' '}
-          <Link to="/">See it in My plans</Link>
+          {t('workout.saved', { title: saved.title })} <Link to={`/workouts/${saved.id}`}>{t('workout.openIt')}</Link> ·{' '}
+          <Link to="/">{t('workout.seeInPlans')}</Link>
         </SuccessMessage>
       )}
 
       <div>
         <button type="submit" className="button" disabled={saving}>
-          {saving ? 'Saving…' : 'Save workout'}
+          {saving ? t('common.saving') : t('workout.submit')}
         </button>
       </div>
     </form>

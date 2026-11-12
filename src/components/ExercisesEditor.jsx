@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { listExerciseNames } from '../api/sets'
+import { useLanguage } from '../i18n/useLanguage'
 import LastTime from './LastTime'
 
 let lastKey = 0
@@ -13,6 +14,7 @@ const newExercise = () => ({ key: nextKey(), name: '', lookup: '', sets: [newSet
  */
 export default function ExercisesEditor({ exercises, onChange }) {
   const listId = useId()
+  const { t } = useLanguage()
   const [names, setNames] = useState([])
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function ExercisesEditor({ exercises, onChange }) {
 
   return (
     <fieldset className="field exercises">
-      <legend>Exercises (optional)</legend>
+      <legend>{t('exercises.legend')}</legend>
       <datalist id={listId}>
         {names.map((name) => (
           <option key={name} value={name} />
@@ -50,21 +52,21 @@ export default function ExercisesEditor({ exercises, onChange }) {
           <div className="exercise" key={exercise.key}>
             <div className="exercise-head">
               <input
-                aria-label={`Exercise ${n} name`}
+                aria-label={t('exercises.nameLabel', { n })}
                 list={listId}
                 value={exercise.name}
                 maxLength={60}
-                placeholder="e.g. Squat"
+                placeholder={t('common.exercisePlaceholder')}
                 onChange={(event) => update(index, { name: event.target.value })}
                 onBlur={() => update(index, { lookup: exercise.name.trim() })}
               />
               <button
                 type="button"
                 className="link-button"
-                aria-label={`Remove exercise ${n}`}
+                aria-label={t('exercises.removeLabel', { n })}
                 onClick={() => onChange(exercises.filter((_, i) => i !== index))}
               >
-                Remove
+                {t('common.remove')}
               </button>
             </div>
             <LastTime name={exercise.lookup} />
@@ -74,15 +76,15 @@ export default function ExercisesEditor({ exercises, onChange }) {
                 const m = setIndex + 1
                 return (
                   <li className="set" key={set.key}>
-                    <span className="set-label">Set {m}</span>
+                    <span className="set-label">{t('sets.setN', { n: m })}</span>
                     <input
                       type="number"
                       inputMode="numeric"
                       min="1"
                       max="1000"
                       step="1"
-                      placeholder="reps"
-                      aria-label={`Exercise ${n}, set ${m} reps`}
+                      placeholder={t('exercises.repsPlaceholder')}
+                      aria-label={t('exercises.repsLabel', { n, m })}
                       value={set.reps}
                       onChange={(event) => updateSet(index, setIndex, { reps: event.target.value })}
                     />
@@ -94,7 +96,7 @@ export default function ExercisesEditor({ exercises, onChange }) {
                       max="1000"
                       step="any"
                       placeholder="kg"
-                      aria-label={`Exercise ${n}, set ${m} kg`}
+                      aria-label={t('exercises.kgLabel', { n, m })}
                       value={set.weight}
                       onChange={(event) => updateSet(index, setIndex, { weight: event.target.value })}
                     />
@@ -105,7 +107,7 @@ export default function ExercisesEditor({ exercises, onChange }) {
                       <button
                         type="button"
                         className="link-button"
-                        aria-label={`Remove set ${m} of exercise ${n}`}
+                        aria-label={t('exercises.removeSetLabel', { n, m })}
                         onClick={() => update(index, { sets: exercise.sets.filter((_, j) => j !== setIndex) })}
                       >
                         ✕
@@ -118,10 +120,10 @@ export default function ExercisesEditor({ exercises, onChange }) {
             <button
               type="button"
               className="button button-secondary button-small"
-              aria-label={`Add set to exercise ${n}`}
+              aria-label={t('exercises.addSetLabel', { n })}
               onClick={() => update(index, { sets: [...exercise.sets, newSet(exercise.sets.at(-1))] })}
             >
-              Add set
+              {t('exercises.addSet')}
             </button>
           </div>
         )
@@ -129,10 +131,10 @@ export default function ExercisesEditor({ exercises, onChange }) {
 
       <div>
         <button type="button" className="button button-secondary" onClick={() => onChange([...exercises, newExercise()])}>
-          Add exercise
+          {t('exercises.addExercise')}
         </button>
       </div>
-      <p className="hint">Leave kg empty for bodyweight exercises.</p>
+      <p className="hint">{t('exercises.bodyweightHint')}</p>
     </fieldset>
   )
 }
