@@ -115,7 +115,7 @@ flowchart LR
   subgraph DEV["Developer machine"]
     CODE["Code in the repo<br/>React + Vite, JavaScript<br/>npm test · lint · build"]
     ENV[".env.local<br/>git-ignored"]
-    KEYS["_task/.keys<br/>git-ignored"]
+    KEYS["_task/.keys<br/>keys.md git-ignored,<br/>keys.zip encrypted"]
   end
 
   subgraph GH["GitHub (private repo)"]
@@ -183,7 +183,7 @@ flowchart LR
 | Supabase URL and publishable (anon) key | Vercel env vars, `.env.local` | Safe to expose, but **only because RLS is on** |
 | Supabase `service_role` / secret key | Admin scripts on the developer machine only | React, Vercel, the repo |
 | Zapier Catch Hook URLs | Inside the two Supabase webhooks (database triggers) and in Zapier | The repo, README, Notion, screenshots, Vercel |
-| Zapier, Notion, Vercel and Supabase tokens | `_task/.keys` (git-ignored) | The repo |
+| Zapier, Notion, Vercel and Supabase tokens, demo logins | `_task/.keys/keys.md` (git-ignored); the repo holds only the password-protected, AES-256 `keys.zip` | The repo in plain text |
 
 ## 3. How the code is organized
 
