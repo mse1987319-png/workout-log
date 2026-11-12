@@ -70,7 +70,7 @@ The Supabase project needs a one-time setup: run `supabase/schema.sql`, then `su
 
 ## Demo accounts
 
-[`supabase/seed.sql`](supabase/seed.sql) creates these three accounts on a new, empty project, together with their plans, workouts, sets, goals, a report and instructor sharing. On a project that already has users it does nothing. The live site has the same three logins; its data was seeded earlier, so the details differ.
+[`supabase/seed.sql`](supabase/seed.sql) creates these three accounts on a new, empty project, together with their plans, workouts, sets, goals, a report and instructor sharing. On a project that already has users it does nothing. The live database was reset to exactly this seed on 2026-11-12, so the live site has the same accounts and data.
 
 | Email | Password | Role | What you'll see |
 |---|---|---|---|
