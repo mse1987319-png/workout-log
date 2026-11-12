@@ -10,8 +10,8 @@ The Database Webhook to Zapier is a separate step in lecture 3: [zapier.md](zapi
 2. Paste the whole of [`supabase/schema.sql`](../supabase/schema.sql) and press **Run**.
    Expected: `Success. No rows returned`. Running it again later is safe.
 3. Check:
-   - **Table Editor** lists `plans`, `workouts`, `workout_sets` and `reports`.
-   - **Authentication → Policies** (or **Database → Policies**) shows RLS **enabled** on all four tables, with these policies:
+   - **Table Editor** lists `plans`, `workouts`, `workout_sets`, `reports` and `goals`.
+   - **Authentication → Policies** (or **Database → Policies**) shows RLS **enabled** on all five tables, with these policies:
 
      | Table | Policies |
      |---|---|
@@ -19,6 +19,7 @@ The Database Webhook to Zapier is a separate step in lecture 3: [zapier.md](zapi
      | `workouts` | Read own workouts · Add workouts to own plans · Edit own workouts · Delete own workouts |
      | `workout_sets` | Read own sets · Add sets to own workouts · Edit own sets · Delete own sets |
      | `reports` | Read own reports (no write policy: only `send_report()` writes) |
+     | `goals` | Read own goals · Add own goals · Edit own goals · Delete own goals |
 
 4. Take the submission screenshots now (checklist item 3): the Table Editor with both tables, and the Policies page.
 
@@ -36,6 +37,8 @@ The app saves a workout through the database function **`log_workout()`**: the w
 [`supabase/tests/sets_summary.test.sql`](../supabase/tests/sets_summary.test.sql) tests both functions. Paste it into the SQL Editor and run it: it always ends with an error that rolls everything back, reading *TESTS PASSED (…)* when all is well, so it never saves a workout or sends an email.
 
 **Progress reports.** **`report_stats(days)`** returns the caller's numbers for the last 7 calendar days with a one-line summary (the app's preview). **`send_report()`** is the only way to create a row in `reports`: it stores the caller's own numbers and email, at most once per 5 minutes, and the INSERT fires the second Database Webhook (`reports_to_zapier`, Zap 2 in [zapier.md](zapier.md#zap-2-progress-reports-extended)). [`supabase/tests/reports.test.sql`](../supabase/tests/reports.test.sql) tests both, the same rolled-back way.
+
+**Goals.** `goals` holds an exercise, a target weight (`target_kg`, more than 0 and up to 1000) and a date (`target_date`), with the same four owner-only policies as `plans`. Whether a goal is reached or overdue is worked out in the app from `workout_sets`, so no column has to be kept up to date. The suggestions on the Progress screen are worked out in the browser too, from the same data. [`supabase/tests/goals.test.sql`](../supabase/tests/goals.test.sql) tests the policies and the checks, the same rolled-back way.
 
 ## 2. Sign-up without email confirmation
 
