@@ -66,7 +66,19 @@ cp .env.example .env.local     # then fill in the two values
 npm run dev                    # http://localhost:5173
 ```
 
-The Supabase project needs a one-time setup: run `supabase/schema.sql` and turn off *Confirm email* ([docs/supabase.md](docs/supabase.md)).
+The Supabase project needs a one-time setup: run `supabase/schema.sql`, then `supabase/seed.sql` for demo data, and turn off *Confirm email* ([docs/supabase.md](docs/supabase.md)).
+
+## Demo accounts
+
+[`supabase/seed.sql`](supabase/seed.sql) creates these three accounts on a new, empty project, together with their plans, workouts, sets, goals, a report and instructor sharing. On a project that already has users it does nothing. The live site has the same three logins; its data was seeded earlier, so the details differ.
+
+| Email | Password | Role | What you'll see |
+|---|---|---|---|
+| `demo.athlete.a@example.com` | `WorkoutLog-demo-2026` | Athlete | 8 weeks of strength and running, a squat goal, a report already sent; suggestions to hold the bench weight and add 2.5 kg to the squat |
+| `demo.athlete.b@example.com` | `WorkoutLog-demo-2026` | Athlete | A beginner with nothing logged for 8 days and a deadlift goal |
+| `demo.instructor@example.com` | `WorkoutLog-demo-2026` | Instructor | Code **GYM234**, both athletes sharing, 3 plans assigned to them |
+
+Anyone who reads this can log in with these: they're demo accounts. On the live site, logging a workout or sending a report as one of them emails the instructor through Zapier, like any other account.
 
 | Command | What it does |
 |---|---|
@@ -107,6 +119,8 @@ src/
   lib/            Supabase client, settings check, error messages, progress maths, goal and suggestion rules
   test/           test setup and fakes (no network)
 supabase/schema.sql   tables + Row Level Security
+supabase/seed.sql     demo accounts and data for a new, empty project
+supabase/tests/       SQL tests (each one rolls itself back)
 docs/                 guides (see Documentation)
 scripts/setup.ps1     automated setup for Windows (safe to re-run)
 vercel.json           lets client-side routes survive a page reload
