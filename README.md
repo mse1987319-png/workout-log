@@ -129,6 +129,7 @@ The Supabase `service_role` key and the Zapier Catch Hook URL must **never** go 
 | File | Contents |
 |---|---|
 | [Notion: project documentation](https://app.notion.com/p/Workout-Log-Project-documentation-4150ecfaf117815bbf2dd6af5ee27323) | Scope card, task table, decision log, error log, test table, architecture and ERD diagrams, demo accounts |
+| [docs/user-manual/](docs/user-manual/README.md) | **User manuals** with screenshots, for athletes and for instructors, in English and Lithuanian |
 | [docs/architecture.md](docs/architecture.md) | **ERD**, **deployment and infrastructure diagram**, code layers, data flows, access model (as built) |
 | [docs/implementation-plan.md](docs/implementation-plan.md) | Scope tiers, data model, Zapier design, test table, lecture plan |
 | [docs/setup.md](docs/setup.md) | Tools, packages and environment setup |
