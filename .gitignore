@@ -28,3 +28,6 @@ dist-ssr
 # The plain-text versions must never be (the folder itself is tracked, for keys.zip).
 /_task/.keys/keys.md
 /_task/~$*
+
+# Python bytecode (the presentation builder in _task/results/src)
+__pycache__/
