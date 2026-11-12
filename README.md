@@ -1,5 +1,7 @@
 <h1 align="center"><img src="public/logo.svg" alt="Logify" height="80"></h1>
 
+<p align="center">English · <a href="README.lt.md">Lietuviškai</a></p>
+
 **Logify** is a web workout log. Athletes follow workout plans (their own, or ones an instructor assigned to them), log strength and cardio sessions, and the instructor is emailed automatically about every new workout.
 
 Capstone project for the course *"The full cycle from idea to live product"*: one app that runs online, stores data, separates users, and reports every important event by email.

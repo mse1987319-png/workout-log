@@ -1,5 +1,7 @@
 # Deployment: Vercel
 
+*English · [Lietuviškai](lt/deployment.md)*
+
 Lecture 3 (deck slide 14). Gives the app a public URL (see the [deployment diagram](architecture.md#2-deployment-and-infrastructure)). Code travels GitHub → Vercel; every push to `main` deploys production, and every pull request gets a preview link.
 
 ## 1. Import the repo

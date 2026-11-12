@@ -1,5 +1,7 @@
 # Zapier: email the instructor about every new workout
 
+*English · [Lietuviškai](lt/zapier.md)*
+
 Lecture 3–4. Builds Zap 1 from the [implementation plan §7](implementation-plan.md#7-automation-zapier): every workout logged in the app becomes an email within about a minute. Exact button names in Zapier and Supabase change between versions; the wording below is the closest current one.
 
 ```

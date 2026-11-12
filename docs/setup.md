@@ -1,5 +1,7 @@
 # Environment setup
 
+*English · [Lietuviškai](lt/setup.md)*
+
 How to get from a fresh clone to the app running at `http://localhost:5173`.
 
 Everything that can run locally is automated by one script, [`scripts/setup.ps1`](../scripts/setup.ps1). What is left by hand is the part that needs a browser sign-in: the Supabase, Vercel and Zapier accounts.

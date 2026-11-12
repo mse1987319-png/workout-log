@@ -1,5 +1,7 @@
 # Architecture
 
+*English · [Lietuviškai](lt/architecture.md)*
+
 How the finished app is built: the data model (ERD), where everything runs (deployment diagram), how a request and an email travel, and who may read what. The diagrams are [Mermaid](https://mermaid.js.org/), which GitHub renders in place.
 
 The original scope is in [implementation-plan.md](implementation-plan.md); this page describes what was **built**, including where it differs from the plan.

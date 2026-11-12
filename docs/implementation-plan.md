@@ -1,5 +1,7 @@
 # Workout Log — high-level implementation plan
 
+*English · [Lietuviškai](lt/implementation-plan.md)*
+
 Capstone project "The full cycle from idea to live product" (idea from slide 3: **Workout log**, `plans → workouts`, `type: strength / other`).
 
 Terms used here: **athlete** = a user who logs workouts; **instructor** = the coach role inside the app; **lecturer** = the course teacher who grades the project.
