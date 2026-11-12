@@ -7,6 +7,8 @@ Capstone project for the course *"The full cycle from idea to live product"*: on
 > **Status: Core and Extended tiers built.** Sign-up/login, plans, workouts with sets, progress charts, goals and suggestions, reports, and instructor sharing are in the code. Supabase Database Webhooks send every new or edited workout (Zap 1) and every report (Zap 2) to Zapier. Still to do: the reliability checks (error handler, cost) and the demo.
 >
 > **Live:** https://workout-log-murex-three.vercel.app/
+>
+> **Project documentation (Notion):** [Workout Log: Project documentation](https://app.notion.com/p/Workout-Log-Project-documentation-4150ecfaf117815bbf2dd6af5ee27323)
 
 ## What it does
 
@@ -46,13 +48,15 @@ The full picture is in [docs/architecture.md](docs/architecture.md): the **ERD**
 
 | Part | Tool |
 |---|---|
-| Code | GitHub (feature branches + pull requests) |
-| Interface | React 19 + Vite, JavaScript, React Router, plain CSS; Recharts for the Progress charts |
-| Data and auth | Supabase (Auth, 8 tables, RLS, SQL functions) |
-| Deployment | Vercel |
-| Automation | Zapier (2 Zaps: Webhook → Filter → Paths → Gmail; report webhook → Gmail) |
-| Tests | Vitest + Testing Library |
-| Documentation | Notion + this README |
+| Code | [GitHub](https://github.com) (feature branches + pull requests) |
+| Interface | [React](https://react.dev) 19 + [Vite](https://vite.dev), JavaScript, [React Router](https://reactrouter.com), plain CSS; [Recharts](https://recharts.org) for the Progress charts |
+| Data and auth | [Supabase](https://supabase.com) (Auth, 8 tables, RLS, SQL functions) |
+| Deployment | [Vercel](https://vercel.com) |
+| Automation | [Zapier](https://zapier.com) (2 Zaps: Webhook → Filter → Paths → Gmail; report webhook → Gmail) |
+| Email | [Gmail](https://www.google.com/gmail/about/) |
+| Tests | [Vitest](https://vitest.dev) + [Testing Library](https://testing-library.com) |
+| Lint | [oxlint](https://oxc.rs/docs/guide/usage/linter.html) |
+| Documentation | [Notion](https://www.notion.so) ([project page](https://app.notion.com/p/Workout-Log-Project-documentation-4150ecfaf117815bbf2dd6af5ee27323)) + this README; diagrams in [Mermaid](https://mermaid.js.org) |
 
 ## Run it locally
 
@@ -100,6 +104,7 @@ The Supabase `service_role` key and the Zapier Catch Hook URL must **never** go 
 
 | File | Contents |
 |---|---|
+| [Notion: project documentation](https://app.notion.com/p/Workout-Log-Project-documentation-4150ecfaf117815bbf2dd6af5ee27323) | Scope card, task table, decision log, error log, test table, architecture and ERD diagrams, demo accounts |
 | [docs/architecture.md](docs/architecture.md) | **ERD**, **deployment and infrastructure diagram**, code layers, data flows, access model (as built) |
 | [docs/implementation-plan.md](docs/implementation-plan.md) | Scope tiers, data model, Zapier design, test table, lecture plan |
 | [docs/setup.md](docs/setup.md) | Tools, packages and environment setup |

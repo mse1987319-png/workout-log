@@ -24,4 +24,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-/_task/.keys/
+# Credentials: only the AES-encrypted _task/.keys/keys.zip is committed.
+# The plain-text versions must never be (the folder itself is tracked, for keys.zip).
+/_task/.keys/keys.md
+/_task/.keys/keys.txt
