@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listProgress } from '../api/progress'
 import MinutesChart from '../components/MinutesChart'
+import ReportCard from '../components/ReportCard'
 import { EmptyState, ErrorState, Loading } from '../components/States'
 import WeightChart from '../components/WeightChart'
 import { friendlyError } from '../lib/errors'
@@ -124,6 +125,7 @@ export default function ProgressPage() {
 
       {status === 'success' && data.workouts.length > 0 && (
         <div className="stack">
+          <ReportCard />
           <WeightSection sets={data.sets} />
           <MinutesSection workouts={data.workouts} />
         </div>
