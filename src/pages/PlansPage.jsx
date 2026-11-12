@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { listPlans } from '../api/plans'
+import { useAuth } from '../auth/AuthContext'
 import PlanCard from '../components/PlanCard'
 import { EmptyState, ErrorState, Loading } from '../components/States'
 import { friendlyError } from '../lib/errors'
@@ -7,6 +8,7 @@ import { useLoad } from '../lib/useLoad'
 
 // The List screen: my plans (table A) and the workouts (table B) under each.
 export default function PlansPage() {
+  const { user } = useAuth()
   const { status, data: plans, error, reload, setData } = useLoad(listPlans)
 
   function handleWorkoutRenamed({ id, title }) {
@@ -48,7 +50,12 @@ export default function PlansPage() {
       {status === 'success' && plans.length > 0 && (
         <ul className="plan-list">
           {plans.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} onWorkoutRenamed={handleWorkoutRenamed} />
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              assigned={plan.user_id !== user?.id}
+              onWorkoutRenamed={handleWorkoutRenamed}
+            />
           ))}
         </ul>
       )}

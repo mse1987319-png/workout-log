@@ -60,6 +60,20 @@ describe('GoalsCard', () => {
     expect(screen.getByText(/^Reached on .+\.$/)).toBeInTheDocument()
   })
 
+  it('can show the goals read-only, for an instructor', () => {
+    render(<GoalsCard goals={[GOAL]} sets={SETS} readOnly />)
+
+    expect(screen.getByRole('progressbar', { name: label(GOAL) })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Remove goal/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Add goal' })).not.toBeInTheDocument()
+  })
+
+  it('says there are no goals without offering the form when read-only', () => {
+    render(<GoalsCard goals={[]} sets={SETS} readOnly />)
+
+    expect(screen.getByText('No goals yet.')).toBeInTheDocument()
+  })
+
   it('says when there are no goals yet', () => {
     renderCard({ goals: [] })
 

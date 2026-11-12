@@ -2,7 +2,9 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { AuthContext } from '../auth/AuthContext'
 import { backend } from '../test/fakeBackend'
+import { ATHLETE } from '../test/fakeSupabase'
 import PlansPage from './PlansPage'
 
 vi.mock('../lib/supabase', async () => {
@@ -13,6 +15,7 @@ vi.mock('../lib/supabase', async () => {
 const PLANS = [
   {
     id: 'plan-1',
+    user_id: ATHLETE.id,
     name: 'Strength block',
     goal: 'Squat 100 kg',
     created_at: '2026-11-10T08:00:00+00:00',
@@ -35,6 +38,7 @@ const PLANS = [
   },
   {
     id: 'plan-2',
+    user_id: ATHLETE.id,
     name: '5K plan',
     goal: null,
     created_at: '2026-11-01T08:00:00+00:00',
@@ -44,9 +48,11 @@ const PLANS = [
 
 function renderPlans() {
   render(
-    <MemoryRouter>
-      <PlansPage />
-    </MemoryRouter>,
+    <AuthContext.Provider value={{ user: ATHLETE, role: 'athlete' }}>
+      <MemoryRouter>
+        <PlansPage />
+      </MemoryRouter>
+    </AuthContext.Provider>,
   )
   return userEvent.setup()
 }
@@ -93,6 +99,15 @@ describe('PlansPage', () => {
       'href',
       '/log?plan=plan-2',
     )
+  })
+
+  it('marks a plan an instructor assigned to me', async () => {
+    const assigned = { id: 'plan-3', user_id: 'instructor-1', name: 'Coach plan', goal: null, created_at: '2026-11-11T08:00:00+00:00', workouts: [] }
+    backend.reply('GET', '/rest/v1/plans', 200, [assigned, ...PLANS])
+    renderPlans()
+
+    expect((await planCard('Coach plan')).getByText('Assigned by your instructor')).toBeInTheDocument()
+    expect((await planCard('Strength block')).queryByText('Assigned by your instructor')).not.toBeInTheDocument()
   })
 
   it("opens a workout's own page from the list", async () => {

@@ -44,6 +44,18 @@ describe('Suggestions', () => {
     expect(screen.getByRole('link', { name: 'Log a workout' })).toHaveAttribute('href', '/log')
   })
 
+  it('can be shown read-only under another title, for an instructor', () => {
+    render(
+      <MemoryRouter>
+        <Suggestions items={ITEMS} title="Suggestions for this athlete" readOnly />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('heading', { name: 'Suggestions for this athlete' })).toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'Suggestions for this athlete' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Log a workout' })).not.toBeInTheDocument()
+  })
+
   it('says when there is nothing to suggest', () => {
     renderSuggestions([])
 

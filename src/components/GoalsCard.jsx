@@ -8,7 +8,7 @@ import { ErrorState, SuccessMessage } from './States'
 
 // One goal: the heaviest set so far against the target, as a bar on a kg
 // scale from 0 to the target, with the numbers beside it.
-function GoalRow({ goal, sets, onRemoved }) {
+function GoalRow({ goal, sets, onRemoved, readOnly }) {
   const [removing, setRemoving] = useState(false)
   const [removeError, setRemoveError] = useState(null)
   const status = goalStatus(goal, sets)
@@ -50,15 +50,17 @@ function GoalRow({ goal, sets, onRemoved }) {
           {status.state === 'reached' && <span aria-hidden="true">✓ </span>}
           {describeGoal(goal, status)}
         </p>
-        <button
-          type="button"
-          className="button button-secondary button-small"
-          aria-label={`Remove goal: ${label}`}
-          disabled={removing}
-          onClick={remove}
-        >
-          {removing ? 'Removing…' : 'Remove'}
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            className="button button-secondary button-small"
+            aria-label={`Remove goal: ${label}`}
+            disabled={removing}
+            onClick={remove}
+          >
+            {removing ? 'Removing…' : 'Remove'}
+          </button>
+        )}
       </div>
       {removeError && <ErrorState message={friendlyError(removeError)} onRetry={remove} />}
     </li>
@@ -170,7 +172,8 @@ function GoalForm({ exercises, onAdded }) {
 }
 
 // Goals on the Progress screen: a bar per goal, and the form to add one.
-export default function GoalsCard({ goals, sets, onAdded, onRemoved }) {
+// readOnly (the instructor's view of an athlete): bars only.
+export default function GoalsCard({ goals, sets, onAdded, onRemoved, readOnly = false }) {
   const exercises = useMemo(() => weightedExercises(sets), [sets])
 
   return (
@@ -178,16 +181,18 @@ export default function GoalsCard({ goals, sets, onAdded, onRemoved }) {
       <h2 id="goals-title">Goals</h2>
 
       {goals.length === 0 ? (
-        <p className="muted">No goals yet. Set one below: an exercise, a weight and a date.</p>
+        <p className="muted">
+          {readOnly ? 'No goals yet.' : 'No goals yet. Set one below: an exercise, a weight and a date.'}
+        </p>
       ) : (
         <ul className="goal-list" aria-labelledby="goals-title">
           {goals.map((goal) => (
-            <GoalRow key={goal.id} goal={goal} sets={sets} onRemoved={onRemoved} />
+            <GoalRow key={goal.id} goal={goal} sets={sets} onRemoved={onRemoved} readOnly={readOnly} />
           ))}
         </ul>
       )}
 
-      <GoalForm exercises={exercises} onAdded={onAdded} />
+      {!readOnly && <GoalForm exercises={exercises} onAdded={onAdded} />}
     </section>
   )
 }
