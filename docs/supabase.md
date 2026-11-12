@@ -1,5 +1,7 @@
 # Supabase setup
 
+*English · [Lietuviškai](lt/supabase.md)*
+
 What to click in the Supabase dashboard so the app works: tables and Row Level Security, sign-up settings, and redirect URLs. About 10 minutes. Exact menu names change between dashboard versions; the wording below is the closest current one.
 
 The Database Webhook to Zapier is a separate step in lecture 3: [zapier.md](zapier.md).
