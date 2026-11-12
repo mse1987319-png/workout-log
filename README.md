@@ -15,6 +15,8 @@ Capstone project for the course *"The full cycle from idea to live product"*: on
 - **Log workout** (create): create a plan; log a workout under a plan with title, type (`strength` / `other`) and duration. For strength: exercises with sets of reps × kg, showing last time's result for each exercise. For cardio: activity and distance. Notes for both.
 - **Workout detail**: a workout's sets by exercise, each with the previous session; or duration, distance and pace for cardio.
 - **Progress**: the heaviest set per session of an exercise over time (line chart) and minutes per week, strength vs other (stacked columns), each with a one-line summary and a table view.
+- **Goals**: set a goal on Progress (exercise, weight, date) and see a bar of your heaviest set so far against it; reached and overdue goals are marked.
+- **Suggestions**: rule-based next steps on Progress, each with the numbers behind it: add 2.5 kg after repeating the same sets at your top weight, hold the weight when reps drop two sessions in a row, pick up again after 7 days without a workout, and the weekly gain a goal still needs. Worked out in the browser; no AI.
 - **Report to the instructor**: a button on Progress sends a summary of the last 7 days; the database builds it, and a second webhook → Zap 2 → Gmail delivers it.
 - **Email to the instructor**: each new workout → Supabase Database Webhook → Zapier → Gmail. Strength workouts arrive as *STRENGTH: title*, others as *New workout: title*; the email lists the sets (e.g. *Squat: 2 × 5 @ 100 kg, 5 @ 102.5 kg*).
 - **Four states** on every screen that loads or saves: Loading, Error (plain language, with *Try again*), Empty, Success.
@@ -35,7 +37,7 @@ Zapier  (Catch Hook → Filter → Paths)
 Code path (separate): GitHub → Vercel → public URL
 ```
 
-- **Data**: table A `plans` → table B `workouts` (`plan_id → plans.id`), plus `workout_sets` for the sets of a strength workout, defined in [`supabase/schema.sql`](supabase/schema.sql).
+- **Data**: table A `plans` → table B `workouts` (`plan_id → plans.id`), plus `workout_sets` for the sets of a strength workout, `reports` for the reports sent to the instructor and `goals`, all defined in [`supabase/schema.sql`](supabase/schema.sql).
 - **Event**: a logged workout is one `INSERT` into `workouts`.
 - **Routing field**: `workouts.type` is `strength` or `other` (cardio, mobility, etc.); Zapier Paths picks the email from it.
 
@@ -99,7 +101,7 @@ src/
   components/     header, plan card, workout row, forms, the four UI states
   auth/           session provider and route guard
   api/            Supabase queries for plans and workouts
-  lib/            Supabase client, settings check, error messages
+  lib/            Supabase client, settings check, error messages, progress maths, goal and suggestion rules
   test/           test setup and fakes (no network)
 supabase/schema.sql   tables + Row Level Security
 docs/                 guides (see Documentation)

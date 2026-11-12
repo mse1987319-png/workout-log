@@ -10,7 +10,7 @@ export function formatDay(iso) {
 }
 
 /** 'YYYY-MM-DD' (a local calendar date) → "Nov 2". */
-export function formatWeekStart(ymd) {
+export function formatCalendarDay(ymd) {
   const [year, month, day] = ymd.split('-').map(Number)
   return new Date(year, month - 1, day).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 }

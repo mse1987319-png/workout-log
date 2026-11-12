@@ -789,3 +789,107 @@ textarea {
 .data-table tbody th {
   font-weight: 500;
 }
+
+/* ---------- Goals and suggestions ---------- */
+
+.goal-list,
+.suggestion-list {
+  display: grid;
+  gap: 1.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.goal {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.goal-head,
+.goal-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+}
+
+.goal-name {
+  font-weight: 600;
+}
+
+/* A meter: 8px, fully rounded; the track is a lighter step of the fill's color. */
+.goal-track {
+  height: 8px;
+  overflow: hidden;
+  background: var(--strength-soft);
+  border-radius: 999px;
+}
+
+.goal-fill {
+  height: 100%;
+  background: var(--strength);
+  border-radius: inherit;
+}
+
+.goal-reached .goal-track {
+  background: var(--success-soft);
+}
+
+.goal-reached .goal-fill {
+  background: var(--success);
+}
+
+.goal-status {
+  margin: 0;
+  color: var(--muted);
+}
+
+.goal-reached .goal-status {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.goal-overdue .goal-status {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.goal-form {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.goal-form h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.suggestion {
+  display: grid;
+  gap: 0.2rem;
+  padding-left: 0.85rem;
+  border-left: 3px solid var(--accent);
+}
+
+.suggestion p {
+  margin: 0;
+}
+
+.suggestion-title {
+  font-weight: 600;
+}
+
+.suggestion .button {
+  justify-self: start;
+  margin-top: 0.4rem;
+}
+
+.rules {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  color: var(--muted);
+}

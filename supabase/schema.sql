@@ -442,5 +442,51 @@ grant execute on function public.report_stats(integer) to authenticated;
 revoke execute on function public.send_report() from public, anon;
 grant execute on function public.send_report() to authenticated;
 
+-- ===========================================================================
+-- Extended tier: goals (an exercise, a target weight, a date)
+-- ===========================================================================
+-- Whether a goal is reached (or overdue) is worked out in the app from
+-- workout_sets, so no column has to be kept up to date. Owner-only, like
+-- plans and workouts.
+create table if not exists public.goals (
+  id           uuid          primary key default gen_random_uuid(),
+  user_id      uuid          not null default auth.uid()
+                             references auth.users (id) on delete cascade,
+  exercise     text          not null check (char_length(btrim(exercise)) between 1 and 60),
+  target_kg    numeric(6, 2) not null check (target_kg > 0 and target_kg <= 1000),
+  target_date  date          not null,
+  created_at   timestamptz   not null default now()
+);
+
+comment on table public.goals is
+  'Goals: lift target_kg in exercise by target_date. Reached / overdue is worked out from workout_sets in the app.';
+
+create index if not exists goals_user_date_idx on public.goals (user_id, target_date);
+
+grant select, insert, update, delete on public.goals to authenticated;
+
+alter table public.goals enable row level security;
+
+drop policy if exists "Read own goals" on public.goals;
+create policy "Read own goals" on public.goals
+  for select to authenticated
+  using (user_id = auth.uid());
+
+drop policy if exists "Add own goals" on public.goals;
+create policy "Add own goals" on public.goals
+  for insert to authenticated
+  with check (user_id = auth.uid());
+
+drop policy if exists "Edit own goals" on public.goals;
+create policy "Edit own goals" on public.goals
+  for update to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+drop policy if exists "Delete own goals" on public.goals;
+create policy "Delete own goals" on public.goals
+  for delete to authenticated
+  using (user_id = auth.uid());
+
 -- Let the REST API see the new tables right away.
 notify pgrst, 'reload schema';
