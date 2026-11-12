@@ -1,4 +1,4 @@
-/* Workout Log: plain CSS, mobile first (used on the phone at the gym). */
+/* Logify: plain CSS, mobile first (used on the phone at the gym). */
 
 :root {
   --bg: #f5f6f8;
@@ -20,6 +20,9 @@
   --other-soft: #dbeafe;
   --radius: 10px;
   --shadow: 0 1px 2px rgb(16 24 40 / 6%), 0 1px 3px rgb(16 24 40 / 10%);
+  --on-danger: #ffffff;
+  /* Barbell and trend line, tiled very faintly behind the cards. */
+  --sport-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240' fill='none' stroke='rgba(15%2C118%2C110%2C0.07)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(60 60) rotate(-35)'%3E%3Cpath d='M-26 0H26M-18 -10V10M-24 -6V6M18 -10V10M24 -6V6'/%3E%3C/g%3E%3Cpath d='M150 190l14-16 12 9 22-26'/%3E%3Ccircle cx='190' cy='60' r='5'/%3E%3C/svg%3E");
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   color-scheme: light dark;
@@ -45,6 +48,8 @@
     --other: #93c5fd;
     --other-soft: #172554;
     --shadow: none;
+    --on-danger: #3a1a17;
+    --sport-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240' fill='none' stroke='rgba(94%2C234%2C212%2C0.06)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(60 60) rotate(-35)'%3E%3Cpath d='M-26 0H26M-18 -10V10M-24 -6V6M18 -10V10M24 -6V6'/%3E%3C/g%3E%3Cpath d='M150 190l14-16 12 9 22-26'/%3E%3Ccircle cx='190' cy='60' r='5'/%3E%3C/svg%3E");
   }
 }
 
@@ -58,7 +63,7 @@ body {
   margin: 0;
   font: 16px/1.5 var(--font);
   color: var(--text);
-  background: var(--bg);
+  background: var(--bg) var(--sport-pattern);
   -webkit-text-size-adjust: 100%;
 }
 
@@ -90,26 +95,47 @@ a {
 /* ---------- Layout ---------- */
 
 .app-header {
+  position: relative;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
 
+/* The Logify colors (cyan to neon green) as a thin line under the header. */
+.app-header::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #00f0ff, #00ff87);
+  opacity: 0.85;
+}
+
+/* Full width: the logo is leftmost, the account (name + Log out) rightmost. */
 .app-header-inner {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 0.6rem 1rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem 1.25rem;
+  gap: 0.5rem 1.5rem;
+  padding: 0.5rem 1.5rem;
 }
 
 .brand {
-  margin: 0;
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--text);
+  display: inline-flex;
+  align-items: center;
   text-decoration: none;
+}
+
+/* The logo fits the header: its tallest neighbor is the 44 px Log out button. */
+.brand-logo {
+  display: block;
+  width: auto;
+  height: 2.5rem;
+}
+
+.brand-logo-large {
+  height: 4.5rem;
 }
 
 .nav {
@@ -125,12 +151,6 @@ a {
   font-weight: 500;
   text-decoration: none;
   white-space: nowrap; /* a label never breaks; the row wraps instead */
-}
-
-@media (max-width: 480px) {
-  .nav a {
-    padding: 0.4rem 0.6rem;
-  }
 }
 
 .nav a:hover {
@@ -310,8 +330,10 @@ textarea:focus {
   text-align: center;
 }
 
-.login-intro .brand {
-  font-size: 1.5rem;
+.login-logo {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 0.5rem;
 }
 
 .login-intro p:last-child {
@@ -1027,4 +1049,101 @@ textarea {
 
 .back-link {
   margin: 0 0 0.75rem;
+}
+
+/* ---------- Plan actions: edit, delete, confirm ---------- */
+
+.plan-actions,
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.5rem;
+}
+
+.plan-head > div:first-child {
+  min-width: 0;
+}
+
+.button-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.button-danger:hover {
+  background: var(--danger-soft);
+}
+
+.button-danger-solid {
+  color: var(--on-danger);
+  background: var(--danger);
+}
+
+.button-danger-solid:hover {
+  background: var(--danger);
+  filter: brightness(0.92);
+}
+
+.confirm-delete {
+  margin-top: 0.75rem;
+  padding: 0.9rem 1rem;
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+}
+
+.confirm-delete > p {
+  margin: 0 0 0.75rem;
+  font-weight: 600;
+}
+
+.confirm-delete .state {
+  margin: 0.75rem 0 0;
+}
+
+.state-icon {
+  width: 4.5rem;
+  height: auto;
+  fill: currentcolor;
+  opacity: 0.5;
+}
+
+/* ---------- Header on phones (after the base header rules, so these win) ---------- */
+
+@media (max-width: 640px) {
+  .app-header-inner {
+    padding: 0.5rem 1rem;
+  }
+
+  /* Logo and account share the first row; the menu takes the second. */
+  .nav {
+    order: 3;
+    width: 100%;
+  }
+
+  .account {
+    order: 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header-inner {
+    gap: 0.4rem 0.75rem;
+  }
+
+  .nav a {
+    padding: 0.4rem 0.6rem;
+  }
+
+  .account {
+    gap: 0.5rem;
+  }
+
+  .account-email {
+    max-width: 5.5rem;
+  }
+
+  .account .button {
+    padding: 0.4rem 0.8rem;
+  }
 }

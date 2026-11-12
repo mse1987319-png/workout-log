@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { friendlyError } from '../lib/errors'
+import Logo from './Logo'
 import { ErrorState } from './States'
 
-// Frame for the signed-in screens: app name, navigation, account, logout.
+// Frame for the signed-in screens: logo, navigation, and the account
+// (name and logout) at the far right.
 export default function Layout() {
   const { user, role, signOut } = useAuth()
   const [logoutError, setLogoutError] = useState('')
@@ -23,14 +25,13 @@ export default function Layout() {
       <header className="app-header">
         <div className="app-header-inner">
           <Link to="/" className="brand">
-            Workout Log
+            <Logo />
           </Link>
           <nav className="nav" aria-label="Main">
             <NavLink to="/" end>
               My plans
             </NavLink>
             {role === 'instructor' && <NavLink to="/athletes">My athletes</NavLink>}
-            <NavLink to="/log">Log workout</NavLink>
             <NavLink to="/progress">Progress</NavLink>
             {role === 'athlete' && <NavLink to="/sharing">Sharing</NavLink>}
           </nav>

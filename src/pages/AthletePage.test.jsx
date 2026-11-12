@@ -192,6 +192,6 @@ describe('AthletePage', () => {
 
     const plans = await card('Plans you assigned')
     expect(plans.getByText('No plans assigned yet.')).toBeInTheDocument()
-    expect(plans.getByRole('link', { name: 'Create a plan' })).toHaveAttribute('href', '/log')
+    expect(plans.getByRole('link', { name: 'Create a plan' })).toHaveAttribute('href', '/plans/new')
   })
 })

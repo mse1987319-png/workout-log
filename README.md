@@ -1,6 +1,6 @@
-# Workout Log
+<h1 align="center"><img src="public/logo.svg" alt="Logify" height="80"></h1>
 
-A web workout log. Athletes follow workout plans (their own, or ones an instructor assigned to them), log strength and cardio sessions, and the instructor is emailed automatically about every new workout.
+**Logify** is a web workout log. Athletes follow workout plans (their own, or ones an instructor assigned to them), log strength and cardio sessions, and the instructor is emailed automatically about every new workout.
 
 Capstone project for the course *"The full cycle from idea to live product"*: one app that runs online, stores data, separates users, and reports every important event by email.
 
@@ -8,13 +8,13 @@ Capstone project for the course *"The full cycle from idea to live product"*: on
 >
 > **Live:** https://workout-log-murex-three.vercel.app/
 >
-> **Project documentation (Notion):** [Workout Log: Project documentation](https://app.notion.com/p/Workout-Log-Project-documentation-4150ecfaf117815bbf2dd6af5ee27323)
+> **Project documentation (Notion):** [Logify: Project documentation](https://app.notion.com/p/Workout-Log-Project-documentation-4150ecfaf117815bbf2dd6af5ee27323)
 
 ## What it does
 
 - **Accounts**: sign up and log in with email and password. Every user sees only their own plans and workouts, enforced in the database with Row Level Security.
-- **My plans** (list): each plan (table A) with the workouts (table B) logged under it; a workout's title can be edited.
-- **Log workout** (create): create a plan; log a workout under a plan with title, type (`strength` / `other`) and duration. For strength: exercises with sets of reps × kg, showing last time's result for each exercise. For cardio: activity and distance. Notes for both.
+- **My plans** (list): each plan (table A) with the workouts (table B) logged under it; a workout's title can be edited. **New plan** opens the plan creation page; you can **edit** or **delete** your own plans (deleting asks first and also deletes the plan's workouts). Plans an instructor assigned to you can't be edited or deleted, and an instructor can't delete a plan athletes have logged workouts under.
+- **Log workout** (create): reached from **+ Log workout** on a plan card; log a workout under that plan with title, type (`strength` / `other`) and duration. For strength: exercises with sets of reps × kg, showing last time's result for each exercise. For cardio: activity and distance. Notes for both.
 - **Workout detail**: a workout's sets by exercise, each with the previous session; or duration, distance and pace for cardio.
 - **Progress**: the heaviest set per session of an exercise over time (line chart) and minutes per week, strength vs other (stacked columns), each with a one-line summary and a table view.
 - **Goals**: set a goal on Progress (exercise, weight, date) and see a bar of your heaviest set so far against it; reached and overdue goals are marked.
@@ -117,12 +117,13 @@ The Supabase `service_role` key and the Zapier Catch Hook URL must **never** go 
 
 ```
 src/
-  pages/          Login, My plans (list), Log workout (create)
+  pages/          Login, My plans, New plan, Log workout, Workout detail, Progress, Sharing, My athletes
   components/     header, plan card, workout row, forms, the four UI states
   auth/           session provider and route guard
   api/            Supabase queries for plans and workouts
   lib/            Supabase client, settings check, error messages, progress maths, goal and suggestion rules
   test/           test setup and fakes (no network)
+public/               logo.svg (the Logify logo) and favicon.svg
 supabase/schema.sql   tables + Row Level Security
 supabase/seed.sql     demo accounts and data for a new, empty project
 supabase/tests/       SQL tests (each one rolls itself back)

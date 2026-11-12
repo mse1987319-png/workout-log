@@ -816,5 +816,35 @@ grant execute on function public.my_athletes() to authenticated;
 revoke execute on function public.athlete_progress(uuid) from public, anon;
 grant execute on function public.athlete_progress(uuid) to authenticated;
 
+-- A plan that other people have logged workouts under can't be deleted ----------
+-- Deleting a plan deletes its workouts (on delete cascade). When an instructor
+-- assigned the plan, that would also erase the athletes' workouts and sets.
+-- This trigger refuses the delete instead. It looks at all workouts, which the
+-- caller's own policies would hide, so it runs as the owner (security definer).
+-- Deleting an ACCOUNT still works: its plans then go with it, and by then the
+-- account row is gone, which is how the trigger tells the two cases apart.
+create or replace function public.protect_shared_plan()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if exists (select 1 from auth.users u where u.id = old.user_id)
+     and exists (select 1 from public.workouts w where w.plan_id = old.id and w.user_id <> old.user_id) then
+    raise exception 'Athletes have logged workouts under this plan, so it can''t be deleted.'
+      using errcode = '23503';
+  end if;
+  return old;
+end;
+$$;
+
+revoke execute on function public.protect_shared_plan() from public, anon, authenticated;
+
+drop trigger if exists plans_protect_shared on public.plans;
+create trigger plans_protect_shared
+  before delete on public.plans
+  for each row execute function public.protect_shared_plan();
+
 -- Let the REST API see the new tables right away.
 notify pgrst, 'reload schema';

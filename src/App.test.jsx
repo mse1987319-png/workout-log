@@ -89,14 +89,37 @@ describe('App', () => {
     expect(supabase.auth.signOut).toHaveBeenCalledTimes(2)
   })
 
-  it('opens the Log workout screen from the navigation', async () => {
+  it('has no Log workout link in the navigation, but the screen is still reachable', async () => {
+    supabase.auth = createFakeAuth({ session: sessionFor(ATHLETE) })
+    backend.reply('GET', '/rest/v1/plans', 200, [{ id: 'plan-1', name: 'Strength block' }])
+    renderApp('/log?plan=plan-1')
+
+    expect(await screen.findByRole('heading', { name: 'Log workout' })).toBeInTheDocument()
+    const nav = screen.getByRole('navigation', { name: 'Main' })
+    expect(within(nav).queryByRole('link', { name: 'Log workout' })).not.toBeInTheDocument()
+  })
+
+  it('opens the plan creation page from the New plan button', async () => {
     supabase.auth = createFakeAuth({ session: sessionFor(ATHLETE) })
     const user = renderApp('/')
 
-    const nav = await screen.findByRole('navigation', { name: 'Main' })
-    await user.click(within(nav).getByRole('link', { name: 'Log workout' }))
+    await user.click(await screen.findByRole('link', { name: 'New plan' }))
 
-    expect(await screen.findByRole('heading', { name: 'Log workout' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'New plan' })).toBeInTheDocument()
+  })
+
+  it('shows the Logify logo as the home link, and the account at the far right of the header', async () => {
+    supabase.auth = createFakeAuth({ session: sessionFor(ATHLETE) })
+    renderApp('/')
+
+    const home = await screen.findByRole('link', { name: 'Logify' })
+    expect(home).toHaveAttribute('href', '/')
+    expect(within(home).getByRole('img', { name: 'Logify' })).toHaveAttribute('src', '/logo.svg')
+    const header = screen.getByRole('banner')
+    const order = [...header.querySelectorAll('.brand, .nav, .account')].map((el) => el.className.split(' ')[0])
+    expect(order).toEqual(['brand', 'nav', 'account'])
+    expect(header.querySelector('.account')).toHaveTextContent('athlete@example.com')
+    expect(within(header.querySelector('.account')).getByRole('button', { name: 'Log out' })).toBeInTheDocument()
   })
 
   it('opens the Progress screen from the navigation', async () => {
@@ -120,7 +143,6 @@ describe('App', () => {
     const nav = await screen.findByRole('navigation', { name: 'Main' })
     expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual([
       'My plans',
-      'Log workout',
       'Progress',
       'Sharing',
     ])
@@ -134,7 +156,6 @@ describe('App', () => {
     expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual([
       'My plans',
       'My athletes',
-      'Log workout',
       'Progress',
     ])
   })

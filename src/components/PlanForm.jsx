@@ -1,19 +1,29 @@
-import { useState } from 'react'
-import { createPlan } from '../api/plans'
+import { useEffect, useId, useRef, useState } from 'react'
+import { createPlan, updatePlan } from '../api/plans'
 import { friendlyError } from '../lib/errors'
 import { ErrorState, SuccessMessage } from './States'
 
-// Creates a plan (table A). `nameRef` lets the page focus the name field.
-export default function PlanForm({ nameRef, onCreated }) {
-  const [name, setName] = useState('')
-  const [goal, setGoal] = useState('')
+// The plan form (table A). Without `plan` it creates one; with `plan` it
+// edits that plan (name and goal) and offers Cancel. `onSaved(plan)` gets the
+// saved row either way.
+export default function PlanForm({ plan = null, onSaved, onCancel }) {
+  const editing = plan !== null
+  const id = useId()
+  const nameRef = useRef(null)
+  const [name, setName] = useState(plan?.name ?? '')
+  const [goal, setGoal] = useState(plan?.goal ?? '')
   const [problem, setProblem] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(null)
   const [created, setCreated] = useState(null)
 
+  useEffect(() => {
+    if (editing) nameRef.current?.focus()
+  }, [editing])
+
   async function save() {
     const cleanName = name.trim()
+    const cleanGoal = goal.trim() || null
     setSaveError(null)
     setCreated(null)
     setProblem(cleanName ? '' : 'Enter a plan name.')
@@ -21,11 +31,15 @@ export default function PlanForm({ nameRef, onCreated }) {
 
     setSaving(true)
     try {
-      const plan = await createPlan({ name: cleanName, goal: goal.trim() || null })
-      setName('')
-      setGoal('')
-      setCreated(plan)
-      onCreated(plan)
+      const saved = editing
+        ? await updatePlan({ id: plan.id, name: cleanName, goal: cleanGoal })
+        : await createPlan({ name: cleanName, goal: cleanGoal })
+      if (!editing) {
+        setName('')
+        setGoal('')
+        setCreated(saved)
+      }
+      onSaved(saved)
     } catch (error) {
       setSaveError(error)
     } finally {
@@ -38,12 +52,15 @@ export default function PlanForm({ nameRef, onCreated }) {
     save()
   }
 
+  let submitLabel = editing ? 'Save plan' : 'Create plan'
+  if (saving) submitLabel = editing ? 'Saving…' : 'Creating…'
+
   return (
     <form className="form" onSubmit={handleSubmit} noValidate>
       <div className="field">
-        <label htmlFor="plan-name">Plan name</label>
+        <label htmlFor={`${id}-name`}>Plan name</label>
         <input
-          id="plan-name"
+          id={`${id}-name`}
           ref={nameRef}
           value={name}
           maxLength={100}
@@ -52,9 +69,9 @@ export default function PlanForm({ nameRef, onCreated }) {
         />
       </div>
       <div className="field">
-        <label htmlFor="plan-goal">Goal (optional)</label>
+        <label htmlFor={`${id}-goal`}>Goal (optional)</label>
         <input
-          id="plan-goal"
+          id={`${id}-goal`}
           value={goal}
           maxLength={300}
           placeholder="e.g. Squat 100 kg by March"
@@ -70,10 +87,15 @@ export default function PlanForm({ nameRef, onCreated }) {
       {saveError && <ErrorState message={friendlyError(saveError)} onRetry={save} />}
       {created && <SuccessMessage>Plan created: {created.name}.</SuccessMessage>}
 
-      <div>
+      <div className="form-actions">
         <button type="submit" className="button" disabled={saving}>
-          {saving ? 'Creating…' : 'Create plan'}
+          {submitLabel}
         </button>
+        {editing && (
+          <button type="button" className="button button-secondary" disabled={saving} onClick={onCancel}>
+            Cancel
+          </button>
+        )}
       </div>
     </form>
   )

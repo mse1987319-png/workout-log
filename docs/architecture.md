@@ -217,6 +217,8 @@ Row Level Security is the access control; the browser never filters by user.
 | An athlete's progress | n/a | Through `my_athletes()` and `athlete_progress()`, which first check the link; read-only |
 | An instructor's plan assigned to an athlete | n/a | The athlete can read it and log their own workouts under it (additive policies) |
 
+**Editing and deleting plans.** Only the owner can edit or delete a plan (an assigned plan is read-only for the athlete). Deleting a plan also deletes its workouts and their sets, so the app asks first. A trigger refuses to delete a plan that *other people* logged workouts under (an instructor's plan with athletes' workouts), so an instructor can't erase athletes' history; deleting an account still works.
+
 **Changed from the plan:** the plan proposed extra `select` policies for instructors on the athletes' tables. They would have mixed athletes' rows into an instructor's own screens, so instructors read through functions instead and the tables keep "own rows only". See [supabase.md](supabase.md#1-tables-and-policies).
 
 ## Related

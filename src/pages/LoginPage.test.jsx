@@ -39,6 +39,12 @@ describe('LoginPage', () => {
     supabase.auth = createFakeAuth()
   })
 
+  it('shows the Logify logo and name', async () => {
+    renderLogin()
+
+    expect(await screen.findByRole('img', { name: 'Logify' })).toHaveAttribute('src', '/logo.svg')
+  })
+
   it('logs in and opens the plans', async () => {
     const user = renderLogin()
     await fillIn(user, { email: '  athlete@example.com ', password: 'secret1' })

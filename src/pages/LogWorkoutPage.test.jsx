@@ -27,16 +27,6 @@ function savedWorkout(overrides) {
   }
 }
 
-function savedPlan(overrides) {
-  return {
-    id: 'plan-3',
-    name: 'Strength block',
-    goal: null,
-    created_at: '2026-11-11T09:00:00+00:00',
-    ...overrides,
-  }
-}
-
 function renderLog(path = '/log') {
   render(
     <MemoryRouter initialEntries={[path]}>
@@ -85,17 +75,22 @@ describe('LogWorkoutPage', () => {
 
     it('asks a new user to create their first plan (Empty state)', async () => {
       backend.reply('GET', '/rest/v1/plans', 200, [])
-      const user = renderLog()
+      renderLog()
 
       expect(
-        await screen.findByText(
-          'No plans yet — create your first plan below, then log workouts under it.',
-        ),
+        await screen.findByText('No plans yet — create a plan first, then log workouts under it.'),
       ).toBeInTheDocument()
       expect(screen.queryByLabelText('Plan')).not.toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Create your first plan' })).toHaveAttribute('href', '/plans/new')
+    })
 
-      await user.click(screen.getByRole('button', { name: 'Create your first plan' }))
-      expect(screen.getByLabelText('Plan name')).toHaveFocus()
+    it('no longer has the plan form (plans are created on their own page)', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+      renderLog()
+
+      await screen.findByLabelText('Plan')
+      expect(screen.queryByLabelText('Plan name')).not.toBeInTheDocument()
+      expect(screen.queryByRole('heading', { name: 'New plan' })).not.toBeInTheDocument()
     })
 
     it('starts with the plan chosen on the Plans screen', async () => {
@@ -110,73 +105,6 @@ describe('LogWorkoutPage', () => {
       renderLog('/log?plan=deleted-plan')
 
       expect(await screen.findByLabelText('Plan')).toHaveValue('plan-1')
-    })
-  })
-
-  describe('new plan', () => {
-    it('creates a plan and picks it for the next workout', async () => {
-      backend.reply('GET', '/rest/v1/plans', 200, [])
-      backend.reply('POST', '/rest/v1/plans', 201, savedPlan({ goal: 'Squat 100 kg' }))
-      const user = renderLog()
-
-      await user.type(await screen.findByLabelText('Plan name'), ' Strength block ')
-      await user.type(screen.getByLabelText('Goal (optional)'), 'Squat 100 kg')
-      await user.click(screen.getByRole('button', { name: 'Create plan' }))
-
-      expect(await screen.findByText('Plan created: Strength block.')).toBeInTheDocument()
-      expect(posts('/rest/v1/plans')[0].body).toEqual({ name: 'Strength block', goal: 'Squat 100 kg' })
-      expect(screen.getByLabelText('Plan')).toHaveValue('plan-3')
-      expect(screen.getByLabelText('Plan name')).toHaveValue('')
-    })
-
-    it('stores a blank goal as no goal', async () => {
-      backend.reply('GET', '/rest/v1/plans', 200, [])
-      backend.reply('POST', '/rest/v1/plans', 201, savedPlan({ name: '5K plan' }))
-      const user = renderLog()
-
-      await user.type(await screen.findByLabelText('Plan name'), '5K plan')
-      await user.type(screen.getByLabelText('Goal (optional)'), '   ')
-      await user.click(screen.getByRole('button', { name: 'Create plan' }))
-
-      await screen.findByText('Plan created: 5K plan.')
-      expect(posts('/rest/v1/plans')[0].body).toEqual({ name: '5K plan', goal: null })
-    })
-
-    it('needs a plan name', async () => {
-      backend.reply('GET', '/rest/v1/plans', 200, [])
-      const user = renderLog()
-
-      await user.type(await screen.findByLabelText('Plan name'), '   ')
-      await user.click(screen.getByRole('button', { name: 'Create plan' }))
-
-      expect(screen.getByRole('alert')).toHaveTextContent('Enter a plan name.')
-      expect(posts('/rest/v1/plans')).toHaveLength(0)
-    })
-
-    it('explains a failed plan save and retries it', async () => {
-      backend.reply('GET', '/rest/v1/plans', 200, [])
-      backend.networkDown('POST', '/rest/v1/plans')
-      backend.reply('POST', '/rest/v1/plans', 201, savedPlan({ name: '5K plan' }))
-      const user = renderLog()
-
-      await user.type(await screen.findByLabelText('Plan name'), '5K plan')
-      await user.click(screen.getByRole('button', { name: 'Create plan' }))
-      expect(await screen.findByRole('alert')).toHaveTextContent("Can't reach the server")
-
-      await user.click(screen.getByRole('button', { name: 'Try again' }))
-      expect(await screen.findByText('Plan created: 5K plan.')).toBeInTheDocument()
-    })
-
-    it('still creates a plan when the plan list failed to load', async () => {
-      backend.networkDown('GET', '/rest/v1/plans')
-      backend.reply('POST', '/rest/v1/plans', 201, savedPlan({ name: '5K plan' }))
-      const user = renderLog()
-      await screen.findByRole('alert')
-
-      await user.type(screen.getByLabelText('Plan name'), '5K plan')
-      await user.click(screen.getByRole('button', { name: 'Create plan' }))
-
-      expect(await screen.findByText('Plan created: 5K plan.')).toBeInTheDocument()
     })
   })
 

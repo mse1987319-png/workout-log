@@ -88,7 +88,7 @@ function AssignedPlans({ athleteId, plans, assignments, onAssigned, onUnassigned
 
       {plans.length === 0 && (
         <p className="muted">
-          <Link to="/log">Create a plan</Link> first, then assign it here.
+          <Link to="/plans/new">Create a plan</Link> first, then assign it here.
         </p>
       )}
       {plans.length > 0 && available.length === 0 && (

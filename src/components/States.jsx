@@ -25,6 +25,13 @@ export function ErrorState({ message, onRetry }) {
 export function EmptyState({ children, action }) {
   return (
     <div className="state state-empty">
+      <svg className="state-icon" viewBox="0 0 72 32" aria-hidden="true" focusable="false">
+        <rect x="14" y="14" width="44" height="4" rx="2" />
+        <rect x="4" y="9" width="6" height="14" rx="2" />
+        <rect x="10" y="4" width="6" height="24" rx="2" />
+        <rect x="56" y="4" width="6" height="24" rx="2" />
+        <rect x="62" y="9" width="6" height="14" rx="2" />
+      </svg>
       <p>{children}</p>
       {action}
     </div>
