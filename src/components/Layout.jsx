@@ -6,7 +6,7 @@ import { ErrorState } from './States'
 
 // Frame for the signed-in screens: app name, navigation, account, logout.
 export default function Layout() {
-  const { user, signOut } = useAuth()
+  const { user, role, signOut } = useAuth()
   const [logoutError, setLogoutError] = useState('')
 
   async function handleLogout() {
@@ -29,8 +29,10 @@ export default function Layout() {
             <NavLink to="/" end>
               My plans
             </NavLink>
+            {role === 'instructor' && <NavLink to="/athletes">My athletes</NavLink>}
             <NavLink to="/log">Log workout</NavLink>
             <NavLink to="/progress">Progress</NavLink>
+            {role === 'athlete' && <NavLink to="/sharing">Sharing</NavLink>}
           </nav>
           <div className="account">
             <span className="account-email">{user?.email}</span>

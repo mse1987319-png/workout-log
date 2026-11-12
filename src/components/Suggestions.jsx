@@ -3,10 +3,11 @@ import { RULES } from '../lib/recommendations'
 
 // Rule-based suggestions (lib/recommendations.js), each with its reason, and
 // every rule spelled out below them, so nothing is a black box.
-export default function Suggestions({ items }) {
+// readOnly (the instructor's view of an athlete): no action links.
+export default function Suggestions({ items, title = 'Suggestions', readOnly = false }) {
   return (
     <section className="card stack" aria-labelledby="suggestions-title">
-      <h2 id="suggestions-title">Suggestions</h2>
+      <h2 id="suggestions-title">{title}</h2>
 
       {items.length === 0 ? (
         <p className="muted">Nothing to suggest right now: suggestions appear when one of the rules below applies.</p>
@@ -16,7 +17,7 @@ export default function Suggestions({ items }) {
             <li key={item.key} className="suggestion">
               <p className="suggestion-title">{item.title}</p>
               <p className="muted">{item.because}</p>
-              {item.link && (
+              {item.link && !readOnly && (
                 <Link className="button button-small" to={item.link}>
                   Log a workout
                 </Link>

@@ -114,6 +114,7 @@ a {
 
 .nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.25rem;
 }
 
@@ -123,6 +124,13 @@ a {
   color: var(--muted);
   font-weight: 500;
   text-decoration: none;
+  white-space: nowrap; /* a label never breaks; the row wraps instead */
+}
+
+@media (max-width: 480px) {
+  .nav a {
+    padding: 0.4rem 0.6rem;
+  }
 }
 
 .nav a:hover {
@@ -892,4 +900,131 @@ textarea {
   margin: 0.5rem 0 0;
   padding-left: 1.25rem;
   color: var(--muted);
+}
+
+/* ---------- Sharing: roles, codes, athletes and instructors ---------- */
+
+.page-intro {
+  margin: -0.5rem 0 1.25rem;
+  color: var(--muted);
+}
+
+.role-choice {
+  display: grid;
+  gap: 0.6rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.role-choice > legend {
+  margin-bottom: 0.35rem;
+  padding: 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.role-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 0.6rem;
+}
+
+.role-option input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.role-option label {
+  font-weight: 600;
+}
+
+.role-option .hint {
+  grid-column: 2;
+}
+
+.plan-tag {
+  display: inline-block;
+  margin: 0.3rem 0 0;
+  padding: 0.1rem 0.55rem;
+  color: var(--accent-strong);
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--accent-soft);
+  border-radius: 999px;
+}
+
+.invite-code {
+  margin: 0;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+.code-field input {
+  max-width: 14rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.code-field input::placeholder {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.person-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person-row {
+  display: grid;
+  gap: 0.2rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.person-row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.person-row p,
+.person-head p {
+  margin: 0;
+}
+
+.person-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.person-email {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.assign-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.assign-form .field {
+  flex: 1 1 14rem;
+}
+
+.back-link {
+  margin: 0 0 0.75rem;
 }

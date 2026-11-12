@@ -488,5 +488,333 @@ create policy "Delete own goals" on public.goals
   for delete to authenticated
   using (user_id = auth.uid());
 
+-- ===========================================================================
+-- Extended tier: instructor sharing
+-- ===========================================================================
+-- Roles: chosen at sign-up and kept in profiles (one row per user).
+-- Linking: an athlete types an instructor's code. The link lets that
+-- instructor READ the athlete's data, but only through the functions below,
+-- which check the link first: the tables keep their "own rows only" policies,
+-- so no screen ever mixes other people's rows into your own. The one
+-- widening is additive: an athlete can read, and log workouts under, plans
+-- an instructor assigned to them.
+
+create table if not exists public.profiles (
+  id           uuid        primary key references auth.users (id) on delete cascade,
+  email        text,
+  role         text        not null default 'athlete' check (role in ('athlete', 'instructor')),
+  -- Instructors only: the code athletes type to share with them.
+  invite_code  text        unique check (invite_code ~ '^[A-HJ-NP-Z2-9]{6}$'),
+  created_at   timestamptz not null default now()
+);
+
+comment on table public.profiles is
+  'One row per user: role chosen at sign-up (athlete / instructor); instructors have an invite code.';
+
+grant select on public.profiles to authenticated;
+alter table public.profiles enable row level security;
+
+-- Read your own profile only. No write policies: the role is set at sign-up.
+drop policy if exists "Read own profile" on public.profiles;
+create policy "Read own profile" on public.profiles
+  for select to authenticated
+  using (id = auth.uid());
+
+-- Six characters that can't be mixed up (no I, O, 0 or 1), from a strong random source.
+create or replace function public.new_invite_code()
+returns text
+language plpgsql
+volatile
+set search_path = ''
+as $$
+declare
+  alphabet constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  bytes bytea;
+  code text;
+begin
+  loop
+    bytes := extensions.gen_random_bytes(6);
+    code := '';
+    for k in 0..5 loop
+      code := code || substr(alphabet, get_byte(bytes, k) % 32 + 1, 1);
+    end loop;
+    exit when not exists (select 1 from public.profiles p where p.invite_code = code);
+  end loop;
+  return code;
+end;
+$$;
+
+revoke execute on function public.new_invite_code() from public, anon, authenticated;
+
+-- Every new user gets a profile, with the role picked on the sign-up form
+-- (user metadata "role"); anything else means athlete.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  wanted text := coalesce(new.raw_user_meta_data ->> 'role', 'athlete');
+begin
+  if wanted not in ('athlete', 'instructor') then
+    wanted := 'athlete';
+  end if;
+  insert into public.profiles (id, email, role, invite_code)
+  values (new.id, new.email, wanted, case when wanted = 'instructor' then public.new_invite_code() end)
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- Users who signed up before profiles existed are athletes.
+insert into public.profiles (id, email)
+select u.id, u.email from auth.users u
+on conflict (id) do nothing;
+
+-- Who shares with whom ----------------------------------------------------------
+create table if not exists public.instructor_links (
+  instructor_id  uuid        not null references public.profiles (id) on delete cascade,
+  athlete_id     uuid        not null references public.profiles (id) on delete cascade,
+  created_at     timestamptz not null default now(),
+  primary key (instructor_id, athlete_id),
+  check (instructor_id <> athlete_id)
+);
+
+comment on table public.instructor_links is
+  'An athlete shares with an instructor. Made only by link_instructor(code); either side can end it.';
+
+create index if not exists instructor_links_athlete_idx on public.instructor_links (athlete_id);
+
+grant select, delete on public.instructor_links to authenticated;
+alter table public.instructor_links enable row level security;
+
+drop policy if exists "Read own links" on public.instructor_links;
+create policy "Read own links" on public.instructor_links
+  for select to authenticated
+  using (athlete_id = auth.uid() or instructor_id = auth.uid());
+
+-- Either side can end a link. No insert policy: only link_instructor() links.
+drop policy if exists "End own links" on public.instructor_links;
+create policy "End own links" on public.instructor_links
+  for delete to authenticated
+  using (athlete_id = auth.uid() or instructor_id = auth.uid());
+
+-- "Is this my athlete?" in one place (security definer, so policies that use
+-- it never evaluate each other recursively).
+create or replace function public.is_my_athlete(p_athlete uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.instructor_links l
+    where l.instructor_id = auth.uid() and l.athlete_id = p_athlete
+  );
+$$;
+
+-- The athlete types the instructor's code (spaces and case don't matter).
+create or replace function public.link_instructor(p_code text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  me uuid := auth.uid();
+  wanted text := upper(regexp_replace(coalesce(p_code, ''), '[^A-Za-z0-9]', '', 'g'));
+  instructor public.profiles;
+  link public.instructor_links;
+begin
+  if me is null then
+    raise exception 'Log in to share with an instructor.' using errcode = '42501';
+  end if;
+  select * into instructor from public.profiles p where p.role = 'instructor' and p.invite_code = wanted;
+  if instructor.id is null then
+    raise exception 'No instructor has that code. Check it and try again.' using errcode = 'P0002';
+  end if;
+  if instructor.id = me then
+    raise exception 'That is your own code: give it to your athletes.' using errcode = '22023';
+  end if;
+  insert into public.instructor_links (instructor_id, athlete_id) values (instructor.id, me)
+  on conflict do nothing;
+  select * into link from public.instructor_links l where l.instructor_id = instructor.id and l.athlete_id = me;
+  return jsonb_build_object('instructor_id', instructor.id, 'email', instructor.email, 'linked_at', link.created_at);
+end;
+$$;
+
+-- The instructors I share with (athlete's view).
+create or replace function public.my_instructors()
+returns table (instructor_id uuid, email text, linked_at timestamptz)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select l.instructor_id, p.email, l.created_at
+  from public.instructor_links l
+  join public.profiles p on p.id = l.instructor_id
+  where l.athlete_id = auth.uid()
+  order by l.created_at;
+$$;
+
+-- The athletes who share with me, with a few numbers (instructor's view).
+create or replace function public.my_athletes()
+returns table (athlete_id uuid, email text, linked_at timestamptz, last_workout_at timestamptz,
+               workouts_last_7_days integer, last_report_at timestamptz)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select l.athlete_id, p.email, l.created_at,
+         (select max(w.created_at) from public.workouts w where w.user_id = l.athlete_id),
+         (select count(*)::int from public.workouts w
+           where w.user_id = l.athlete_id and w.created_at >= (current_date - 6)::timestamptz),
+         (select max(r.created_at) from public.reports r where r.user_id = l.athlete_id)
+  from public.instructor_links l
+  join public.profiles p on p.id = l.athlete_id
+  where l.instructor_id = auth.uid()
+  order by p.email;
+$$;
+
+-- One athlete's data for their instructor, read-only, in the shapes the
+-- Progress screen uses. Refused unless the athlete shares with the caller.
+create or replace function public.athlete_progress(p_athlete uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_my_athlete(p_athlete) then
+    raise exception 'This athlete is not sharing with you.' using errcode = '42501';
+  end if;
+  return jsonb_build_object(
+    'athlete', (select jsonb_build_object('id', p.id, 'email', p.email) from public.profiles p where p.id = p_athlete),
+    'linked_at', (select l.created_at from public.instructor_links l
+                   where l.instructor_id = auth.uid() and l.athlete_id = p_athlete),
+    'workouts', coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'id', w.id, 'type', w.type, 'title', w.title, 'duration_min', w.duration_min,
+               'activity', w.activity, 'distance_km', w.distance_km, 'notes', w.notes,
+               'sets_summary', w.sets_summary, 'plan_name', pl.name, 'created_at', w.created_at)
+             order by w.created_at)
+      from public.workouts w left join public.plans pl on pl.id = w.plan_id
+      where w.user_id = p_athlete), '[]'::jsonb),
+    'sets', coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'workout_id', s.workout_id, 'exercise', s.exercise, 'reps', s.reps,
+               'weight_kg', s.weight_kg, 'created_at', s.created_at)
+             order by s.created_at, s.set_no)
+      from public.workout_sets s
+      where s.user_id = p_athlete), '[]'::jsonb),
+    'goals', coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'id', g.id, 'exercise', g.exercise, 'target_kg', g.target_kg,
+               'target_date', g.target_date, 'created_at', g.created_at)
+             order by g.target_date, g.created_at)
+      from public.goals g
+      where g.user_id = p_athlete), '[]'::jsonb),
+    'reports', coalesce((
+      select jsonb_agg(jsonb_build_object('created_at', r.created_at, 'summary', r.summary)
+             order by r.created_at desc)
+      from (select * from public.reports r0 where r0.user_id = p_athlete
+            order by r0.created_at desc limit 5) r), '[]'::jsonb)
+  );
+end;
+$$;
+
+-- One plan → many athletes -------------------------------------------------------
+create table if not exists public.plan_assignments (
+  plan_id      uuid        not null references public.plans (id) on delete cascade,
+  athlete_id   uuid        not null references public.profiles (id) on delete cascade,
+  assigned_by  uuid        not null default auth.uid() references public.profiles (id) on delete cascade,
+  created_at   timestamptz not null default now(),
+  primary key (plan_id, athlete_id)
+);
+
+comment on table public.plan_assignments is
+  'An instructor assigns one of their plans to athletes who share with them. The athletes log their own workouts under it.';
+
+create index if not exists plan_assignments_athlete_idx on public.plan_assignments (athlete_id);
+
+grant select, insert, delete on public.plan_assignments to authenticated;
+alter table public.plan_assignments enable row level security;
+
+drop policy if exists "Read own assignments" on public.plan_assignments;
+create policy "Read own assignments" on public.plan_assignments
+  for select to authenticated
+  using (athlete_id = auth.uid() or assigned_by = auth.uid());
+
+drop policy if exists "Assign own plans to own athletes" on public.plan_assignments;
+create policy "Assign own plans to own athletes" on public.plan_assignments
+  for insert to authenticated
+  with check (
+    assigned_by = auth.uid()
+    and public.is_my_athlete(athlete_id)
+    and exists (select 1 from public.plans p where p.id = plan_assignments.plan_id and p.user_id = auth.uid())
+  );
+
+drop policy if exists "Unassign own assignments" on public.plan_assignments;
+create policy "Unassign own assignments" on public.plan_assignments
+  for delete to authenticated
+  using (assigned_by = auth.uid());
+
+create or replace function public.is_assigned_to_me(p_plan uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.plan_assignments a
+    where a.plan_id = p_plan and a.athlete_id = auth.uid()
+  );
+$$;
+
+-- Additive policies (permissive policies are OR-ed, so the owner policies
+-- above are unchanged): read an assigned plan, and log or edit your own
+-- workouts under it.
+drop policy if exists "Read plans assigned to me" on public.plans;
+create policy "Read plans assigned to me" on public.plans
+  for select to authenticated
+  using (public.is_assigned_to_me(id));
+
+drop policy if exists "Add workouts to assigned plans" on public.workouts;
+create policy "Add workouts to assigned plans" on public.workouts
+  for insert to authenticated
+  with check (user_id = auth.uid() and public.is_assigned_to_me(plan_id));
+
+drop policy if exists "Edit own workouts on assigned plans" on public.workouts;
+create policy "Edit own workouts on assigned plans" on public.workouts
+  for update to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid() and public.is_assigned_to_me(plan_id));
+
+revoke execute on function public.is_my_athlete(uuid) from public, anon;
+grant execute on function public.is_my_athlete(uuid) to authenticated;
+revoke execute on function public.is_assigned_to_me(uuid) from public, anon;
+grant execute on function public.is_assigned_to_me(uuid) to authenticated;
+revoke execute on function public.link_instructor(text) from public, anon;
+grant execute on function public.link_instructor(text) to authenticated;
+revoke execute on function public.my_instructors() from public, anon;
+grant execute on function public.my_instructors() to authenticated;
+revoke execute on function public.my_athletes() from public, anon;
+grant execute on function public.my_athletes() to authenticated;
+revoke execute on function public.athlete_progress(uuid) from public, anon;
+grant execute on function public.athlete_progress(uuid) to authenticated;
+
 -- Let the REST API see the new tables right away.
 notify pgrst, 'reload schema';
