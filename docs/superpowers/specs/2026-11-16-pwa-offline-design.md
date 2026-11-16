@@ -18,6 +18,7 @@ v5 turns Logify into an installable phone app (a PWA) that opens and works witho
 2. **The database change is applied by Claude** to the live Supabase project, with the token in `_task/.keys/keys.md`, followed by the SQL tests.
 3. **Git:** commit on `release/v5` and push it, so Vercel builds a preview to test on a real phone. No pull request. `main` and the live site stay untouched.
 4. **Phones get a bottom tab bar** (native-app style). The manuals' phone screenshots would otherwise be out of date.
+5. **On approval:** "make sure that existing prod won't be broken, and new phone app will do fine if the existing DB will point to an older version of DB with a warning." See section 7.
 
 ## Goals
 
@@ -96,7 +97,8 @@ supabase-js keeps the session in localStorage. It deletes the session only when 
 - **`p_id uuid`:** the id made on the phone. If this user already has a workout with that id, the function returns it and inserts nothing: no second row, no second webhook, no second email. If two sends race, the second hits the primary key (23505). The app then tries again later, and the function finds the workout and returns it. The app never assumes a workout was saved without the server returning it.
 - **`p_logged_at timestamptz`:** when Save was pressed. It becomes `created_at` (and the sets' `created_at`) if it is within the last 30 days and not in the future; otherwise the server's time is used. So a workout sent hours later still lands on the right day in the charts and *Last time*.
 - `schema.sql` drops the old 8-parameter version first, because PostgREST can't choose between two versions that both match. It keeps the grants and stays safe to re-run.
-- **New SQL test** `supabase/tests/log_workout_offline.test.sql`, rolled back like the others. It checks that the same id sent twice gives one row and one webhook request, that the logged time is used, that future and over-30-day-old times are replaced, and that an old-style call still works.
+- **New `schema_version()`** returns `5` (section 7).
+- **New SQL test** `supabase/tests/log_workout_offline.test.sql`, rolled back like the others. It checks that the same id sent twice gives one row and one webhook request, that the logged time is used, that future and over-30-day-old times are replaced, that an old-style call still works, and that `schema_version()` returns 5.
 - **Applied to the live project in one transaction,** then all SQL tests are run there.
 
 ### 6. Phone layout: bottom tab bar
@@ -105,11 +107,36 @@ supabase-js keeps the session in localStorage. It deletes the session only when 
 - **It's the same `<nav>`, restyled,** so no link is duplicated. *Log* shows only on phones; the desktop menu stays as it is.
 - **The header becomes one row:** logo, LT/EN and Log out. The email is hidden on the smallest screens, as today.
 - **Pages get bottom padding** so nothing hides under the bar, and the header and bar keep clear of the notch and home indicator (`env(safe-area-inset-*)`).
-- **The status line** (offline, waiting, new version) sits just under the header.
+- **The status line** (offline, waiting, new version, older database) sits just under the header.
 - **Install card on My plans:**
   - Android: when the browser offers installing, *Install Logify: it opens like an app and works without signal*, with **Install** and **Not now**.
   - iPhone Safari: a short how-to (Share → Add to Home Screen).
   - Hidden once the app is installed, or after **Not now**.
+
+### 7. Compatibility in both directions
+
+**The live app on `main` with the new database must not break.**
+
+- `log_workout()`'s new parameters are optional, so the call the live app sends (eight named parameters) still matches. Nothing else the live app uses changes.
+- The change runs in one transaction: there is no moment without a `log_workout()`.
+- Webhooks, triggers, policies and the Zaps are untouched.
+- **Checked on the live project after the change:**
+  - all SQL tests, which make old-style calls;
+  - an HTTP request with exactly the body the live app sends, made as a temporary account that shares with no instructor (so no email), deleted afterwards.
+- Pushing `release/v5` builds a Vercel preview only. Production deploys from `main`, which isn't touched, so the live site gets no service worker.
+
+**The new app with an older database must work, with a warning.**
+
+- **The database tells its version.** A new function `schema_version()` returns `5` and is callable by `anon` and `authenticated`. An older database doesn't have it.
+  - The app asks once per start while online, and keeps the last answer on the phone.
+  - "Function not found" (PGRST202 / HTTP 404) means older than v5.
+  - No answer (offline) keeps the last known value.
+- **Belt and braces:** if `log_workout()` answers "function not found" to the new parameters (for example a database rolled back, or PostgREST's schema cache not yet reloaded), the app marks the database as older and repeats that send the old way at once.
+- **On an older database, everything works,** including logging offline, with two differences:
+  - The send leaves out `p_id` and `p_logged_at`, so a workout logged offline gets the time it is sent.
+  - A send is never cut off by the 15 s limit. The form still stops waiting after 15 s (*kept on this phone, sending in the background*) while the request runs to its end, because cutting it off could leave a saved workout looking unsaved. Only a connection that really drops mid-send can still cause a second copy.
+- **The warning** is in the status line, one line, with **Hide** for the rest of the session: *Logify's database is an older version than this app: workouts logged offline get the time they're sent, and after a dropped connection one could be saved twice. The fix is updating the database (`supabase/schema.sql`).* It disappears by itself once the database reports version 5.
+- **Tests:** unit tests on the fake backend for both directions. Live, the new app is first run against the database as it is now (warning, logging works), before the change is applied.
 
 ## Constraints
 
@@ -152,6 +179,11 @@ supabase-js keeps the session in localStorage. It deletes the session only when 
   - the app opens with the server stopped;
   - with the network simulated as down, saved data shows and a workout can be logged;
   - it syncs on reconnect against the live Supabase. This uses a temporary account that shares with no instructor, so no email is sent, and the account is deleted afterwards.
+- **Order on the live project:**
+  1. the new app against the database as it is now (warning, logging works);
+  2. the database change and all SQL tests;
+  3. the live app's exact request still works, and the new app shows no warning and saves exactly once;
+  4. the temporary account is deleted.
 - **After the push,** the Vercel preview of `release/v5` serves the manifest and the service worker. If the preview shows "not set up", the two Supabase variables aren't enabled for Vercel's Preview environment; that is reported to the user, not changed. The final test on a real phone is the user's.
 
 ## Docs
