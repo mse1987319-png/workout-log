@@ -52,7 +52,7 @@ TOOLS = [
     "[Supabase: Database Webhooks](https://supabase.com/docs/guides/database/webhooks)",
     "[Supabase: Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)",
     "[Zapier Help Center](https://help.zapier.com): Paths, Filter, error handling",
-    "[Zapier pricing](https://zapier.com/pricing)",
+    "[Zapier pricing](https://zapier.com/pricing) · [Supabase pricing](https://supabase.com/pricing) · [Vercel pricing](https://vercel.com/pricing)",
     "[Vercel: environment variables](https://vercel.com/docs/environment-variables)",
     "[Vite: env variables and modes](https://vite.dev/guide/env-and-mode)",
     "[React](https://react.dev) · [React Router](https://reactrouter.com) · [Recharts](https://recharts.org)",
@@ -73,7 +73,7 @@ EN["title"] = {
               f"Code: [github.com/mse1987319-png/workout-log]({REPO})"],
     "year": "2026  ·  React + Vite  ·  Supabase  ·  Vercel  ·  Zapier  ·  Gmail  ·  Notion",
     "notes": f"""
-Timing: ~20 s. The main part takes about 9 minutes; the live demo script is in Appendix A, links in Appendix B.
+Timing: ~20 s. The main part takes about 10 minutes; the live demo script is in Appendix A, links in Appendix B.
 
 Say: Logify is a web workout log. Athletes follow workout plans, log their workouts, and their instructor is emailed automatically about every new workout. Everything shown today runs in production at the link on the slide.
 
@@ -499,6 +499,58 @@ Sources:
 """,
 }
 
+EN["tco"] = {
+    "title": "Total cost of ownership (TCO)",
+    "kicker": "Monthly running costs in three scenarios  ·  USD list prices, annual billing, excl. VAT  ·  "
+              "checked 16 Nov 2026",
+    "head": ["Cost item", ["Course demo", "now, demo users"], ["Club, free for members", "1–2 coaches, 30 athletes"],
+             ["Coaching business", "10 coaches, 250 athletes"], "What moves the price"],
+    "rows": [
+        ["Supabase",
+         ["**$0** · Free", "500 MB, 50k users a month"],
+         ["**$25** · Pro", "daily backups, never paused"],
+         ["**$25** · Pro", "250 of 100k users; data ≪ 8 GB"],
+         "Flat until 100k users or 8 GB, then $0.00325 per user and $0.125 per GB. Free pauses after one idle week "
+         "and has no backups."],
+        ["Zapier",
+         ["**$0** on the trial, then **$19.99**", "Pro, 750 tasks; ~50 used"],
+         ["**$19.99** · Pro, 750 tasks", "~510 used"],
+         ["**$89** · Pro, 5,000 tasks", "~4,250 used"],
+         "1 email = 1 task (2–3 ¢). The Free plan can't run these Zaps (no webhooks, Filters or Paths). Over the "
+         "limit: pay per task at 1.25×, or new runs wait for the next month."],
+        ["Other infra",
+         ["**$0**", "Vercel Hobby, Gmail, GitHub, Notion"],
+         ["**≈ $1**", "own domain (≈ $11 a year); Resend Free as SMTP"],
+         ["**≈ $28**", "Vercel Pro $20, Google Workspace $7, domain"],
+         "Vercel Pro once the app earns money (Hobby is non-commercial only); own SMTP to turn sign-up "
+         "confirmation back on (Supabase's sender: 2 emails an hour); a branded sender."],
+        ["Per month", "**≈ $20**", "**≈ $46**", "**≈ $142**", "Zapier is ≈ 63% of the business bill"],
+        ["Per year", "≈ $240", ["≈ $550", "$1.53 per athlete a month"], ["≈ $1,700", "$0.57 per athlete a month"],
+         "People time (building, support) not included"],
+    ],
+    "assume": "**Assumptions:** an active athlete logs 3 workouts and sends 1 report a week ≈ **17 emails = 17 Zapier "
+              "tasks a month**. Monthly billing costs more: Zapier $29.99 (750) / $133.50 (5,000), Workspace $8.40.",
+    "lever": "**Biggest lever:** Zapier grows with every email, Supabase stays flat. Outside the course rules, a "
+             "Supabase Edge Function sending through Resend would replace Zapier (3,000 emails a month free, "
+             "50,000 for $20).",
+    "notes": f"""
+Timing: ~45 s.
+
+Say: Running Logify costs about 20 dollars a month today, and all of it is Zapier: the free plan can't run webhooks or Paths. For a real club with thirty athletes I would move Supabase to Pro for the daily backups: about 46 dollars a month, a dollar and a half per athlete. At 250 athletes it is about 142 dollars, and Zapier is almost two thirds of it, because every email is a task. Supabase stays flat at 25 dollars.
+
+Model: an active athlete logs 3 workouts and sends 1 report a week, about 17 emails a month; each email is one Zapier task (trigger, Filter and Paths steps cost nothing, and runs the Filter stops cost nothing). 30 athletes ≈ 510 tasks, 250 athletes ≈ 4,250 tasks. Prices: USD list prices with annual billing where offered, excluding VAT.
+
+Not in the totals (optional): Supabase point-in-time recovery $100 a month per 7 days; a custom domain for the Supabase API $10 a month; Resend Pro $20 a month (50,000 emails) once sign-up emails pass 3,000 a month or 100 a day.
+
+Sources (checked 2026-11-16):
+- Supabase pricing: https://supabase.com/pricing ; built-in auth email limit (2 an hour): https://supabase.com/docs/guides/auth/auth-smtp
+- Zapier pricing and overage: https://zapier.com/pricing ; what counts as a task: https://help.zapier.com/hc/en-us/articles/8496196837261
+- Vercel pricing: https://vercel.com/pricing ; Hobby is personal, non-commercial only: https://vercel.com/docs/plans/hobby , https://vercel.com/legal/terms
+- Google Workspace Business Starter: https://workspace.google.com/pricing ; Resend: https://resend.com/pricing ; .com domain at cost: https://www.cloudflare.com/products/registrar/ (these three from third-party price trackers; check the vendor page)
+- Task counts in this project: {BLOB}docs/zapier.md (section 8, Cost)
+""",
+}
+
 EN["summary"] = {
     "title": "Summary",
     "points": [
@@ -719,7 +771,7 @@ LT["title"] = {
               f"Kodas: [github.com/mse1987319-png/workout-log]({REPO})"],
     "year": "2026  ·  React + Vite  ·  Supabase  ·  Vercel  ·  Zapier  ·  Gmail  ·  Notion",
     "notes": f"""
-Laikas: ~20 s. Pagrindinė dalis trunka apie 9 minutes; gyvos demonstracijos scenarijus – A priede, nuorodos – B priede.
+Laikas: ~20 s. Pagrindinė dalis trunka apie 10 minučių; gyvos demonstracijos scenarijus – A priede, nuorodos – B priede.
 
 Sakykite: Logify – internetinis treniruočių žurnalas. Sportininkai vykdo treniruočių planus, registruoja treniruotes, o treneris automatiškai gauna el. laišką apie kiekvieną naują treniruotę. Viskas, ką šiandien matysite, veikia gamybinėje aplinkoje adresu, nurodytu skaidrėje.
 
@@ -1156,6 +1208,59 @@ Sakykite: Ilgiausiai užtruko keturi dalykai. Pirma, webhook mato tik įterptą 
 """,
 }
 
+LT["tco"] = {
+    "title": "Bendra nuosavybės kaina (TCO)",
+    "kicker": "Mėnesio išlaidos trimis scenarijais  ·  USD kainoraščio kainos, mokant metams, be PVM  ·  "
+              "tikrinta 2026-11-16",
+    "head": ["Išlaidos", ["Kurso demo", "dabar, demo naudotojai"], ["Nemokamas klubas", "1–2 treneriai, 30 sportininkų"],
+             ["Trenerių verslas", "10 trenerių, 250 sportininkų"], "Kas keičia kainą"],
+    "rows": [
+        ["Supabase",
+         ["**0 $** · Free", "500 MB, 50 tūkst. naudotojų"],
+         ["**25 $** · Pro", "kasdienės kopijos, nesustabdomas"],
+         ["**25 $** · Pro", "250 iš 100 tūkst.; duomenų ≪ 8 GB"],
+         "Pastovi iki 100 tūkst. naudotojų ar 8 GB, toliau 0,00325 $ už naudotoją, 0,125 $ už GB. Free sustoja po "
+         "savaitės neveiklumo, kopijų neturi."],
+        ["Zapier",
+         ["**0 $** bandant, vėliau **19,99 $**", "Pro, 750 užd.; naudojama ~50"],
+         ["**19,99 $** · Pro, 750 užduočių", "naudojama ~510"],
+         ["**89 $** · Pro, 5 000 užduočių", "naudojama ~4 250"],
+         "1 laiškas = 1 užduotis (2–3 ct). Free šių Zap nepaleidžia (nėra webhook, Filter, Paths). Viršijus "
+         "limitą: 1,25× tarifas arba paleidimai laukia kito mėnesio."],
+        ["Kita infrastruktūra",
+         ["**0 $**", "Vercel Hobby, Gmail, GitHub, Notion"],
+         ["**≈ 1 $**", "domenas (≈ 11 $ per metus); Resend Free SMTP"],
+         ["**≈ 28 $**", "Vercel Pro 20 $, Google Workspace 7 $, domenas"],
+         "Vercel Pro, kai programa uždirba (Hobby – tik nekomercinė); savas SMTP registracijos patvirtinimui "
+         "(Supabase siuntėjas: 2 laiškai per val.); firminis siuntėjas."],
+        ["Per mėnesį", "**≈ 20 $**", "**≈ 46 $**", "**≈ 142 $**", "Zapier sudaro ≈ 63 % verslo sąskaitos"],
+        ["Per metus", "≈ 240 $", ["≈ 550 $", "1,53 $ sportininkui per mėn."], ["≈ 1 700 $", "0,57 $ sportininkui per mėn."],
+         "Žmonių laikas (kūrimas, palaikymas) neįskaičiuotas"],
+    ],
+    "assume": "**Prielaidos:** aktyvus sportininkas per savaitę įrašo 3 treniruotes ir išsiunčia 1 ataskaitą ≈ "
+              "**17 laiškų = 17 Zapier užduočių per mėnesį**. Mokant kas mėnesį brangiau: Zapier 29,99 $ (750) / "
+              "133,50 $ (5 000), Workspace 8,40 $.",
+    "lever": "**Didžiausias svertas:** Zapier auga su kiekvienu laišku, Supabase lieka pastovus. Už kurso taisyklių "
+             "ribų Supabase Edge Function, siunčianti per Resend, pakeistų Zapier (3 000 laiškų per mėn. nemokamai, "
+             "50 000 – už 20 $).",
+    "notes": f"""
+Laikas: ~45 s.
+
+Sakykite: Šiandien Logify išlaikymas kainuoja apie 20 dolerių per mėnesį, ir visa tai – Zapier: nemokamas planas nepaleidžia webhook ir Paths. Tikram klubui su trisdešimt sportininkų Supabase perkelčiau į Pro dėl kasdienių atsarginių kopijų: apie 46 dolerius per mėnesį, pusantro dolerio vienam sportininkui. Su 250 sportininkų – apie 142 dolerius, ir Zapier sudaro beveik du trečdalius, nes kiekvienas laiškas – užduotis. Supabase lieka pastovus – 25 doleriai.
+
+Modelis: aktyvus sportininkas per savaitę įrašo 3 treniruotes ir išsiunčia 1 ataskaitą, apie 17 laiškų per mėnesį; kiekvienas laiškas – viena Zapier užduotis (trigerio, Filter ir Paths žingsniai nekainuoja, Filter sustabdyti paleidimai taip pat). 30 sportininkų ≈ 510 užduočių, 250 sportininkų ≈ 4 250 užduočių. Kainos: USD kainoraščio kainos mokant metams, kur tai siūloma, be PVM.
+
+Neįskaičiuota (pasirinktinai): Supabase atkūrimas į bet kurį laiko tašką (PITR) – 100 $ per mėn. už 7 dienas; savas domenas Supabase API – 10 $ per mėn.; Resend Pro – 20 $ per mėn. (50 000 laiškų), kai registracijos laiškų daugiau nei 3 000 per mėn. arba 100 per dieną.
+
+Šaltiniai (tikrinta 2026-11-16):
+- Supabase kainos: https://supabase.com/pricing ; integruoto autentifikacijos pašto limitas (2 per valandą): https://supabase.com/docs/guides/auth/auth-smtp
+- Zapier kainos ir viršijimas: https://zapier.com/pricing ; kas laikoma užduotimi: https://help.zapier.com/hc/en-us/articles/8496196837261
+- Vercel kainos: https://vercel.com/pricing ; Hobby – tik asmeniniam, nekomerciniam naudojimui: https://vercel.com/docs/plans/hobby , https://vercel.com/legal/terms
+- Google Workspace Business Starter: https://workspace.google.com/pricing ; Resend: https://resend.com/pricing ; .com domenas savikaina: https://www.cloudflare.com/products/registrar/ (šios trys – iš trečiųjų šalių kainų apžvalgų; patikrinkite tiekėjo puslapyje)
+- Užduočių skaičiai šiame projekte: {BLOB}docs/lt/zapier.md (8 skyrius, Kaina)
+""",
+}
+
 LT["summary"] = {
     "title": "Santrauka",
     "points": [
@@ -1365,7 +1470,8 @@ LT["links"] = [
 ]
 
 TOOLS_LT = [t.replace("Paths, Filter, error handling", "Paths, Filter, klaidų valdymas")
-             .replace("[Zapier pricing]", "[Zapier kainos]")
+             .replace("[Zapier pricing]", "[Zapier kainos]").replace("[Supabase pricing]", "[Supabase kainos]")
+             .replace("[Vercel pricing]", "[Vercel kainos]")
              .replace("[Vercel: environment variables]", "[Vercel: aplinkos kintamieji]")
              .replace("[Vite: env variables and modes]", "[Vite: aplinkos kintamieji ir režimai]")
              .replace("(diagrams in the docs)", "(diagramos dokumentacijoje)") for t in TOOLS]
