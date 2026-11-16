@@ -73,7 +73,7 @@ EN["title"] = {
               f"Code: [github.com/mse1987319-png/workout-log]({REPO})"],
     "year": "2026  ·  React + Vite  ·  Supabase  ·  Vercel  ·  Zapier  ·  Gmail  ·  Notion",
     "notes": f"""
-Timing: ~20 s. The main part takes about 8 minutes; the live demo script is in Appendix A, links in Appendix B.
+Timing: ~20 s. The main part takes about 9 minutes; the live demo script is in Appendix A, links in Appendix B.
 
 Say: Logify is a web workout log. Athletes follow workout plans, log their workouts, and their instructor is emailed automatically about every new workout. Everything shown today runs in production at the link on the slide.
 
@@ -279,6 +279,93 @@ Sources:
 - Zapier guide: {BLOB}docs/zapier.md
 - Task deck, slides 15, 16 and 18
 - Zapier help (Paths, Filter, error handling): https://help.zapier.com
+""",
+}
+
+EN["mail_workout"] = {
+    "title": "Who gets an email: a new workout",
+    "kicker": "One new user, from sign-up to the instructor's inbox  ·  Zap 1",
+    "spine": [
+        ("start", "New user signs up"),
+        ("dec", "Role at sign-up?"),
+        ("proc", "Logs a workout: **Save workout** → one INSERT into `workouts`"),
+        ("dec", "Shares with an instructor?"),
+        ("dec", "`type` = strength?"),
+        ("mail", "**Email “STRENGTH: title”** with the sets, to every linked instructor"),
+    ],
+    "edges": [None, "Athlete", None, "Yes", "Yes"],
+    "downs": [
+        (1, "Instructor", "none", "**No email.** Instructors have no **Sharing** screen, so their own workouts "
+                                  "reach nobody. They *receive* the emails of athletes who share with them."),
+        (2, None, "note", "**Renamed later?** *Edit title* is an UPDATE: the Filter stops it, so no second email."),
+        (3, "No", "none", "**No email.** The workout is saved, but its `instructor_emails` is empty: the Filter "
+                          "stops the run (0 tasks)."),
+        (4, "No", "mail2", "**Email “New workout: title”** to every linked instructor (the Fallback path)."),
+    ],
+    "facts_h": "GOOD TO KNOW",
+    "legend": ["Email sent", "No email"],
+    "facts": [
+        "**Several instructors?** One email addressed to all of them: 1 Zapier task, not one per instructor.",
+        "**Shared later?** Only workouts saved after that are emailed; older ones are not resent. "
+        "**Stopped sharing?** The emails stop.",
+        "**The athlete gets no copy.** Only instructors are emailed, at the address they signed up with.",
+    ],
+    "notes": f"""
+Timing: ~30 s.
+
+Say: Follow a brand-new user. If they sign up as an instructor, their own workouts email nobody: instructors have no Sharing screen, they are the ones who receive emails. An athlete's workout is emailed only if, at the moment it is saved, they share with at least one instructor. Then the type picks the subject: strength goes down path A, everything else down the Fallback. Renaming a workout later sends nothing.
+
+Behind it: a BEFORE INSERT trigger copies the linked instructors' emails into the row (instructor_emails); the Zapier Filter needs type = INSERT and a non-empty instructor_emails.
+
+Sources:
+- Zapier guide, "Who gets the email" and tests Recipient 1–3: {BLOB}docs/zapier.md
+- Trigger set_instructor_emails(): {BLOB}supabase/schema.sql
+- SQL test: {BLOB}supabase/tests/instructor_emails.test.sql
+- User manual, instructor, section 7 "Emails you receive": {BLOB}docs/user-manual/en/instructor.md
+""",
+}
+
+EN["mail_report"] = {
+    "title": "Who gets an email: a progress report",
+    "kicker": "The same new user presses Send report to instructor  ·  Zap 2",
+    "spine": [
+        ("start", "New user signs up"),
+        ("dec", "Role at sign-up?"),
+        ("proc", "**Progress** → **Send report to instructor**"),
+        ("dec", "Sent a report in the last 5 min?"),
+        ("dec", "Shares with an instructor?"),
+        ("mail", "**Email “Progress report: athlete (dates)”** to every linked instructor"),
+    ],
+    "edges": [None, "Athlete", None, "No", "Yes"],
+    "downs": [
+        (1, "Instructor", "none", "**No email.** An instructor's own report is saved, but nobody is linked to "
+                                  "them: Zap 2's Filter stops it."),
+        (2, None, "note", "**No workouts yet?** Progress shows its empty state; the button appears after the first "
+                          "logged workout."),
+        (3, "Yes", "none", "**Refused:** “You sent a report a few minutes ago…”. Nothing is saved, no email."),
+        (4, "No", "none", "**No email.** The 7-day report is saved without `instructor_emails`: the Filter stops "
+                          "Zap 2 (0 tasks)."),
+    ],
+    "facts_h": "GOOD TO KNOW",
+    "legend": ["Email sent", "No email"],
+    "facts": [
+        "**What is in it:** the last 7 days (workouts, minutes, sets, heaviest lift), written by `send_report()`, "
+        "always in English.",
+        "**Several instructors?** One email addressed to all of them: 1 Zapier task.",
+        "**Recipients** are copied from the sharing links at the moment of sending, by a database trigger. "
+        "Nobody can type an address.",
+    ],
+    "notes": f"""
+Timing: ~30 s.
+
+Say: The report follows the same rule, with one more check. The Send report button appears once the athlete has logged a workout. The database refuses a second report within five minutes, so an inbox cannot be flooded. If the athlete shares with nobody, the report is still saved, but Zap 2's Filter stops it and nobody is emailed.
+
+Behind it: send_report() checks the 5-minute rule and inserts one reports row; the same trigger as for workouts fills instructor_emails; the reports_to_zapier webhook starts Zap 2 (Filter → Gmail).
+
+Sources:
+- Zapier guide, "Zap 2: progress reports": {BLOB}docs/zapier.md
+- send_report() and the trigger: {BLOB}supabase/schema.sql
+- User manual, athlete, section 6 "Progress" (Report to your instructor): {BLOB}docs/user-manual/en/athlete.md
 """,
 }
 
@@ -632,7 +719,7 @@ LT["title"] = {
               f"Kodas: [github.com/mse1987319-png/workout-log]({REPO})"],
     "year": "2026  ·  React + Vite  ·  Supabase  ·  Vercel  ·  Zapier  ·  Gmail  ·  Notion",
     "notes": f"""
-Laikas: ~20 s. Pagrindinė dalis trunka apie 8 minutes; gyvos demonstracijos scenarijus – A priede, nuorodos – B priede.
+Laikas: ~20 s. Pagrindinė dalis trunka apie 9 minutes; gyvos demonstracijos scenarijus – A priede, nuorodos – B priede.
 
 Sakykite: Logify – internetinis treniruočių žurnalas. Sportininkai vykdo treniruočių planus, registruoja treniruotes, o treneris automatiškai gauna el. laišką apie kiekvieną naują treniruotę. Viskas, ką šiandien matysite, veikia gamybinėje aplinkoje adresu, nurodytu skaidrėje.
 
@@ -843,6 +930,96 @@ Sakykite: Zap 1 pagauna webhook'ą. Filter praleidžia tik naujas eilutes, turin
 - Zapier vadovas: {BLOB}docs/lt/zapier.md
 - Užduoties 15, 16 ir 18 skaidrės
 - Zapier pagalba (Paths, Filter, klaidų valdymas): https://help.zapier.com
+""",
+}
+
+LT["mail_workout"] = {
+    "title": "Kas gauna laišką: nauja treniruotė",
+    "kicker": "Vienas naujas naudotojas – nuo registracijos iki trenerio pašto dėžutės  ·  Zap 1",
+    "spine": [
+        ("start", "Naujo naudotojo registracija"),
+        ("dec", "Koks vaidmuo?"),
+        ("proc", "Įrašo treniruotę: **Išsaugoti treniruotę** → vienas INSERT į `workouts`"),
+        ("dec", "Dalijasi su treneriu?"),
+        ("dec", "`type` = strength?"),
+        ("mail", "**Laiškas „STRENGTH: pavadinimas“** su serijomis kiekvienam susietam treneriui"),
+    ],
+    "edges": [None, "Sportininkas", None, "Taip", "Taip"],
+    "downs": [
+        (1, "Treneris", "none", "**Laiško nėra.** Treneriai neturi skilties **Dalijimasis**, todėl jų pačių "
+                                "treniruotės niekam nesiunčiamos. Jie *gauna* su jais besidalijančių sportininkų "
+                                "laiškus."),
+        (2, None, "note", "**Pervadinta vėliau?** *Redaguoti pavadinimą* – tai UPDATE: Filter jį sustabdo, antro "
+                          "laiško nėra."),
+        (3, "Ne", "none", "**Laiško nėra.** Treniruotė išsaugoma, bet jos `instructor_emails` tuščias: Filter "
+                          "sustabdo paleidimą (0 užduočių)."),
+        (4, "Ne", "mail2", "**Laiškas „New workout: pavadinimas“** kiekvienam susietam treneriui (Fallback kelias)."),
+    ],
+    "facts_h": "SVARBU ŽINOTI",
+    "legend": ["Laiškas išsiųstas", "Laiško nėra"],
+    "facts": [
+        "**Keli treneriai?** Vienas laiškas visiems kartu: 1 Zapier užduotis, ne po vieną kiekvienam.",
+        "**Pradėjo dalytis vėliau?** Siunčiamos tik po to išsaugotos treniruotės; senos nesiunčiamos. "
+        "**Nustojo dalytis?** Laiškai nebesiunčiami.",
+        "**Sportininkas kopijos negauna.** Laiškai siunčiami tik treneriams, jų registracijos el. pašto adresu.",
+    ],
+    "notes": f"""
+Laikas: ~30 s.
+
+Sakykite: Sekime visiškai naują naudotoją. Jei jis registruojasi kaip treneris, jo paties treniruotės niekam nesiunčiamos: treneriai neturi skilties „Dalijimasis“, jie laiškus gauna. Sportininko treniruotė siunčiama tik tada, kai išsaugojimo metu jis dalijasi bent su vienu treneriu. Tada tipas parenka temą: jėgos treniruotė eina keliu A, visa kita – Fallback keliu. Vėliau pervadinus treniruotę, nieko nesiunčiama.
+
+Užkulisiai: BEFORE INSERT trigeris į eilutę nukopijuoja susietų trenerių el. paštus (instructor_emails); Zapier Filter reikalauja type = INSERT ir netuščio instructor_emails.
+
+Šaltiniai:
+- Zapier vadovas, „Kas gauna laišką“ ir testai Gavėjas 1–3: {BLOB}docs/lt/zapier.md
+- Trigeris set_instructor_emails(): {BLOB}supabase/schema.sql
+- SQL testas: {BLOB}supabase/tests/instructor_emails.test.sql
+- Naudotojo vadovas, treneris, 7 skyrius „El. laiškai, kuriuos gaunate“: {BLOB}docs/user-manual/lt/instructor.md
+""",
+}
+
+LT["mail_report"] = {
+    "title": "Kas gauna laišką: pažangos ataskaita",
+    "kicker": "Tas pats naujas naudotojas spaudžia „Siųsti ataskaitą treneriui“  ·  Zap 2",
+    "spine": [
+        ("start", "Naujo naudotojo registracija"),
+        ("dec", "Koks vaidmuo?"),
+        ("proc", "**Pažanga** → **Siųsti ataskaitą treneriui**"),
+        ("dec", "Ataskaita jau siųsta per 5 min.?"),
+        ("dec", "Dalijasi su treneriu?"),
+        ("mail", "**Laiškas „Progress report: sportininkas (datos)“** kiekvienam susietam treneriui"),
+    ],
+    "edges": [None, "Sportininkas", None, "Ne", "Taip"],
+    "downs": [
+        (1, "Treneris", "none", "**Laiško nėra.** Trenerio paties ataskaita išsaugoma, bet su juo niekas "
+                                "nesusietas: Zap 2 Filter ją sustabdo."),
+        (2, None, "note", "**Dar nėra treniruočių?** Pažanga rodo tuščią būseną; mygtukas atsiranda po pirmos "
+                          "įrašytos treniruotės."),
+        (3, "Taip", "none", "**Atmesta:** „Ataskaitą išsiuntėte prieš kelias minutes…“. Niekas neišsaugoma, "
+                            "laiško nėra."),
+        (4, "Ne", "none", "**Laiško nėra.** 7 dienų ataskaita išsaugoma be `instructor_emails`: Filter sustabdo "
+                          "Zap 2 (0 užduočių)."),
+    ],
+    "facts_h": "SVARBU ŽINOTI",
+    "legend": ["Laiškas išsiųstas", "Laiško nėra"],
+    "facts": [
+        "**Kas joje:** paskutinės 7 dienos (treniruotės, minutės, serijos, sunkiausias svoris); tekstą rašo "
+        "`send_report()`, visada anglų kalba.",
+        "**Keli treneriai?** Vienas laiškas visiems kartu: 1 Zapier užduotis.",
+        "**Gavėjus** siuntimo akimirką pagal dalijimosi ryšius įrašo duomenų bazės trigeris. Adreso įvesti niekas "
+        "negali.",
+    ],
+    "notes": f"""
+Laikas: ~30 s.
+
+Sakykite: Ataskaitai galioja ta pati taisyklė ir dar vienas patikrinimas. Mygtukas „Siųsti ataskaitą“ atsiranda, kai sportininkas įrašo bent vieną treniruotę. Duomenų bazė neleidžia siųsti antros ataskaitos per penkias minutes, todėl pašto dėžutės užversti neįmanoma. Jei sportininkas su niekuo nesidalija, ataskaita vis tiek išsaugoma, bet Zap 2 Filter ją sustabdo ir laiško niekas negauna.
+
+Užkulisiai: send_report() patikrina 5 minučių taisyklę ir įterpia vieną reports eilutę; tas pats trigeris kaip treniruotėms užpildo instructor_emails; webhook reports_to_zapier paleidžia Zap 2 (Filter → Gmail).
+
+Šaltiniai:
+- Zapier vadovas, „Zap 2: pažangos ataskaitos“: {BLOB}docs/lt/zapier.md
+- send_report() ir trigeris: {BLOB}supabase/schema.sql
+- Naudotojo vadovas, sportininkas, 6 skyrius „Pažanga“: {BLOB}docs/user-manual/lt/athlete.md
 """,
 }
 

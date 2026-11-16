@@ -531,9 +531,90 @@ def slide_zaps(d):
     notes(s, c["notes"])
 
 
+def slide_mail_flow(d, key, tag):
+    """Left-to-right flowchart: does anyone get an email when a new user logs a workout / sends a report?
+    content: spine = [(kind, text)], kind in start | dec | proc | mail; edges = labels of the arrows between
+    spine nodes; downs = [(spine index, arrow label, kind, text)], kind in none | note | mail2."""
+    c = d.c[key]
+    s = d.content(tag, c["title"], c["kicker"])
+    nodes, labels = c["spine"], c["edges"]
+    n = len(nodes)
+    Y = 2.42                                   # centre line of the main path
+    half = {"start": 0.45, "dec": 0.75, "proc": 0.6, "mail": 0.7}
+    # every arrow gets at least the room its label needs; the nodes share the rest
+    gaps = [max(0.38, 0.1 + 0.072 * len(lab)) if lab else 0.38 for lab in labels]
+    base = [{"start": 1.3, "dec": 1.95, "proc": 1.9, "mail": 1.8}[k] for k, _ in nodes]
+    k = (12.45 - sum(gaps)) / sum(base)
+    widths = [w * k for w in base]
+    xs = [0.45]
+    for i in range(n - 1):
+        xs.append(xs[-1] + widths[i] + gaps[i])
+    cx = [x + w / 2 for x, w in zip(xs, widths)]
+    for i, ((kind, txt), x, w) in enumerate(zip(nodes, xs, widths)):
+        h = half[kind] * 2
+        if kind == "start":
+            box(s, x, Y - h / 2, w, h, [txt], fill=DARK, line_color=None, size=13, color=WHITE, font=HEAD,
+                align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, radius=0.5, margin=0.06)
+        elif kind == "dec":
+            # a diamond's own text area is only half its width, so the question sits in a wider text box on top
+            rect(s, x, Y - h / 2, w, h, WHITE, TEAL, shape=MSO_SHAPE.DIAMOND, line_w=2)
+            text(s, x + w * 0.13, Y - h * 0.35, w * 0.74, h * 0.7, [txt], size=11, font=BODY_B,
+                 align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, space=0, margin=0)
+        elif kind == "proc":
+            box(s, x, Y - h / 2, w, h, [txt], fill=SOFT, line_color=LINE, size=11, align=PP_ALIGN.CENTER,
+                anchor=MSO_ANCHOR.MIDDLE, margin=0.1)
+        else:
+            box(s, x, Y - h / 2, w, h, [txt], fill=ORANGE, line_color=None, size=11, color=WHITE,
+                align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.1)
+        if i < n - 1:
+            arrow(s, x + w, Y, xs[i + 1], Y, color=INK, w=2)
+            if labels[i]:
+                text(s, x + w - 0.3, Y - 0.33, gaps[i] + 0.6, 0.28, [labels[i]], size=10, color=TEAL,
+                     font=BODY_B, align=PP_ALIGN.CENTER, space=0)
+    # side exits, each in its own column under the node it leaves
+    top, bh = 3.75, 1.3
+    downs = c["downs"]
+    for j, (i, lab, kind, txt) in enumerate(downs):
+        left = 0.45 if j == 0 else (cx[downs[j - 1][0]] + cx[i]) / 2 + 0.07
+        right = 12.9 if j == len(downs) - 1 else (cx[i] + cx[downs[j + 1][0]]) / 2 - 0.07
+        if right - left > 3.0:                 # keep a wide column's box close to its arrow
+            left = max(left, min(cx[i] - 1.5, right - 3.0))
+            right = left + 3.0
+        y0 = Y + half[nodes[i][0]]
+        arrow(s, cx[i], y0, cx[i], top, color=INK if kind == "mail2" else MUTED, w=2, dash=kind == "note")
+        if lab:
+            text(s, cx[i] + 0.08, y0 + 0.06, 1.6, 0.28, [lab], size=10, color=ORANGE_D, font=BODY_B, space=0)
+        if kind == "mail2":
+            box(s, left, top, right - left, bh, [txt], fill=TEAL, line_color=None, size=11, color=WHITE,
+                anchor=MSO_ANCHOR.MIDDLE, margin=0.14)
+        elif kind == "note":
+            box(s, left, top, right - left, bh, [txt], fill=WHITE, line_color=MUTED, size=11, color=MUTED,
+                anchor=MSO_ANCHOR.MIDDLE, margin=0.14, dash=True)
+        else:
+            box(s, left, top, right - left, bh, [txt], fill=SOFT, line_color=MUTED, size=11,
+                anchor=MSO_ANCHOR.MIDDLE, margin=0.14, dash=True)
+    # legend and the facts that the chart cannot show
+    text(s, 0.45, 5.25, 6.0, 0.3, [c["facts_h"]], size=12.5, color=MUTED, font=HEAD_N, space=0)
+    lx = 12.9
+    for label, fill, col, dash in ((c["legend"][1], SOFT, INK, True), (c["legend"][0], ORANGE, WHITE, False)):
+        w = 0.3 + 0.075 * len(label)
+        lx -= w
+        box(s, lx, 5.24, w, 0.28, [label], fill=fill, line_color=MUTED if dash else None, size=9.5, color=col,
+            font=BODY_B, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.02, radius=0.5, dash=dash)
+        lx -= 0.1
+    facts = c["facts"]
+    fw = (12.45 - 0.25 * (len(facts) - 1)) / len(facts)
+    for i, f in enumerate(facts):
+        x = 0.45 + i * (fw + 0.25)
+        box(s, x, 5.6, fw, 1.25, [f], fill=SOFT_T, line_color=None, size=11.5, anchor=MSO_ANCHOR.MIDDLE,
+            margin=0.18, radius=0.04)
+        rect(s, x, 5.6, 0.07, 1.25, TEAL)
+    notes(s, c["notes"])
+
+
 def slide_deploy(d):
     c = d.c["deploy"]
-    s = d.content("07", c["title"])
+    s = d.content("09", c["title"])
     y = 1.6
     for i, (head, body, col) in enumerate(c["pipe"]):
         box(s, 0.45, y, 5.3, 1.0, [f"**{head}**", body], fill=WHITE, line_color=col, size=12, space=2,
@@ -554,7 +635,7 @@ def slide_deploy(d):
 
 def slide_reqs(d):
     c = d.c["reqs"]
-    s = d.content("08", c["title"], c["kicker"])
+    s = d.content("10", c["title"], c["kicker"])
     gf = s.shapes.add_table(len(c["rows"]) + 1, 3, Inches(0.45), Inches(1.5), Inches(12.45), Inches(5.3))
     tbl = gf.table
     for i, wv in enumerate((2.35, 4.6, 5.5)):
@@ -565,7 +646,7 @@ def slide_reqs(d):
 
 def slide_quality(d):
     c = d.c["quality"]
-    s = d.content("09", c["title"])
+    s = d.content("11", c["title"])
     for i, (num, label, col) in enumerate(c["tiles"]):
         x = 0.45 + i * 3.15
         rect(s, x, 1.55, 2.95, 1.75, DARK)
@@ -581,7 +662,7 @@ def slide_quality(d):
 
 def slide_hard(d):
     c = d.c["hard"]
-    s = d.content("10", c["title"])
+    s = d.content("12", c["title"])
     for i, (head, problem, fix) in enumerate(c["cards"]):
         x = 0.45 + (i % 2) * 6.3
         y = 1.55 + (i // 2) * 2.7
@@ -716,6 +797,8 @@ def build(lang):
     slide_arch(d)
     slide_erd(d)
     slide_zaps(d)
+    slide_mail_flow(d, "mail_workout", "07")
+    slide_mail_flow(d, "mail_report", "08")
     slide_deploy(d)
     slide_reqs(d)
     slide_quality(d)
