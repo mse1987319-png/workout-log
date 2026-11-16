@@ -11,7 +11,7 @@ const loadCard = () => Promise.all([previewReport(), lastReport()]).then(([stats
 // "Send report to instructor": a preview of the last 7 days, when the last
 // report went out, and the button. The database builds and stores the report.
 export default function ReportCard() {
-  const { status, data, error, reload, setData } = useLoad(loadCard)
+  const { status, data, error, reload, setData } = useLoad(loadCard, 'report')
   const { t } = useLanguage()
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState(null)

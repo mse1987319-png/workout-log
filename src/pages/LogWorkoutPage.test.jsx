@@ -2,13 +2,18 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { setCurrentUser } from '../offline/currentUser'
+import { saveData } from '../offline/savedData'
 import { backend } from '../test/fakeBackend'
+import { ATHLETE } from '../test/fakeSupabase'
 import LogWorkoutPage from './LogWorkoutPage'
 
 vi.mock('../lib/supabase', async () => {
   const { createTestClient } = await import('../test/fakeBackend')
   return { supabase: createTestClient(), configError: null }
 })
+
+const SAVED_AT = Date.parse('2026-11-16T16:42:00Z')
 
 const PLAN_OPTIONS = [
   { id: 'plan-1', name: 'Strength block' },
@@ -406,6 +411,77 @@ describe('LogWorkoutPage: exercises and cardio details', () => {
       p_type: 'strength',
       p_activity: null,
       p_distance_km: null,
+    })
+  })
+})
+
+describe('LogWorkoutPage: offline', () => {
+  const SAVED_PROGRESS = {
+    workouts: [{ id: 'w1', type: 'strength', duration_min: 60, created_at: '2026-11-10T18:00:00+00:00' }],
+    sets: [
+      { workout_id: 'w1', exercise: 'Squat', set_no: 1, reps: 5, weight_kg: 100, created_at: '2026-11-10T18:00:00+00:00' },
+      { workout_id: 'w1', exercise: 'Bench press', set_no: 2, reps: 8, weight_kg: 60, created_at: '2026-11-10T18:00:00+00:00' },
+    ],
+    goals: [],
+  }
+
+  beforeEach(() => {
+    backend.reset()
+    setCurrentUser(ATHLETE.id)
+    // The hints' own requests fail too: the phone is offline.
+    backend.networkDown('GET', '/rest/v1/workout_sets')
+  })
+
+  async function startStrength(user) {
+    await screen.findByLabelText('Plan')
+    await fillWorkout(user, { title: 'Leg day', type: 'Strength', duration: '60' })
+    await user.click(screen.getByRole('button', { name: 'Add exercise' }))
+  }
+
+  it('shows the saved plans offline, with when they were saved', async () => {
+    saveData('planOptions', PLAN_OPTIONS, SAVED_AT)
+    backend.networkDown('GET', '/rest/v1/plans')
+    renderLog()
+
+    expect(await screen.findByRole('option', { name: 'Strength block' })).toBeInTheDocument()
+    expect(screen.getByText(/Offline: showing data saved on/)).toBeInTheDocument()
+  })
+
+  it('shows last time from the saved progress offline', async () => {
+    saveData('progress', SAVED_PROGRESS, SAVED_AT)
+    backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+    const user = renderLog()
+    await startStrength(user)
+
+    await user.type(screen.getByLabelText('Exercise 1 name'), 'Squat')
+    await user.tab()
+
+    expect(await screen.findByText(/^Last time \(.+\): 5 @ 100 kg$/)).toBeInTheDocument()
+  })
+
+  it('shows nothing for last time offline when no progress is saved', async () => {
+    backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+    const user = renderLog()
+    await startStrength(user)
+
+    await user.type(screen.getByLabelText('Exercise 1 name'), 'Squat')
+    await user.tab()
+
+    await waitFor(() => expect(backend.requests.some((r) => r.query.get('exercise') === 'ilike.Squat')).toBe(true))
+    expect(screen.queryByText(/Last time|First time/)).not.toBeInTheDocument()
+  })
+
+  it('suggests exercise names from the saved progress offline', async () => {
+    saveData('progress', SAVED_PROGRESS, SAVED_AT)
+    backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+    const user = renderLog()
+    await startStrength(user)
+
+    const input = screen.getByLabelText('Exercise 1 name')
+    await waitFor(() => {
+      const listId = input.getAttribute('list')
+      const options = [...document.querySelectorAll(`datalist[id="${listId}"] option`)].map((o) => o.value)
+      expect(options).toEqual(['Squat', 'Bench press'])
     })
   })
 })

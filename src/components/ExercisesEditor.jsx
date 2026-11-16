@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import { listExerciseNames } from '../api/sets'
 import { useLanguage } from '../i18n/useLanguage'
+import { savedExerciseNames } from '../offline/hints'
 import LastTime from './LastTime'
 
 let lastKey = 0
@@ -23,7 +24,10 @@ export default function ExercisesEditor({ exercises, onChange }) {
       (list) => {
         if (current) setNames(list)
       },
-      () => {}, // suggestions are optional
+      // Suggestions are optional: if the lookup fails, use the saved progress (maybe none).
+      () => {
+        if (current) setNames(savedExerciseNames())
+      },
     )
     return () => {
       current = false

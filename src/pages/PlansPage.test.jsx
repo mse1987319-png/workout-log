@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthContext } from '../auth/AuthContext'
+import { setCurrentUser } from '../offline/currentUser'
+import { saveData } from '../offline/savedData'
 import { backend } from '../test/fakeBackend'
 import { ATHLETE } from '../test/fakeSupabase'
 import PlansPage from './PlansPage'
@@ -11,6 +13,8 @@ vi.mock('../lib/supabase', async () => {
   const { createTestClient } = await import('../test/fakeBackend')
   return { supabase: createTestClient(), configError: null }
 })
+
+const SAVED_AT = Date.parse('2026-11-16T16:42:00Z')
 
 const PLANS = [
   {
@@ -391,5 +395,15 @@ describe('PlansPage', () => {
       await user.click(card.getByRole('button', { name: 'Try again' }))
       await waitFor(() => expect(screen.queryByRole('heading', { name: 'Strength block' })).not.toBeInTheDocument())
     })
+  })
+
+  it('shows the saved plans offline, with when they were saved', async () => {
+    setCurrentUser(ATHLETE.id)
+    saveData('plans', PLANS, SAVED_AT)
+    backend.networkDown('GET', '/rest/v1/plans')
+    renderPlans()
+
+    expect(await screen.findByRole('heading', { name: 'Strength block' })).toBeInTheDocument()
+    expect(screen.getByText(/Offline: showing data saved on/)).toBeInTheDocument()
   })
 })

@@ -2,13 +2,18 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { setCurrentUser } from '../offline/currentUser'
+import { saveData } from '../offline/savedData'
 import { backend } from '../test/fakeBackend'
+import { ATHLETE } from '../test/fakeSupabase'
 import AthletesPage from './AthletesPage'
 
 vi.mock('../lib/supabase', async () => {
   const { createTestClient } = await import('../test/fakeBackend')
   return { supabase: createTestClient(), configError: null }
 })
+
+const SAVED_AT = Date.parse('2026-11-16T16:42:00Z')
 
 const INSTRUCTOR = { role: 'instructor', invite_code: 'K7P2QX' }
 const ANNA = {
@@ -103,5 +108,17 @@ describe('AthletesPage', () => {
       await screen.findByText('Only instructor accounts have a code: this account signed up as an athlete.'),
     ).toBeInTheDocument()
     expect(screen.getByText('No athletes yet.')).toBeInTheDocument()
+  })
+
+  it('shows the saved athletes offline, with when they were saved', async () => {
+    setCurrentUser(ATHLETE.id)
+    saveData('athletes', { profile: INSTRUCTOR, athletes: [ANNA] }, SAVED_AT)
+    backend.networkDown('GET', '/rest/v1/profiles')
+    backend.networkDown('POST', '/rest/v1/rpc/my_athletes')
+    renderAthletes()
+
+    expect(await screen.findByRole('link', { name: 'anna@example.com' })).toBeInTheDocument()
+    expect(screen.getByText('K7P2QX')).toBeInTheDocument()
+    expect(screen.getByText(/Offline: showing data saved on/)).toBeInTheDocument()
   })
 })

@@ -1,14 +1,12 @@
 import { Link } from 'react-router-dom'
-import { getMyProfile, listMyAthletes } from '../api/sharing'
+import { getAthletesOverview } from '../api/sharing'
+import SavedDataNotice from '../components/SavedDataNotice'
 import { ErrorState, Loading } from '../components/States'
 import { t } from '../i18n/i18n'
 import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
 import { formatDay } from '../lib/format'
 import { useLoad } from '../lib/useLoad'
-
-const loadAthletes = () =>
-  Promise.all([getMyProfile(), listMyAthletes()]).then(([profile, athletes]) => ({ profile, athletes }))
 
 function activity({ workouts_last_7_days: count }) {
   if (count === 0) return t('athletes.noWorkouts7')
@@ -17,13 +15,14 @@ function activity({ workouts_last_7_days: count }) {
 
 // My athletes (instructors): my invite code, and the athletes who share with me.
 export default function AthletesPage() {
-  const { status, data, error, reload } = useLoad(loadAthletes)
+  const { status, data, error, savedAt, reload } = useLoad(getAthletesOverview, 'athletes')
   useLanguage() // re-render when the language changes
   const code = data?.profile.invite_code
 
   return (
     <section>
       <h1>{t('nav.myAthletes')}</h1>
+      {savedAt && <SavedDataNotice savedAt={savedAt} onRetry={reload} />}
 
       {status === 'loading' && <Loading>{t('athletes.loading')}</Loading>}
 

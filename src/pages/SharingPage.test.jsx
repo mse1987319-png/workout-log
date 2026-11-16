@@ -2,13 +2,18 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { setCurrentUser } from '../offline/currentUser'
+import { saveData } from '../offline/savedData'
 import { backend } from '../test/fakeBackend'
+import { ATHLETE } from '../test/fakeSupabase'
 import SharingPage from './SharingPage'
 
 vi.mock('../lib/supabase', async () => {
   const { createTestClient } = await import('../test/fakeBackend')
   return { supabase: createTestClient(), configError: null }
 })
+
+const SAVED_AT = Date.parse('2026-11-16T16:42:00Z')
 
 const COACH = { instructor_id: 'i-1', email: 'coach@example.com', linked_at: '2026-11-10T09:00:00+00:00' }
 const PHYSIO = { instructor_id: 'i-2', email: 'physio@example.com', linked_at: '2026-11-12T09:00:00+00:00' }
@@ -140,5 +145,15 @@ describe('SharingPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Try again' }))
     expect(await screen.findByText("You don't share with an instructor yet.")).toBeInTheDocument()
+  })
+
+  it('shows the saved instructors offline, with when they were saved', async () => {
+    setCurrentUser(ATHLETE.id)
+    saveData('instructors', [COACH], SAVED_AT)
+    backend.networkDown('POST', LIST)
+    renderSharing()
+
+    expect(await screen.findByText('coach@example.com')).toBeInTheDocument()
+    expect(screen.getByText(/Offline: showing data saved on/)).toBeInTheDocument()
   })
 })

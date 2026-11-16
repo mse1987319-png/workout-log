@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { listPlans } from '../api/plans'
 import { useAuth } from '../auth/AuthContext'
 import PlanCard from '../components/PlanCard'
+import SavedDataNotice from '../components/SavedDataNotice'
 import { EmptyState, ErrorState, Loading, SuccessMessage } from '../components/States'
 import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
@@ -12,7 +13,7 @@ import { useLoad } from '../lib/useLoad'
 export default function PlansPage() {
   const { user } = useAuth()
   const { t } = useLanguage()
-  const { status, data: plans, error, reload, setData } = useLoad(listPlans)
+  const { status, data: plans, error, savedAt, reload, setData } = useLoad(listPlans, 'plans')
   const [deletedNotice, setDeletedNotice] = useState(false)
 
   function handleWorkoutRenamed({ id, title }) {
@@ -46,6 +47,7 @@ export default function PlansPage() {
           {t('plans.new')}
         </Link>
       </div>
+      {savedAt && <SavedDataNotice savedAt={savedAt} onRetry={reload} />}
 
       {deletedNotice && <SuccessMessage>{t('plans.deleted')}</SuccessMessage>}
 

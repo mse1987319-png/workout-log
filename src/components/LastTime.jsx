@@ -2,13 +2,16 @@ import { useEffect, useState } from 'react'
 import { lastSession } from '../api/sets'
 import { useLanguage } from '../i18n/useLanguage'
 import { formatDay } from '../lib/format'
+import { isNetworkError } from '../lib/errors'
 import { formatSets } from '../lib/sets'
+import { savedLastSession } from '../offline/hints'
 
 /**
  * "Last time (10 Nov): 2 × 5 @ 100 kg" for an exercise, or "First time
  * logging …". With `before`, only sessions before that time count (so a
  * logged workout does not show itself). Shows nothing while loading or if
- * the lookup fails: it is a hint, not essential.
+ * the lookup fails: it is a hint, not essential. When the network is down
+ * it uses the saved Progress data instead.
  */
 export default function LastTime({ name, before }) {
   // session: the sets of the last workout, null if there is none, undefined if the lookup failed.
@@ -23,8 +26,10 @@ export default function LastTime({ name, before }) {
       (session) => {
         if (current) setResult({ key: `${name}|${before ?? ''}`, session })
       },
-      () => {
-        if (current) setResult({ key: `${name}|${before ?? ''}`, session: undefined })
+      (error) => {
+        // Offline: the saved progress, if there is any (undefined shows nothing).
+        const session = isNetworkError(error) ? savedLastSession(name, { before }) : undefined
+        if (current) setResult({ key: `${name}|${before ?? ''}`, session })
       },
     )
     return () => {

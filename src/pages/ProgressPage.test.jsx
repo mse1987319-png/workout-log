@@ -4,13 +4,18 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatCalendarDay } from '../lib/format'
 import { toYmd } from '../lib/goals'
+import { setCurrentUser } from '../offline/currentUser'
+import { saveData } from '../offline/savedData'
 import { backend } from '../test/fakeBackend'
+import { ATHLETE } from '../test/fakeSupabase'
 import ProgressPage from './ProgressPage'
 
 vi.mock('../lib/supabase', async () => {
   const { createTestClient } = await import('../test/fakeBackend')
   return { supabase: createTestClient(), configError: null }
 })
+
+const SAVED_AT = Date.parse('2026-11-16T16:42:00Z')
 
 const now = new Date()
 const daysAgo = (n) => new Date(now.getTime() - n * 24 * 60 * 60 * 1000).toISOString()
@@ -191,5 +196,17 @@ describe('ProgressPage', () => {
     expect(await screen.findByText('Pick up where you left off.')).toBeInTheDocument()
     expect(screen.getByText(/^Your last workout was \d+ days ago \(.+\)\.$/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Log a workout' })).toHaveAttribute('href', '/log')
+  })
+
+  it('shows the saved progress offline, with when it was saved', async () => {
+    setCurrentUser(ATHLETE.id)
+    saveData('progress', { workouts: WORKOUTS, sets: SETS, goals: [SQUAT_GOAL] }, SAVED_AT)
+    backend.networkDown('GET', '/rest/v1/workouts')
+    backend.networkDown('GET', '/rest/v1/workout_sets')
+    backend.networkDown('GET', '/rest/v1/goals')
+    renderProgress()
+
+    expect(await screen.findByText(goalLabel(SQUAT_GOAL))).toBeInTheDocument()
+    expect(screen.getByText(/Offline: showing data saved on/)).toBeInTheDocument()
   })
 })

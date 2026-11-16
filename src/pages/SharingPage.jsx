@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { linkInstructor, listMyInstructors, stopSharing } from '../api/sharing'
+import SavedDataNotice from '../components/SavedDataNotice'
 import { ErrorState, Loading, SuccessMessage } from '../components/States'
 import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
@@ -122,7 +123,7 @@ function ShareForm({ onLinked }) {
 // Sharing (athletes): share with an instructor by code, see who you share
 // with, and stop. Instructors can read what you share, never change it.
 export default function SharingPage() {
-  const { status, data: instructors, error, reload, setData } = useLoad(listMyInstructors)
+  const { status, data: instructors, error, savedAt, reload, setData } = useLoad(listMyInstructors, 'instructors')
   const { t } = useLanguage()
 
   function addInstructor(linked) {
@@ -138,6 +139,7 @@ export default function SharingPage() {
   return (
     <section>
       <h1>{t('nav.sharing')}</h1>
+      {savedAt && <SavedDataNotice savedAt={savedAt} onRetry={reload} />}
       <p className="page-intro">
         {t('sharing.intro')}
       </p>
