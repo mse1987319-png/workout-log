@@ -87,6 +87,70 @@ describe('workouts API', () => {
     ).rejects.toMatchObject({ code: '42501' })
   })
 
+  it('sends the id made on the phone and the time Save was pressed', async () => {
+    backend.reply('POST', '/rest/v1/rpc/log_workout', 200, SAVED)
+
+    await createWorkout({
+      planId: 'plan-1',
+      title: 'Leg day',
+      type: 'strength',
+      durationMin: 60,
+      id: 'b2c4e6a8-1d3f-4a5b-8c7d-9e0f1a2b3c4d',
+      loggedAt: '2026-11-16T16:42:00.000Z',
+    })
+
+    expect(backend.requests[0].body).toMatchObject({
+      p_id: 'b2c4e6a8-1d3f-4a5b-8c7d-9e0f1a2b3c4d',
+      p_logged_at: '2026-11-16T16:42:00.000Z',
+    })
+  })
+
+  it('leaves both out when not given', async () => {
+    backend.reply('POST', '/rest/v1/rpc/log_workout', 200, SAVED)
+
+    await createWorkout({ planId: 'plan-1', title: 'Leg day', type: 'strength', durationMin: 60 })
+
+    const body = backend.requests[0].body
+    expect(body).not.toHaveProperty('p_id')
+    expect(body).not.toHaveProperty('p_logged_at')
+  })
+
+  it('passes an abort signal to the request', async () => {
+    backend.reply('POST', '/rest/v1/rpc/log_workout', 200, SAVED)
+    const controller = new AbortController()
+
+    await createWorkout({
+      planId: 'plan-1',
+      title: 'Leg day',
+      type: 'strength',
+      durationMin: 60,
+      signal: controller.signal,
+    })
+
+    expect(backend.requests[0].signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('reports the HTTP status with an error', async () => {
+    backend.reply('POST', '/rest/v1/rpc/log_workout', 403, {
+      code: '42501',
+      message: 'new row violates row-level security policy for table "workouts"',
+      details: null,
+      hint: null,
+    })
+
+    await expect(
+      createWorkout({ planId: 'plan-1', title: 'Leg day', type: 'strength', durationMin: 60 }),
+    ).rejects.toMatchObject({ code: '42501', status: 403 })
+  })
+
+  it('reports status 0 when there was no response', async () => {
+    backend.networkDown('POST', '/rest/v1/rpc/log_workout')
+
+    await expect(
+      createWorkout({ planId: 'plan-1', title: 'Leg day', type: 'strength', durationMin: 60 }),
+    ).rejects.toMatchObject({ status: 0 })
+  })
+
   it('loads one workout with its plan and its sets in entry order', async () => {
     const row = {
       ...SAVED,

@@ -15,8 +15,14 @@ export async function createWorkout({
   distanceKm = null,
   notes = null,
   sets = [],
+  id = null,
+  loggedAt = null,
+  signal = null,
 }) {
-  const { data, error } = await supabase.rpc('log_workout', {
+  // id (made on the phone) and loggedAt (when Save was pressed) are optional
+  // parameters of log_workout in database v5; an older database rejects them,
+  // so they are sent only when given.
+  const params = {
     p_plan_id: planId,
     p_title: title,
     p_type: type,
@@ -25,8 +31,15 @@ export async function createWorkout({
     p_distance_km: distanceKm,
     p_notes: notes,
     p_sets: sets,
-  })
-  if (error) throw error
+  }
+  if (id) params.p_id = id
+  if (loggedAt) params.p_logged_at = loggedAt
+
+  let request = supabase.rpc('log_workout', params)
+  if (signal) request = request.abortSignal(signal)
+  const { data, error, status } = await request
+  // status is the HTTP status; 0 when there was no response at all.
+  if (error) throw Object.assign(error, { status })
   return data
 }
 
