@@ -65,6 +65,9 @@ export const translations = {
     'errors.db.ownCode': 'That is your own code: give it to your athletes.',
     'errors.db.planHasWorkouts': "Athletes have logged workouts under this plan, so it can't be deleted.",
 
+    // Offline
+    'offline.savedData': 'Offline: showing data saved on {time}.',
+
     // Configuration (shown when the Supabase settings are missing)
     'config.and': ' and ',
     'config.missing':
@@ -397,6 +400,9 @@ export const translations = {
     'errors.db.noInstructorCode': 'Joks treneris neturi tokio kodo. Patikrinkite jį ir bandykite dar kartą.',
     'errors.db.ownCode': 'Tai jūsų pačių kodas: duokite jį savo sportininkams.',
     'errors.db.planHasWorkouts': 'Sportininkai yra įrašę treniruočių pagal šį planą, todėl jo ištrinti negalima.',
+
+    // Offline
+    'offline.savedData': 'Nėra ryšio: rodomi duomenys, išsaugoti {time}.',
 
     // Configuration (shown when the Supabase settings are missing)
     'config.and': ' ir ',

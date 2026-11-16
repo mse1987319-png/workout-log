@@ -37,11 +37,12 @@ const DB_MESSAGES = {
 export function friendlyError(error) {
   const message = typeof error?.message === 'string' ? error.message.trim() : ''
 
-  if (isNetworkError(error)) {
-    return t('errors.network')
-  }
+  // A known code first: offline_not_saved keeps the failed request's message.
   if (error?.code && KNOWN_CODES.has(String(error.code))) {
     return t(`errors.code.${error.code}`)
+  }
+  if (isNetworkError(error)) {
+    return t('errors.network')
   }
   if (DB_MESSAGES[message]) {
     return t(DB_MESSAGES[message])

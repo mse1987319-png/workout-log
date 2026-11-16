@@ -100,6 +100,12 @@ describe('friendlyError for offline codes', () => {
     )
   })
 
+  it('says the data is not saved yet even when the error carries the failed request message', () => {
+    expect(friendlyError({ code: 'offline_not_saved', message: 'TypeError: Failed to fetch' })).toBe(
+      "You're offline, and this hasn't been saved on this phone yet.",
+    )
+  })
+
   it('says the storage is full', () => {
     expect(friendlyError({ code: 'storage_full' })).toBe(
       "This phone's storage is full, so the workout couldn't be kept here. Free some space, or save it when you're online.",

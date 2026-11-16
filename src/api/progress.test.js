@@ -15,7 +15,7 @@ describe('progress API', () => {
   it('loads my workouts and sets oldest first, and my goals soonest first', async () => {
     const workouts = [{ id: 'w1', type: 'strength', duration_min: 50, created_at: '2026-11-01T12:00:00+00:00' }]
     const sets = [
-      { workout_id: 'w1', exercise: 'Squat', reps: 5, weight_kg: 100, created_at: '2026-11-01T12:00:00+00:00' },
+      { workout_id: 'w1', exercise: 'Squat', set_no: 1, reps: 5, weight_kg: 100, created_at: '2026-11-01T12:00:00+00:00' },
     ]
     const goals = [
       { id: 'g1', exercise: 'Squat', target_kg: 120, target_date: '2026-12-31', created_at: '2026-11-02T08:00:00+00:00' },
@@ -29,7 +29,8 @@ describe('progress API', () => {
     const byPath = Object.fromEntries(backend.requests.map((r) => [r.path, r.query]))
     expect(byPath['/rest/v1/workouts'].get('select')).toBe('id,type,duration_min,created_at')
     expect(byPath['/rest/v1/workouts'].get('order')).toBe('created_at.asc')
-    expect(byPath['/rest/v1/workout_sets'].get('select')).toBe('workout_id,exercise,reps,weight_kg,created_at')
+    // set_no gives the order within a workout, for "Last time" from the saved progress offline.
+    expect(byPath['/rest/v1/workout_sets'].get('select')).toBe('workout_id,exercise,set_no,reps,weight_kg,created_at')
     expect(byPath['/rest/v1/workout_sets'].get('order')).toBe('created_at.asc')
     expect(byPath['/rest/v1/goals'].get('select')).toBe('id,exercise,target_kg,target_date,created_at')
     expect(byPath['/rest/v1/goals'].get('order')).toBe('target_date.asc,created_at.asc')
