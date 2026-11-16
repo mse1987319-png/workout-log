@@ -254,15 +254,29 @@ grant execute on function public.format_sets(jsonb) to authenticated;
 -- so every Row Level Security policy above still applies. The INSERT into
 -- workouts still fires the Database Webhook once; if anything fails, nothing
 -- is saved and no webhook request is sent.
+--
+-- v5 (offline logging): the phone makes the workout's id (p_id) and remembers
+-- when Save was pressed (p_logged_at). If the same id arrives again (the phone
+-- never got the answer), the saved workout is returned and nothing is saved
+-- twice, so the webhook fires once too. A logged time in the future or older
+-- than 30 days is ignored and the server's time is used. Both parameters are
+-- optional, so the call the live app already sends keeps working.
+
+-- v5 (offline logging): the old 8-parameter version goes first, because
+-- PostgREST can't choose between two versions that both match a call.
+drop function if exists public.log_workout(uuid, text, text, integer, text, numeric, text, jsonb);
+
 create or replace function public.log_workout(
   p_plan_id      uuid,
   p_title        text,
   p_type         text,
   p_duration_min integer,
-  p_activity     text    default null,
-  p_distance_km  numeric default null,
-  p_notes        text    default null,
-  p_sets         jsonb   default '[]'::jsonb
+  p_activity     text        default null,
+  p_distance_km  numeric     default null,
+  p_notes        text        default null,
+  p_sets         jsonb       default '[]'::jsonb,
+  p_id           uuid        default null,
+  p_logged_at    timestamptz default null
 )
 returns public.workouts
 language plpgsql
@@ -271,15 +285,27 @@ set search_path = ''
 as $$
 declare
   saved public.workouts;
+  logged_at timestamptz := case
+    when p_logged_at between now() - interval '30 days' and now() then p_logged_at
+    else now()
+  end;
 begin
+  -- Sent again (the phone never got the answer): return what was saved.
+  if p_id is not null then
+    select * into saved from public.workouts where id = p_id;
+    if found then
+      return saved;
+    end if;
+  end if;
+
   if p_type <> 'strength' and jsonb_array_length(coalesce(p_sets, '[]'::jsonb)) > 0 then
     raise exception 'Only strength workouts have sets' using errcode = '22023';
   end if;
 
   -- The summary goes into the same INSERT, so the webhook payload carries it.
-  insert into public.workouts (plan_id, title, type, duration_min, activity, distance_km, notes, sets_summary)
-  values (p_plan_id, p_title, p_type, p_duration_min, p_activity, p_distance_km, p_notes,
-          public.format_sets(p_sets))
+  insert into public.workouts (id, plan_id, title, type, duration_min, activity, distance_km, notes, sets_summary, created_at)
+  values (coalesce(p_id, gen_random_uuid()), p_plan_id, p_title, p_type, p_duration_min, p_activity, p_distance_km,
+          p_notes, public.format_sets(p_sets), logged_at)
   returning * into saved;
 
   insert into public.workout_sets (workout_id, exercise, set_no, reps, weight_kg, created_at)
@@ -291,10 +317,22 @@ begin
 end;
 $$;
 
-revoke execute on function public.log_workout(uuid, text, text, integer, text, numeric, text, jsonb)
+revoke execute on function public.log_workout(uuid, text, text, integer, text, numeric, text, jsonb, uuid, timestamptz)
   from public, anon;
-grant execute on function public.log_workout(uuid, text, text, integer, text, numeric, text, jsonb)
+grant execute on function public.log_workout(uuid, text, text, integer, text, numeric, text, jsonb, uuid, timestamptz)
   to authenticated;
+
+-- The database's version, so a newer app can tell it is talking to an older
+-- database (where this function doesn't exist) and fall back.
+create or replace function public.schema_version()
+returns integer
+language sql
+immutable
+set search_path = ''
+as $$ select 5 $$;
+
+revoke execute on function public.schema_version() from public;
+grant execute on function public.schema_version() to anon, authenticated;
 
 -- ===========================================================================
 -- Extended tier: progress reports for the instructor (Zap 2)
