@@ -56,6 +56,9 @@ export const translations = {
     'errors.code.over_request_rate_limit': 'Too many attempts. Wait a few minutes and try again.',
     'errors.code.42501': "You don't have permission to do that.",
     'errors.code.PGRST116': 'This item no longer exists. Reload the page and try again.',
+    'errors.code.offline_not_saved': "You're offline, and this hasn't been saved on this phone yet.",
+    'errors.code.storage_full':
+      "This phone's storage is full, so the workout couldn't be kept here. Free some space, or save it when you're online.",
     // Messages the database raises on purpose (supabase/schema.sql), by their English text.
     'errors.db.reportTooSoon': 'You sent a report a few minutes ago. Wait a little before sending another.',
     'errors.db.noInstructorCode': 'No instructor has that code. Check it and try again.',
@@ -387,6 +390,9 @@ export const translations = {
     'errors.code.over_request_rate_limit': 'Per daug bandymų. Palaukite kelias minutes ir bandykite dar kartą.',
     'errors.code.42501': 'Neturite teisės to daryti.',
     'errors.code.PGRST116': 'Šio įrašo nebėra. Perkraukite puslapį ir bandykite dar kartą.',
+    'errors.code.offline_not_saved': 'Nėra ryšio, o šie duomenys šiame telefone dar neišsaugoti.',
+    'errors.code.storage_full':
+      'Šio telefono atmintis pilna, todėl treniruotės čia išsaugoti nepavyko. Atlaisvinkite vietos arba išsaugokite, kai bus ryšys.',
     'errors.db.reportTooSoon': 'Ataskaitą išsiuntėte prieš kelias minutes. Šiek tiek palaukite, prieš siųsdami kitą.',
     'errors.db.noInstructorCode': 'Joks treneris neturi tokio kodo. Patikrinkite jį ir bandykite dar kartą.',
     'errors.db.ownCode': 'Tai jūsų pačių kodas: duokite jį savo sportininkams.',
