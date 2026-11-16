@@ -674,6 +674,41 @@ def slide_hard(d):
     notes(s, c["notes"])
 
 
+def slide_tco(d):
+    c = d.c["tco"]
+    s = d.content("13", c["title"], c["kicker"])
+    rows = c["rows"]                               # Supabase, Zapier, other infra, per month, per year
+    gf = s.shapes.add_table(len(rows) + 1, 5, Inches(0.45), Inches(1.45), Inches(12.45), Inches(4.0))
+    tbl = gf.table
+    for i, wv in enumerate((1.5, 2.35, 2.35, 2.45, 3.8)):
+        tbl.columns[i].width = Inches(wv)
+    for i, hv in enumerate([0.62] + [0.8] * (len(rows) - 2) + [0.42, 0.55]):
+        tbl.rows[i].height = Inches(hv)
+    style_table(tbl, [c["head"]] + rows, sizes=(12.5, 11), first_col_bold=True, col_colors={4: MUTED})
+    for ci in range(5):                            # scenario subtitles in the header: smaller and lighter
+        for p in tbl.cell(0, ci).text_frame.paragraphs[1:]:
+            for r in p.runs:
+                r.font.size = Pt(10)
+                r.font.name = BODY
+                r.font.color.rgb = rgb("C9D1DC")
+    month = len(rows) - 1                          # table row of the monthly totals (row 0 is the header)
+    for ri in (month, month + 1):
+        for ci in range(5):
+            cell = tbl.cell(ri, ci)
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = rgb(SOFT_O)
+    for ci in (1, 2, 3):
+        for p in tbl.cell(month, ci).text_frame.paragraphs:
+            for r in p.runs:
+                r.font.size = Pt(16)
+                r.font.color.rgb = rgb(ORANGE_D)
+    box(s, 0.45, 5.85, 6.7, 1.0, [c["assume"]], fill=SOFT, line_color=None, size=11.5, anchor=MSO_ANCHOR.MIDDLE,
+        margin=0.18)
+    box(s, 7.4, 5.85, 5.5, 1.0, [c["lever"]], fill=SOFT_T, line_color=None, size=11.5, anchor=MSO_ANCHOR.MIDDLE,
+        margin=0.18)
+    notes(s, c["notes"])
+
+
 def slide_summary(d):
     c = d.c["summary"]
     s = d.new(dark=True)
@@ -803,6 +838,7 @@ def build(lang):
     slide_reqs(d)
     slide_quality(d)
     slide_hard(d)
+    slide_tco(d)
     slide_summary(d)
     # Appendix A
     a = c["appA"]
