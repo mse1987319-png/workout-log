@@ -234,7 +234,7 @@ Since v5 Logify is an installable phone app (a PWA) that opens and works without
 | Part | Where | What it does |
 |---|---|---|
 | Service worker and manifest | `vite.config.js` (vite-plugin-pwa, Workbox), `src/pwa/` | Keeps the app's own files on the phone, so every screen opens offline; offers an update with **Update**; the install card |
-| Saved data | `src/offline/savedData.js`, `src/lib/useLoad.js` | `useLoad` asks the network first and saves each result per user; the saved copy is shown when the phone is offline, the request fails, or it takes over 4 s |
+| Saved data | `src/offline/savedData.js`, `src/offline/plansCache.js`, `src/lib/useLoad.js` | `useLoad` asks the network first and saves each result per user; the saved copy is shown when the phone is offline, the request fails, or it takes over 4 s. My plans' copy keeps the Log workout plan list in step and gets every sent workout |
 | Warm-up and hints | `src/offline/warmUp.js`, `src/offline/hints.js` | Saves plan options and Progress right after sign-in; offline, exercise names and *Last time* come from the saved Progress |
 | Outbox | `src/offline/outbox.js`, `src/offline/sync.js` | Workouts logged on the phone, kept until the server has them; sent in order, one at a time |
 | Draft | `src/offline/draft.js` | The half-filled Log workout form, kept as you type |

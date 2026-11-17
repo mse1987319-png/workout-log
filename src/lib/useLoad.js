@@ -21,8 +21,10 @@ const LOADING = { status: 'loading', data: null, error: null, savedAt: null }
  * phone (src/offline/savedData.js). It is shown when the phone is offline,
  * the load fails for lack of network, or takes over FAST_FALLBACK_MS; then
  * `savedAt` is when it was saved (ms), and null for fresh data.
+ * `save(key, data, savedAt)` is how it is kept: saveData, unless a screen
+ * keeps another copy in step (My plans: savePlans). Stable, like `load`.
  */
-export function useLoad(load, key = null) {
+export function useLoad(load, key = null, save = saveData) {
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState(LOADING)
   // Counts setData calls: a load that started before one can't contain it.
@@ -60,7 +62,7 @@ export function useLoad(load, key = null) {
           if (outdated()) return run()
           clearTimeout(timer)
           setState({ status: 'success', data, error: null, savedAt: null })
-          if (caching) saveData(key, data)
+          if (caching) save(key, data)
         },
         (error) => {
           if (!current) return
@@ -84,7 +86,7 @@ export function useLoad(load, key = null) {
       current = false
       clearTimeout(timer)
     }
-  }, [load, key, attempt])
+  }, [load, key, save, attempt])
 
   // Back online while saved data is shown: load again, keeping the saved data
   // on screen (no Loading) until the fresh data arrives.
@@ -112,11 +114,11 @@ export function useLoad(load, key = null) {
         // data keeps its own time, so the copy never looks newer than it is.
         // Writing the same entry twice is harmless, so React may run this
         // updater twice (Strict Mode).
-        if (key && previous.status === 'success') saveData(key, data, previous.savedAt ?? Date.now())
+        if (key && previous.status === 'success') save(key, data, previous.savedAt ?? Date.now())
         return { ...previous, data }
       })
     },
-    [key],
+    [key, save],
   )
 
   return { ...state, reload, setData }

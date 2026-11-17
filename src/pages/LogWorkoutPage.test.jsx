@@ -2,16 +2,18 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { AuthContext } from '../auth/AuthContext'
 import { friendlyError } from '../lib/errors'
 import { supabase } from '../lib/supabase'
 import { setCurrentUser } from '../offline/currentUser'
 import { readDraft } from '../offline/draft'
 import { getOutbox } from '../offline/outbox'
-import { saveData } from '../offline/savedData'
+import { readSaved, saveData } from '../offline/savedData'
 import { syncOutbox } from '../offline/sync'
 import { backend } from '../test/fakeBackend'
 import { ATHLETE, createFakeAuth, sessionFor } from '../test/fakeSupabase'
 import LogWorkoutPage from './LogWorkoutPage'
+import PlansPage from './PlansPage'
 
 vi.mock('../lib/supabase', async () => {
   const { createTestClient } = await import('../test/fakeBackend')
@@ -23,6 +25,11 @@ const SAVED_AT = Date.parse('2026-11-16T16:42:00Z')
 const PLAN_OPTIONS = [
   { id: 'plan-1', name: 'Strength block' },
   { id: 'plan-2', name: '5K plan' },
+]
+// The same plans as My plans loads them.
+const FULL_PLANS = [
+  { id: 'plan-1', user_id: ATHLETE.id, name: 'Strength block', goal: null, created_at: '2026-11-01T08:00:00+00:00', workouts: [] },
+  { id: 'plan-2', user_id: ATHLETE.id, name: '5K plan', goal: null, created_at: '2026-10-01T08:00:00+00:00', workouts: [] },
 ]
 
 function savedWorkout(overrides) {
@@ -251,6 +258,29 @@ describe('LogWorkoutPage', () => {
       expect(sent).toHaveLength(2)
       expect(sent[1].body).toEqual(sent[0].body)
       expect(getOutbox()).toEqual([])
+    })
+
+    it('adds the saved workout to the saved copy of My plans, which is not open, keeping its time', async () => {
+      const listed = { id: 'workout-1', title: 'Easy run', type: 'other', duration_min: 30, created_at: '2026-11-09T07:00:00+00:00' }
+      const copy = [
+        { ...FULL_PLANS[0], workouts: [listed] },
+        { ...FULL_PLANS[1], workouts: [] },
+      ]
+      saveData('plans', copy, SAVED_AT)
+      backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+      // log_workout answers with the whole row.
+      const row = savedWorkout({ title: 'Tempo run', type: 'other', duration_min: 40, user_id: ATHLETE.id, activity: 'run', distance_km: 8, notes: null })
+      backend.reply('POST', '/rest/v1/rpc/log_workout', 200, row)
+      const user = renderLog()
+      await screen.findByLabelText('Plan')
+
+      await fillWorkout(user, { title: 'Tempo run', type: /^Other/, duration: '40' })
+      await user.click(screen.getByRole('button', { name: 'Save workout' }))
+      await screen.findByText(/Workout saved/)
+
+      // Offline, My plans will list it under its plan: My plans' columns, newest first.
+      const asListed = { id: row.id, title: 'Tempo run', type: 'other', duration_min: 40, created_at: row.created_at }
+      expect(readSaved('plans')).toEqual({ data: [{ ...copy[0], workouts: [asListed, listed] }, copy[1]], savedAt: SAVED_AT })
     })
 
     it('explains a refused save, keeps the form and retries', async () => {
@@ -685,6 +715,33 @@ describe('LogWorkoutPage: offline', () => {
 
     expect(await screen.findByRole('option', { name: 'Strength block' })).toBeInTheDocument()
     expect(screen.getByText(/Offline: showing data saved on/)).toBeInTheDocument()
+  })
+
+  it('offers a plan created on My plans since the plan list was saved', async () => {
+    // The warm-up saved the plan list; later a plan was created, and My plans loaded it.
+    saveData('planOptions', PLAN_OPTIONS, SAVED_AT)
+    const created = { ...FULL_PLANS[0], id: 'plan-3', name: 'Hill sprints', created_at: '2026-11-16T18:00:00+00:00' }
+    backend.reply('GET', '/rest/v1/plans', 200, [created, ...FULL_PLANS])
+    backend.networkDown('GET', '/rest/v1/plans')
+    render(
+      <AuthContext.Provider value={{ user: ATHLETE, role: 'athlete' }}>
+        <MemoryRouter>
+          <PlansPage />
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    )
+    await screen.findByRole('heading', { name: 'Hill sprints' })
+    cleanup()
+
+    goOffline()
+    renderLog()
+
+    expect(await screen.findByRole('option', { name: 'Hill sprints' })).toBeInTheDocument()
+    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
+      'Hill sprints',
+      'Strength block',
+      '5K plan',
+    ])
   })
 
   it('shows last time from the saved progress offline', async () => {

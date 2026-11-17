@@ -10,6 +10,7 @@ import { markDbOlder, supportsExactlyOnce } from './dbVersion'
 import { clearDraft } from './draft'
 import { isOnline } from './network'
 import { addToOutbox, getOutbox, removeItem, updateItem } from './outbox'
+import { addSentWorkout } from './plansCache'
 
 // How long the form waits for a send (and how long an exactly-once send may take).
 export const SEND_LIMIT_MS = 15000
@@ -89,12 +90,25 @@ function announce(row, item) {
   })
 }
 
+// A sent workout goes into its owner's saved copy of My plans here, not only
+// by My plans' own listener: otherwise one sent while My plans isn't open
+// would be missing from that copy offline. Like a listener, a failure here
+// must not undo the save.
+function addToSavedPlans(owner, row) {
+  try {
+    addSentWorkout(owner, row)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 // What a send's outcome does to its owner's outbox. Only the person signed in
 // hears about a sent workout: if someone else signed in meanwhile, it isn't
 // theirs to show.
 function record(owner, item, result) {
   if (result.outcome === 'sent') {
     removeItem(item.id, owner)
+    addToSavedPlans(owner, result.row)
     if (getCurrentUser() === owner) announce(result.row, item)
   } else if (result.outcome === 'retry') {
     updateItem(item.id, { status: 'waiting' }, owner)

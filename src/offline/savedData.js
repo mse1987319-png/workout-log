@@ -22,9 +22,12 @@ function oldestFirst(prefix) {
     .map(({ key }) => key)
 }
 
-/** Keeps `data` for the signed-in user under `key`; does nothing without one. */
-export function saveData(key, data, savedAt = Date.now()) {
-  const user = getCurrentUser()
+/**
+ * Keeps `data` for `user` under `key`; does nothing without a user. Named
+ * explicitly for work that can finish after someone else signed in (a sent
+ * workout belongs in its owner's copy); screens use saveData.
+ */
+export function saveDataFor(user, key, data, savedAt = Date.now()) {
   if (!user) return
   const prefix = prefixFor(user)
   const storageKey = prefix + key
@@ -45,12 +48,21 @@ export function saveData(key, data, savedAt = Date.now()) {
   }
 }
 
-/** { data, savedAt } saved for the signed-in user under `key`, or null. */
-export function readSaved(key) {
-  const user = getCurrentUser()
+/** Keeps `data` for the signed-in user under `key`; does nothing without one. */
+export function saveData(key, data, savedAt) {
+  saveDataFor(getCurrentUser(), key, data, savedAt)
+}
+
+/** { data, savedAt } saved for `user` under `key`, or null. */
+export function readSavedFor(user, key) {
   if (!user) return null
   const entry = readJson(prefixFor(user) + key)
   return typeof entry?.savedAt === 'number' ? { data: entry.data, savedAt: entry.savedAt } : null
+}
+
+/** { data, savedAt } saved for the signed-in user under `key`, or null. */
+export function readSaved(key) {
+  return readSavedFor(getCurrentUser(), key)
 }
 
 /** On log out: that user's saved data leaves the phone, and nothing else does. */

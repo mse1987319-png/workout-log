@@ -6,7 +6,7 @@ import { setCurrentUser } from './currentUser'
 import { getDbVersion, markDbOlder } from './dbVersion'
 import { readDraft, saveDraft } from './draft'
 import { addToOutbox, getOutbox } from './outbox'
-import { readSaved, saveData } from './savedData'
+import { readSaved, readSavedFor, saveData } from './savedData'
 import { deleteItem, onWorkoutSent, retryItem, saveWorkout, startOutboxSync, syncOutbox } from './sync'
 
 // A real supabase-js client on the fake REST backend; each test signs in with the fake auth.
@@ -40,6 +40,14 @@ const ROW = {
   distance_km: null,
   notes: null,
   created_at: '2026-11-16T16:42:00+00:00',
+}
+// ROW as My plans lists it (listPlans' columns).
+const SENT_LISTED = {
+  id: ROW.id,
+  title: ROW.title,
+  type: ROW.type,
+  duration_min: ROW.duration_min,
+  created_at: ROW.created_at,
 }
 // What log_workout answers when the plan was deleted while the workout waited.
 const PLAN_GONE = {
@@ -462,6 +470,25 @@ describe('a send that settles after the form stopped waiting', () => {
     expect(posts()).toHaveLength(1)
   })
 
+  it("puts a late answer into its owner's saved copy of My plans, not into whoever is signed in", async () => {
+    saveData('plans', [{ id: 'plan-1', name: PLAN_NAME, workouts: [] }], 1000)
+    backend.reply('POST', LOG_WORKOUT, 200, ROW)
+    const { release } = await saveAndStopWaiting()
+
+    // A logs out and B logs in before the answer comes.
+    supabase.auth = createFakeAuth({ session: sessionFor(INSTRUCTOR) })
+    setCurrentUser(INSTRUCTOR.id)
+    saveData('plans', [{ id: 'plan-1', name: 'Their copy', workouts: [] }], 2000)
+    release()
+
+    await vi.waitFor(() => expect(localStorage.getItem(OUTBOX_KEY)).toBeNull())
+    expect(readSavedFor(ATHLETE.id, 'plans')).toEqual({
+      data: [{ id: 'plan-1', name: PLAN_NAME, workouts: [SENT_LISTED] }],
+      savedAt: 1000,
+    })
+    expect(readSaved('plans')).toEqual({ data: [{ id: 'plan-1', name: 'Their copy', workouts: [] }], savedAt: 2000 })
+  })
+
   it('files a late answer under its owner when someone else signed in meanwhile', async () => {
     backend.reply('POST', LOG_WORKOUT, 200, ROW)
     const sent = vi.fn()
@@ -505,6 +532,19 @@ describe('sending the outbox', () => {
       wednesday.loggedAt,
     ])
     expect(getOutbox()).toEqual([])
+  })
+
+  it('lists a sent workout in the saved copy of My plans, which may not be open, and no refused one', async () => {
+    saveData('plans', [{ id: 'plan-1', name: PLAN_NAME, workouts: [] }], 1000)
+    logOffline('Plan deleted')
+    logOffline('Monday')
+    backend.reply('POST', LOG_WORKOUT, 409, PLAN_GONE)
+    backend.reply('POST', LOG_WORKOUT, 200, ROW)
+
+    await syncOutbox()
+
+    expect(posts()).toHaveLength(2)
+    expect(readSaved('plans')).toEqual({ data: [{ id: 'plan-1', name: PLAN_NAME, workouts: [SENT_LISTED] }], savedAt: 1000 })
   })
 
   it("marks a refused workout Couldn't send and goes on with the next", async () => {

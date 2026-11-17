@@ -6,7 +6,7 @@ import { AuthContext } from '../auth/AuthContext'
 import { supabase } from '../lib/supabase'
 import { setCurrentUser } from '../offline/currentUser'
 import { addToOutbox, getOutbox, updateItem } from '../offline/outbox'
-import { saveData } from '../offline/savedData'
+import { readSaved, saveData } from '../offline/savedData'
 import { syncOutbox } from '../offline/sync'
 import { backend } from '../test/fakeBackend'
 import { ATHLETE, createFakeAuth, sessionFor } from '../test/fakeSupabase'
@@ -426,6 +426,51 @@ describe('PlansPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Strength block' })).toBeInTheDocument()
     expect(screen.getByText(/Offline: showing data saved on/)).toBeInTheDocument()
+  })
+
+  describe('the plan list it keeps for the Log workout screen', () => {
+    const OPTIONS = [
+      { id: 'plan-1', name: 'Strength block' },
+      { id: 'plan-2', name: '5K plan' },
+    ]
+
+    beforeEach(() => {
+      setCurrentUser(ATHLETE.id)
+    })
+
+    it('is the plans it loaded, saved at the same time', async () => {
+      // The warm-up's older list is replaced.
+      saveData('planOptions', [{ id: 'plan-2', name: '5K plan' }], SAVED_AT)
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      renderPlans()
+      await screen.findByRole('heading', { name: 'Strength block' })
+
+      const { savedAt } = readSaved('plans')
+      expect(savedAt).toBeGreaterThan(SAVED_AT)
+      expect(readSaved('planOptions')).toEqual({ data: OPTIONS, savedAt })
+    })
+
+    it('follows a renamed and a deleted plan', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      backend.reply('PATCH', '/rest/v1/plans', 200, { ...PLANS[0], name: 'Heavy block' })
+      backend.reply('DELETE', '/rest/v1/plans', 200, [{ id: 'plan-2' }])
+      const user = renderPlans()
+
+      const strength = await planCard('Strength block')
+      await user.click(strength.getByRole('button', { name: 'Edit plan Strength block' }))
+      await user.clear(strength.getByLabelText('Plan name'))
+      await user.type(strength.getByLabelText('Plan name'), 'Heavy block')
+      await user.click(strength.getByRole('button', { name: 'Save plan' }))
+      await screen.findByRole('heading', { name: 'Heavy block' })
+      expect(readSaved('planOptions').data).toEqual([{ id: 'plan-1', name: 'Heavy block' }, OPTIONS[1]])
+
+      const fiveK = await planCard('5K plan')
+      await user.click(fiveK.getByRole('button', { name: 'Delete plan 5K plan' }))
+      await user.click(fiveK.getByRole('button', { name: 'Yes, delete plan' }))
+      await waitFor(() => expect(screen.queryByRole('heading', { name: '5K plan' })).not.toBeInTheDocument())
+
+      expect(readSaved('planOptions')).toEqual({ data: [{ id: 'plan-1', name: 'Heavy block' }], savedAt: readSaved('plans').savedAt })
+    })
   })
 
   describe('workouts waiting to send', () => {

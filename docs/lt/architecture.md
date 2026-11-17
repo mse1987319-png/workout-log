@@ -234,7 +234,7 @@ Nuo v5 „Logify“ yra įdiegiama telefono programėlė (PWA), kuri atsidaro ir
 | Dalis | Kur | Ką daro |
 |---|---|---|
 | Service worker ir manifestas | `vite.config.js` (vite-plugin-pwa, Workbox), `src/pwa/` | Telefone laiko pačios programos failus, todėl kiekvienas ekranas atsidaro be ryšio; siūlo atnaujinimą mygtuku **Atnaujinti**; įdiegimo kortelė |
-| Išsaugoti duomenys | `src/offline/savedData.js`, `src/lib/useLoad.js` | `useLoad` pirmiausia klausia tinklo ir kiekvieną rezultatą išsaugo pagal naudotoją; išsaugota kopija rodoma, kai telefonas be ryšio, užklausa nepavyksta arba trunka ilgiau nei 4 s |
+| Išsaugoti duomenys | `src/offline/savedData.js`, `src/offline/plansCache.js`, `src/lib/useLoad.js` | `useLoad` pirmiausia klausia tinklo ir kiekvieną rezultatą išsaugo pagal naudotoją; išsaugota kopija rodoma, kai telefonas be ryšio, užklausa nepavyksta arba trunka ilgiau nei 4 s. Skilties „Mano planai“ kopija kartu atnaujina įrašymo ekrano planų sąrašą ir gauna kiekvieną išsiųstą treniruotę |
 | Pasiruošimas ir užuominos | `src/offline/warmUp.js`, `src/offline/hints.js` | Iškart po prisijungimo išsaugo planų parinktis ir Pažangą; be ryšio pratimų pavadinimai ir *Praėjusį kartą* imami iš išsaugotos Pažangos |
 | Siuntimo eilė | `src/offline/outbox.js`, `src/offline/sync.js` | Telefone įrašytos treniruotės, laikomos, kol jas gauna serveris; siunčiamos iš eilės, po vieną |
 | Juodraštis | `src/offline/draft.js` | Pusiau užpildyta treniruotės įrašymo forma, išsaugoma jums rašant |

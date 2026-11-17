@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { setCurrentUser } from './currentUser'
-import { clearSavedData, readSaved, saveData } from './savedData'
+import { clearSavedData, readSaved, readSavedFor, saveData, saveDataFor } from './savedData'
 import { keysStartingWith, readJson, writeJson } from './storage'
 
 afterEach(() => {
@@ -18,6 +18,20 @@ describe('saved data', () => {
 
     setCurrentUser('user-1')
     expect(readSaved('plans')).toEqual({ data: [{ id: 'p1', name: 'Strength' }], savedAt: 1000 })
+  })
+
+  it('reads and writes a named user\'s data whoever is signed in', () => {
+    setCurrentUser('user-2')
+
+    saveDataFor('user-1', 'plans', ['mine'], 1000)
+
+    expect(readJson('logify.cache.v1.user-1.plans')).toEqual({ savedAt: 1000, data: ['mine'] })
+    expect(readSavedFor('user-1', 'plans')).toEqual({ data: ['mine'], savedAt: 1000 })
+    expect(readSaved('plans')).toBeNull()
+    // Nobody named, nothing saved or read.
+    saveDataFor(null, 'plans', ['nobody'], 1000)
+    expect(readSavedFor(null, 'plans')).toBeNull()
+    expect(keysStartingWith('logify.cache.v1.')).toEqual(['logify.cache.v1.user-1.plans'])
   })
 
   it("clearSavedData removes only that user's saved data", () => {

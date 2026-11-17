@@ -11,30 +11,21 @@ import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
 import { useLoad } from '../lib/useLoad'
 import { useOutbox } from '../offline/outbox'
+import { savePlans, withSentWorkout } from '../offline/plansCache'
 import { onWorkoutSent } from '../offline/sync'
 
 // The List screen: my plans (table A) and the workouts (table B) under each.
 export default function PlansPage() {
   const { user } = useAuth()
   const { t } = useLanguage()
-  const { status, data: plans, error, savedAt, reload, setData } = useLoad(listPlans, 'plans')
+  // savePlans also keeps the Log workout screen's saved plan list in step.
+  const { status, data: plans, error, savedAt, reload, setData } = useLoad(listPlans, 'plans', savePlans)
   const [deletedNotice, setDeletedNotice] = useState(false)
   const outbox = useOutbox()
 
-  // A waiting workout the server has just taken becomes a normal row under its plan.
-  useEffect(
-    () =>
-      onWorkoutSent((row) => {
-        setData((current) =>
-          current?.map((plan) =>
-            plan.id === row.plan_id && !plan.workouts.some((workout) => workout.id === row.id)
-              ? { ...plan, workouts: [row, ...plan.workouts] }
-              : plan,
-          ) ?? current,
-        )
-      }),
-    [setData],
-  )
+  // A waiting workout the server has just taken becomes a normal row under
+  // its plan, as the saved copy lists it (src/offline/plansCache.js).
+  useEffect(() => onWorkoutSent((row) => setData((current) => withSentWorkout(current, row))), [setData])
 
   function handleWorkoutRenamed({ id, title }) {
     setData((current) =>

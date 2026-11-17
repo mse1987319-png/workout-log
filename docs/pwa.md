@@ -61,6 +61,8 @@ Every screen that reads data (`useLoad` in `src/lib/useLoad.js`) tries the netwo
 
 **Warm-up.** Right after sign-in, or on app start with a connection, the app quietly loads the plan options and Progress (instructors: My athletes too) and saves them, so offline works for screens you haven't opened yet. `src/offline/warmUp.js`.
 
+**My plans and the Log workout plan list stay in step.** Whenever My plans saves its plans (a fresh load, a rename, a delete), the Log workout screen's plan list is saved from them too, unless that list was saved more recently. Every workout the server takes is added under its plan to the saved copy of My plans, even when My plans isn't open. So offline the Log workout screen offers a plan created since the warm-up, and My plans lists a workout sent from the Log workout screen. `src/offline/plansCache.js`.
+
 **Hints while logging.** Offline, the exercise-name suggestions and *Last time* come from the saved Progress data (`src/offline/hints.js`).
 
 **No data request without a sign-in.** After a long offline period the access token has expired. Until supabase-js has a usable session again (after reconnecting it can wait up to a minute before it refreshes), it would send database requests with only the project key, and Row Level Security would answer with empty lists, which a screen would save over good data. `src/lib/sessionGuard.js` makes such a request fail like a dropped connection instead, so screens keep their saved data and the outbox waits.

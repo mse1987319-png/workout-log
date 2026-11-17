@@ -61,6 +61,8 @@ Kiekvienas ekranas, kuris skaito duomenis (`useLoad` faile `src/lib/useLoad.js`)
 
 **Pasiruošimas.** Iškart po prisijungimo arba paleidus programą su ryšiu, programa tyliai įkelia planų parinktis ir Pažangą (treneriams – ir Mano sportininkus) ir juos išsaugo, todėl be ryšio veikia ir ekranai, kurių dar neatidarėte. `src/offline/warmUp.js`.
 
+**„Mano planai“ ir įrašymo ekrano planų sąrašas sutampa.** Kai skiltis „Mano planai“ išsaugo savo planus (įkėlus juos, pervadinus ar ištrynus planą), iš jų išsaugomas ir treniruotės įrašymo ekrano planų sąrašas, nebent tas sąrašas išsaugotas vėliau. Kiekviena serverio gauta treniruotė pridedama po savo planu ir išsaugotoje „Mano planai“ kopijoje, net jei ši skiltis neatidaryta. Todėl be ryšio įrašymo ekranas siūlo ir po pasiruošimo sukurtą planą, o „Mano planai“ rodo iš įrašymo ekrano išsiųstą treniruotę. `src/offline/plansCache.js`.
+
 **Užuominos įrašant.** Be ryšio pratimų pavadinimų siūlymai ir *Praėjusį kartą* imami iš išsaugotų Pažangos duomenų (`src/offline/hints.js`).
 
 **Jokių duomenų užklausų be prisijungimo.** Po ilgo laiko be ryšio prieigos raktas būna pasibaigęs. Kol supabase-js dar neturi tinkamos sesijos (grįžus ryšiui jis gali palaukti iki minutės, kol ją atnaujins), duomenų bazės užklausas jis siųstų tik su projekto raktu, o Row Level Security atsakytų tuščiais sąrašais, kuriuos ekranas išsaugotų vietoje gerų duomenų. `src/lib/sessionGuard.js` tokią užklausą priverčia nepavykti kaip nutrūkusį ryšį, todėl ekranai išlaiko savo išsaugotus duomenis, o siuntimo eilė laukia.
