@@ -144,7 +144,7 @@ describe('useLoad', () => {
     expect(readSaved('plans').data).toEqual(['Strength', 'Cardio'])
   })
 
-  it('setData leaves the saved copy and its time alone while saved data is shown', () => {
+  it('setData updates the saved copy and keeps its time while saved data is shown', () => {
     saveData('plans', ['Saved'], SAVED_AT)
     goOffline()
     const load = vi.fn(() => new Promise(() => {}))
@@ -153,7 +153,8 @@ describe('useLoad', () => {
     act(() => result.current.setData((plans) => [...plans, 'Cardio']))
 
     expect(result.current).toMatchObject({ data: ['Saved', 'Cardio'], savedAt: SAVED_AT })
-    expect(readSaved('plans')).toEqual({ data: ['Saved'], savedAt: SAVED_AT })
+    // The copy has the change but doesn't look any newer than before.
+    expect(readSaved('plans')).toEqual({ data: ['Saved', 'Cardio'], savedAt: SAVED_AT })
   })
 
   it('loads again when the connection comes back while saved data is shown', async () => {
@@ -184,7 +185,7 @@ describe('useLoad', () => {
     // and the load runs again.
     await act(async () => outdated.resolve(['Saved']))
     expect(result.current).toMatchObject({ status: 'success', data: ['Saved', 'Sent'], savedAt: SAVED_AT })
-    expect(readSaved('plans')).toEqual({ data: ['Saved'], savedAt: SAVED_AT })
+    expect(readSaved('plans')).toEqual({ data: ['Saved', 'Sent'], savedAt: SAVED_AT })
     expect(load).toHaveBeenCalledTimes(3)
 
     // The new answer includes the change and is shown; nothing runs after it.
@@ -203,6 +204,24 @@ describe('useLoad', () => {
 
     await act(async () => rerun.resolve(['Fresh', 'Sent']))
     expect(result.current).toMatchObject({ status: 'success', data: ['Fresh', 'Sent'], savedAt: null })
+  })
+
+  it('the 4 s fallback after a local change still shows the change', async () => {
+    vi.useFakeTimers()
+    const { result } = await setDataDuringReload()
+
+    // The load is still on its way after 4 s: the saved copy shown in its place has the change.
+    await act(() => vi.advanceTimersByTimeAsync(4000))
+    expect(result.current).toMatchObject({ status: 'success', data: ['Saved', 'Sent'], savedAt: SAVED_AT })
+  })
+
+  it('a failed re-run after a local change still shows the change', async () => {
+    const { result, outdated, rerun } = await setDataDuringReload()
+    await act(async () => outdated.resolve(['Saved']))
+
+    // The connection drops again: the saved copy shown in its place has the change.
+    await act(async () => rerun.reject(NETWORK_ERROR))
+    expect(result.current).toMatchObject({ status: 'success', data: ['Saved', 'Sent'], savedAt: SAVED_AT })
   })
 
   it('without a signed-in user nothing is saved or read', async () => {

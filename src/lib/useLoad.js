@@ -106,10 +106,13 @@ export function useLoad(load, key = null) {
       changes.current += 1
       setState((previous) => {
         const data = update(previous.data)
-        // Fresh data changed in place (a rename, a delete) is saved again; saved
-        // data keeps its old time. Writing the same entry twice is harmless, so
-        // React may run this updater twice (Strict Mode).
-        if (key && previous.status === 'success' && previous.savedAt === null) saveData(key, data)
+        // Data changed in place (a rename, a delete, a sent workout) is saved
+        // again, so a later fallback to the saved copy (a slow load, a network
+        // error) still shows the change. Fresh data is saved as of now; saved
+        // data keeps its own time, so the copy never looks newer than it is.
+        // Writing the same entry twice is harmless, so React may run this
+        // updater twice (Strict Mode).
+        if (key && previous.status === 'success') saveData(key, data, previous.savedAt ?? Date.now())
         return { ...previous, data }
       })
     },
