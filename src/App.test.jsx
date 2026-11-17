@@ -14,6 +14,10 @@ vi.mock('./lib/supabase', async () => {
   return { supabase: createTestClient(), configError: null }
 })
 
+// The background work (version check, warm-up, sending) makes requests of its
+// own; these tests assert the requests of the screens.
+vi.mock('./offline/useBackgroundSync', () => ({ useBackgroundSync: () => {} }))
+
 function renderApp(path = '/') {
   render(
     <MemoryRouter initialEntries={[path]}>
@@ -141,6 +145,7 @@ describe('App', () => {
     const nav = await screen.findByRole('navigation', { name: 'Main' })
     expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual([
       'My plans',
+      'Log',
       'Progress',
       'Sharing',
     ])
@@ -153,6 +158,7 @@ describe('App', () => {
     const nav = await screen.findByRole('navigation', { name: 'Main' })
     expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual([
       'My plans',
+      'Log',
       'My athletes',
       'Progress',
     ])

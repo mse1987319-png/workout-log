@@ -44,7 +44,12 @@ export const translations = {
     'nav.myAthletes': 'My athletes',
     'nav.progress': 'Progress',
     'nav.sharing': 'Sharing',
+    'nav.log': 'Log',
     'account.logOut': 'Log out',
+    'account.unsent.one':
+      "{count} workout hasn't been sent yet. It stays on this phone and is sent the next time you log in here.",
+    'account.unsent.other':
+      "{count} workouts haven't been sent yet. They stay on this phone and are sent the next time you log in here.",
 
     // Errors
     'errors.network': "Can't reach the server. Check your internet connection and try again.",
@@ -74,6 +79,20 @@ export const translations = {
     'outbox.failed': "Couldn't send: {reason}",
     'outbox.cardTitle': 'Workouts waiting to send',
     'outbox.confirmDelete': 'Delete “{title}”? It was never sent, so it will be gone.',
+
+    // Status line under the header
+    'status.offline': "You're offline. Workouts you log are kept on this phone.",
+    'status.waiting.one': '{count} workout waiting to send',
+    'status.waiting.other': '{count} workouts waiting to send',
+    'status.sendNow': 'Send now',
+    'status.sending': 'Sending…',
+    'status.failed.one': "{count} workout couldn't be sent: see My plans.",
+    'status.failed.other': "{count} workouts couldn't be sent: see My plans.",
+    'status.update': 'A new version of Logify is ready.',
+    'status.updateNow': 'Update',
+    'status.oldDb':
+      "Logify's database is an older version than this app: workouts logged offline get the time they're sent, and after a dropped connection one could be saved twice. The fix is updating the database (supabase/schema.sql).",
+    'status.hide': 'Hide',
 
     // Install card (My plans)
     'install.title': 'Install Logify',
@@ -400,7 +419,14 @@ export const translations = {
     'nav.myAthletes': 'Mano sportininkai',
     'nav.progress': 'Pažanga',
     'nav.sharing': 'Dalijimasis',
+    'nav.log': 'Įrašyti',
     'account.logOut': 'Atsijungti',
+    'account.unsent.one':
+      '{count} treniruotė dar neišsiųsta. Ji liks šiame telefone ir bus išsiųsta, kai kitą kartą čia prisijungsite.',
+    'account.unsent.few':
+      '{count} treniruotės dar neišsiųstos. Jos liks šiame telefone ir bus išsiųstos, kai kitą kartą čia prisijungsite.',
+    'account.unsent.other':
+      '{count} treniruočių dar neišsiųsta. Jos liks šiame telefone ir bus išsiųstos, kai kitą kartą čia prisijungsite.',
 
     // Errors
     'errors.network': 'Nepavyksta pasiekti serverio. Patikrinkite interneto ryšį ir bandykite dar kartą.',
@@ -430,6 +456,22 @@ export const translations = {
     'outbox.failed': 'Nepavyko išsiųsti: {reason}',
     'outbox.cardTitle': 'Išsiuntimo laukiančios treniruotės',
     'outbox.confirmDelete': 'Ištrinti „{title}“? Ji nebuvo išsiųsta, todėl dings visam laikui.',
+
+    // Status line under the header
+    'status.offline': 'Nėra ryšio. Įrašytos treniruotės saugomos šiame telefone.',
+    'status.waiting.one': '{count} treniruotė laukia išsiuntimo',
+    'status.waiting.few': '{count} treniruotės laukia išsiuntimo',
+    'status.waiting.other': '{count} treniruočių laukia išsiuntimo',
+    'status.sendNow': 'Siųsti dabar',
+    'status.sending': 'Siunčiama…',
+    'status.failed.one': 'Nepavyko išsiųsti {count} treniruotės: žr. „Mano planai“.',
+    'status.failed.few': 'Nepavyko išsiųsti {count} treniruočių: žr. „Mano planai“.',
+    'status.failed.other': 'Nepavyko išsiųsti {count} treniruočių: žr. „Mano planai“.',
+    'status.update': 'Paruošta nauja Logify versija.',
+    'status.updateNow': 'Atnaujinti',
+    'status.oldDb':
+      'Logify duomenų bazė senesnė nei ši programėlė: be ryšio įrašytoms treniruotėms priskiriamas išsiuntimo laikas, o nutrūkus ryšiui ta pati treniruotė gali būti išsaugota du kartus. Sprendimas – atnaujinti duomenų bazę (supabase/schema.sql).',
+    'status.hide': 'Slėpti',
 
     // Install card (My plans)
     'install.title': 'Įdiekite Logify',

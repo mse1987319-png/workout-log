@@ -96,6 +96,7 @@ a {
 
 .app-header {
   position: relative;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
@@ -203,6 +204,13 @@ a {
   background: var(--bg);
 }
 
+/* The tab bar's icons, and the Log tab, exist on phones only (see the
+   max-width: 640px block at the end). */
+.nav-icon,
+.nav-phone-only {
+  display: none;
+}
+
 .nav a.active {
   color: var(--accent);
   background: var(--accent-soft);
@@ -216,6 +224,10 @@ a {
   min-width: 0;
 }
 
+.app-header > .confirm-delete {
+  margin: 0 1.5rem 0.75rem;
+}
+
 .account-email {
   max-width: 14rem;
   overflow: hidden;
@@ -223,6 +235,24 @@ a {
   font-size: 0.9rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* The line under the header: offline, workouts waiting, new version, older database. */
+.status-bar {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.5rem 1.5rem;
+  font-size: 0.9rem;
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--border);
+}
+
+.status-bar p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.75rem;
+  margin: 0;
 }
 
 .page {
@@ -238,6 +268,7 @@ a {
 .install-card {
   background: var(--surface);
   border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
   border-radius: var(--radius);
   padding: 1rem 1.25rem;
   margin-bottom: 1rem;
@@ -385,6 +416,8 @@ textarea:focus {
   border: 1px solid currentcolor;
 }
 
+/* Saved data shown instead of fresh, and a restored draft. */
+.state-saved,
 .state-restored {
   background: var(--accent-soft);
   border: 1px solid var(--border);
@@ -581,6 +614,18 @@ a.workout-title:hover {
 .badge-other {
   color: var(--other);
   background: var(--other-soft);
+}
+
+/* A workout in My plans that the server doesn't have yet. */
+.badge-waiting {
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.badge-failed {
+  color: var(--danger);
+  background: var(--danger-soft);
 }
 
 .rename-form {
@@ -1188,23 +1233,80 @@ textarea {
 /* ---------- Header on phones (after the base header rules, so these win) ---------- */
 
 @media (max-width: 640px) {
+  /* One row: logo, language, account. The menu is the tab bar below. */
   .app-header-inner {
+    flex-wrap: nowrap;
     padding: 0.5rem 1rem;
   }
 
-  /* Logo and account share the first row; the menu takes the second. */
-  .nav {
-    order: 3;
-    width: 100%;
+  .app-header > .confirm-delete {
+    margin: 0 1rem 0.75rem;
   }
 
-  .account {
-    order: 2;
+  .status-bar {
+    padding: 0.5rem 1rem;
   }
 
   .app-header .lang-switch {
     align-self: auto;
     padding: 0 0.5rem;
+  }
+
+  /* The same <nav>, fixed to the bottom of the screen: an icon over a label
+     in each of the equal columns. */
+  .nav {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 10;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+
+  .nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    min-height: 56px;
+    padding: 0.35rem 0.25rem;
+    border-radius: 0;
+    font-size: 0.72rem;
+    line-height: 1.15;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .nav a:hover,
+  .nav a.active {
+    background: none;
+  }
+
+  .nav a:focus-visible {
+    outline-offset: -3px;
+  }
+
+  .nav-icon {
+    display: block;
+    width: 24px;
+    height: 24px;
+  }
+
+  /* The longest label goes last. */
+  .nav-athletes {
+    order: 4;
+  }
+
+  /* Nothing hides under the bar. */
+  .page {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom) + 1.5rem);
   }
 }
 
@@ -1213,19 +1315,17 @@ textarea {
     gap: 0.4rem 0.75rem;
   }
 
-  .nav a {
-    padding: 0.4rem 0.6rem;
-  }
-
   .account {
     gap: 0.5rem;
   }
 
+  /* One row: the email goes, so the logo, language and Log out fit. */
   .account-email {
-    max-width: 5.5rem;
+    display: none;
   }
 
   .account .button {
     padding: 0.4rem 0.8rem;
+    white-space: nowrap;
   }
 }
