@@ -1,7 +1,7 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AuthProvider from '../auth/AuthProvider'
 import { supabase } from '../lib/supabase'
 import { ATHLETE, authError, createFakeAuth, sessionFor } from '../test/fakeSupabase'
@@ -37,6 +37,10 @@ async function openSignUp(user) {
 describe('LoginPage', () => {
   beforeEach(() => {
     supabase.auth = createFakeAuth()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('shows the Logify logo and name', async () => {
@@ -169,6 +173,20 @@ describe('LoginPage', () => {
 
     expect(screen.getByRole('alert')).toHaveTextContent('Password must be at least 6 characters.')
     expect(supabase.auth.signUp).not.toHaveBeenCalled()
+  })
+
+  it('says that logging in needs a connection when offline', async () => {
+    const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+    renderLogin()
+
+    await screen.findByRole('heading', { name: 'Log in' })
+    expect(screen.getByRole('status')).toHaveTextContent("You're offline. Logging in needs a connection.")
+
+    act(() => {
+      onLine.mockReturnValue(true)
+      window.dispatchEvent(new Event('online'))
+    })
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
   it('sends an already signed-in user on to the plans', async () => {

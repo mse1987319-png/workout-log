@@ -103,6 +103,7 @@ export const translations = {
     'login.alreadyRegistered': 'Already registered?',
     'login.newHere': 'New here?',
     'login.haveAccount': 'I already have an account',
+    'login.offline': "You're offline. Logging in needs a connection.",
 
     // My plans
     'plans.new': 'New plan',
@@ -451,6 +452,7 @@ export const translations = {
     'login.alreadyRegistered': 'Jau užsiregistravote?',
     'login.newHere': 'Pirmą kartą čia?',
     'login.haveAccount': 'Jau turiu paskyrą',
+    'login.offline': 'Nėra ryšio. Prisijungti galima tik turint ryšį.',
 
     // My plans
     'plans.new': 'Naujas planas',

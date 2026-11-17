@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
+import { isNetworkError } from '../lib/errors'
 import { supabase } from '../lib/supabase'
+import { getCurrentUser, setCurrentUser } from '../offline/currentUser'
+import { clearDraft } from '../offline/draft'
+import { isOnline } from '../offline/network'
+import { clearSavedData } from '../offline/savedData'
 import { AuthContext } from './AuthContext'
+import { readStoredSession } from './storedSession'
 
 async function signIn(email, password) {
   const { error } = await supabase.auth.signInWithPassword({ email, password })
@@ -26,9 +32,31 @@ async function signUp(email, password, role = 'athlete') {
   return { needsConfirmation: !data.session }
 }
 
+// Online it logs out everywhere, as before; a server that refuses keeps the
+// user signed in, and the error is thrown for the screen to show. When the
+// server can't be reached it logs out on this phone only, and the server's
+// session simply expires (spec §4).
+async function endSession() {
+  if (isOnline()) {
+    const { error } = await supabase.auth.signOut()
+    if (!error) return
+    if (!isNetworkError(error)) throw error
+  }
+  // supabase-js forgets the session on this phone before it tries to tell the
+  // server, so the error it returns when the server can't be reached leaves
+  // nobody signed in here. Only a throw means this phone is still signed in.
+  await supabase.auth.signOut({ scope: 'local' })
+}
+
 async function signOut() {
-  const { error } = await supabase.auth.signOut()
-  if (error) throw error
+  const userId = getCurrentUser()
+  await endSession()
+  // The user's saved data and draft leave the phone with them. Workouts
+  // waiting to send stay, and go out when they log in here again.
+  if (userId) {
+    clearSavedData(userId)
+    clearDraft(userId)
+  }
 }
 
 export default function AuthProvider({ children }) {
@@ -37,7 +65,16 @@ export default function AuthProvider({ children }) {
   useEffect(() => {
     // Supabase reports the restored session first (INITIAL_SESSION),
     // then every sign-in, sign-out and token refresh.
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data } = supabase.auth.onAuthStateChange((event, reported) => {
+      // Offline with an expired access token, supabase-js reports no session
+      // although it is still stored: the user stays signed in on this phone.
+      // supabase-js deletes it, and signs out, if the server rejects it later.
+      const session =
+        reported ?? (event === 'INITIAL_SESSION' ? readStoredSession(supabase.auth.storageKey) : null)
+      // Set here, before the screens render, not in an effect: a screen's
+      // first load (its own effect, which runs before this component's) must
+      // know whose saved data, outbox and draft to use.
+      setCurrentUser(session?.user?.id ?? null)
       setAuth({ status: 'ready', session })
     })
     return () => data.subscription.unsubscribe()

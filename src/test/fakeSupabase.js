@@ -53,6 +53,9 @@ export function createFakeAuth({ session = null, confirmEmail = false } = {}) {
   }
 
   return {
+    // Where supabase-js keeps the session in localStorage (in the app:
+    // sb-<project ref>-auth-token). This fake never writes there itself.
+    storageKey: 'sb-test-auth-token',
     // supabase-js reads this before every database request (for the JWT).
     getSession: vi.fn(async () => ({ data: { session: current }, error: null })),
     onAuthStateChange: vi.fn((callback) => {
@@ -76,7 +79,9 @@ export function createFakeAuth({ session = null, confirmEmail = false } = {}) {
       emit('SIGNED_IN')
       return { data: { user, session: current }, error: null }
     }),
-    signOut: vi.fn(async () => {
+    // Any scope ends the session here; the options (such as
+    // { scope: 'local' }: this phone only) are recorded with each call.
+    signOut: vi.fn(async (_options) => {
       current = null
       emit('SIGNED_OUT')
       return { error: null }
