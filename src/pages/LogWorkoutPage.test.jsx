@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { friendlyError } from '../lib/errors'
 import { supabase } from '../lib/supabase'
 import { setCurrentUser } from '../offline/currentUser'
+import { readDraft } from '../offline/draft'
 import { getOutbox } from '../offline/outbox'
 import { saveData } from '../offline/savedData'
 import { syncOutbox } from '../offline/sync'
@@ -361,6 +362,37 @@ describe('LogWorkoutPage', () => {
       renderLog()
       await screen.findByLabelText('Plan')
       expect(screen.getByLabelText('Title')).toHaveValue('')
+      expect(screen.queryByText('Unsaved workout restored.')).not.toBeInTheDocument()
+    })
+
+    it('switching only the plan leaves no draft to restore', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+      const user = renderLog()
+      await screen.findByLabelText('Plan')
+      await user.selectOptions(screen.getByLabelText('Plan'), '5K plan')
+      expect(readDraft()).toBeNull()
+      cleanup()
+
+      renderLog()
+      await screen.findByLabelText('Plan')
+      expect(screen.queryByText('Unsaved workout restored.')).not.toBeInTheDocument()
+      expect(screen.getByLabelText('Plan')).toHaveValue('plan-1')
+      expect(readDraft()).toBeNull()
+    })
+
+    it('typing and then clearing the title leaves no draft', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+      const user = renderLog()
+      await screen.findByLabelText('Plan')
+      await user.selectOptions(screen.getByLabelText('Plan'), '5K plan')
+      await user.type(screen.getByLabelText('Title'), 'Leg')
+      expect(readDraft()).toMatchObject({ planId: 'plan-2', title: 'Leg' })
+      await user.clear(screen.getByLabelText('Title'))
+      expect(readDraft()).toBeNull()
+      cleanup()
+
+      renderLog()
+      await screen.findByLabelText('Plan')
       expect(screen.queryByText('Unsaved workout restored.')).not.toBeInTheDocument()
     })
 

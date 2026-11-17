@@ -7,7 +7,8 @@ import { ACTIVITY_VALUES, activityLabel, typeLabel } from '../lib/format'
 import { toSetsPayload, validateExercises } from '../lib/sets'
 import { clearDraft, readDraft, saveDraft } from '../offline/draft'
 import { saveWorkout } from '../offline/sync'
-import ExercisesEditor, { withFreshKeys } from './ExercisesEditor'
+import ExercisesEditor from './ExercisesEditor'
+import { withFreshKeys } from './exerciseKeys'
 import { ErrorState, SuccessMessage } from './States'
 
 const MAX_MINUTES = 1440
@@ -23,8 +24,8 @@ function restoredFields() {
   return { title, type, duration, exercises: withFreshKeys(exercises), activity, distance, notes }
 }
 
-const isBlank = ({ planId, exercises, ...text }) =>
-  !planId && exercises.length === 0 && Object.values(text).every((value) => value === '')
+// Only typed content makes a draft: choosing a plan alone is not one.
+const isBlank = ({ exercises, ...text }) => exercises.length === 0 && Object.values(text).every((value) => value === '')
 
 function validate({ title, type, minutes, distance, exercises }) {
   if (!title) return t('workout.enterTitle')
@@ -56,7 +57,7 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
   function change(patch, plan = planId) {
     const next = { ...fields, ...patch }
     setFields(next)
-    if (isBlank({ planId: plan, ...next })) clearDraft()
+    if (isBlank(next)) clearDraft()
     else saveDraft({ planId: plan, ...next })
   }
 
