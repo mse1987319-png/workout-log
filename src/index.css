@@ -1312,7 +1312,7 @@ textarea {
 
 @media (max-width: 480px) {
   .app-header-inner {
-    gap: 0.4rem 0.75rem;
+    gap: 0.4rem 0.5rem;
   }
 
   .account {
@@ -1325,7 +1325,23 @@ textarea {
   }
 
   .account .button {
-    padding: 0.4rem 0.8rem;
+    padding: 0.4rem 0.6rem;
     white-space: nowrap;
+  }
+
+  /* Lithuanian's Atsijungti is the widest: keep the row inside the screen. */
+  .app-header .lang-switch {
+    padding: 0 0.25rem;
+  }
+
+  .lang-option {
+    gap: 0.25rem;
+    padding: 0.4rem 0.35rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .brand-logo {
+    height: 2rem;
   }
 }

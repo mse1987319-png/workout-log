@@ -30,8 +30,19 @@ function renderApp(path = '/') {
 describe('App', () => {
   // Screens loaded on demand: compile them once up front, so the tests
   // measure routing, not how long the test runner takes to transform them.
+  // The first render of the whole app and the first role query (the library
+  // builds its role tables on first use) also cost a one-off ~150 ms, which a
+  // busy machine multiplies past findByRole's 1 s: pay it here, not in test 1.
   beforeAll(async () => {
     await Promise.all([import('./pages/ProgressPage'), import('./pages/WorkoutDetailPage')])
+    supabase.auth = createFakeAuth()
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+    await screen.findByRole('heading', { name: 'Log in' }, { timeout: 30000 })
+    unmount()
   }, 60000)
 
   beforeEach(() => {
