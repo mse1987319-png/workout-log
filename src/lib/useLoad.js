@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { getCurrentUser } from '../offline/currentUser'
 import { isOnline, subscribeOnline } from '../offline/network'
 import { readSaved, saveData } from '../offline/savedData'
@@ -14,6 +14,8 @@ const LOADING = { status: 'loading', data: null, error: null, savedAt: null }
  * status is 'loading' | 'success' | 'error'. `reload` is for the
  * "Try again" button; `setData` updates the loaded data in place.
  * `load` must be a stable function, such as an imported API call.
+ * A load that started before a `setData` can't contain that change, so its
+ * answer is dropped and the load runs again, with the change kept on screen.
  *
  * With a `key` and someone signed in, the loaded data is also kept on the
  * phone (src/offline/savedData.js). It is shown when the phone is offline,
@@ -23,6 +25,8 @@ const LOADING = { status: 'loading', data: null, error: null, savedAt: null }
 export function useLoad(load, key = null) {
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState(LOADING)
+  // Counts setData calls: a load that started before one can't contain it.
+  const changes = useRef(0)
 
   useEffect(() => {
     let current = true
@@ -43,27 +47,39 @@ export function useLoad(load, key = null) {
       if (!shown) timer = setTimeout(showSaved, FAST_FALLBACK_MS)
     }
 
-    load().then(
-      (data) => {
-        if (!current) return
-        clearTimeout(timer)
-        setState({ status: 'success', data, error: null, savedAt: null })
-        if (caching) saveData(key, data)
-      },
-      (error) => {
-        if (!current) return
-        clearTimeout(timer)
-        if (caching && isNetworkError(error)) {
-          if (showSaved()) return
-          if (!isOnline()) {
-            const notSaved = { code: 'offline_not_saved', message: error.message }
-            setState({ status: 'error', data: null, error: notSaved, savedAt: null })
-            return
+    // A load's answer is the data as it was when the load started. If setData
+    // ran meanwhile (the outbox sent a workout while My plans reloaded), that
+    // answer, data or error, would undo the change: it is dropped and the load
+    // runs again, leaving the current data on screen (no Loading, no Error).
+    function run() {
+      const changesAtStart = changes.current
+      const outdated = () => changes.current !== changesAtStart
+      load().then(
+        (data) => {
+          if (!current) return
+          if (outdated()) return run()
+          clearTimeout(timer)
+          setState({ status: 'success', data, error: null, savedAt: null })
+          if (caching) saveData(key, data)
+        },
+        (error) => {
+          if (!current) return
+          if (outdated()) return run()
+          clearTimeout(timer)
+          if (caching && isNetworkError(error)) {
+            if (showSaved()) return
+            if (!isOnline()) {
+              const notSaved = { code: 'offline_not_saved', message: error.message }
+              setState({ status: 'error', data: null, error: notSaved, savedAt: null })
+              return
+            }
           }
-        }
-        setState({ status: 'error', data: null, error, savedAt: null })
-      },
-    )
+          setState({ status: 'error', data: null, error, savedAt: null })
+        },
+      )
+    }
+
+    run()
     return () => {
       current = false
       clearTimeout(timer)
@@ -87,6 +103,7 @@ export function useLoad(load, key = null) {
 
   const setData = useCallback(
     (update) => {
+      changes.current += 1
       setState((previous) => {
         const data = update(previous.data)
         // Fresh data changed in place (a rename, a delete) is saved again; saved

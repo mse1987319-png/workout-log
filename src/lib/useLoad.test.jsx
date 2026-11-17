@@ -21,6 +21,28 @@ function deferred() {
 
 const goOffline = () => vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
 
+// Saved data is shown offline. Back online the load runs again (`outdated`),
+// and before it answers, setData adds a workout the server has just taken.
+async function setDataDuringReload() {
+  saveData('plans', ['Saved'], SAVED_AT)
+  const onLine = goOffline()
+  const offline = deferred()
+  const outdated = deferred()
+  const rerun = deferred()
+  const load = vi
+    .fn()
+    .mockReturnValueOnce(offline.promise)
+    .mockReturnValueOnce(outdated.promise)
+    .mockReturnValueOnce(rerun.promise)
+  const { result } = renderHook(() => useLoad(load, 'plans'))
+  await act(async () => offline.reject(NETWORK_ERROR))
+
+  onLine.mockReturnValue(true)
+  act(() => window.dispatchEvent(new Event('online')))
+  act(() => result.current.setData((plans) => [...plans, 'Sent']))
+  return { result, load, outdated, rerun }
+}
+
 beforeEach(() => {
   setCurrentUser('user-1')
 })
@@ -153,6 +175,34 @@ describe('useLoad', () => {
 
     await act(async () => second.resolve(['Fresh']))
     expect(result.current).toMatchObject({ status: 'success', data: ['Fresh'], savedAt: null })
+  })
+
+  it('a load that started before setData does not overwrite it', async () => {
+    const { result, load, outdated, rerun } = await setDataDuringReload()
+
+    // Its answer was read before the change: it is neither shown nor saved,
+    // and the load runs again.
+    await act(async () => outdated.resolve(['Saved']))
+    expect(result.current).toMatchObject({ status: 'success', data: ['Saved', 'Sent'], savedAt: SAVED_AT })
+    expect(readSaved('plans')).toEqual({ data: ['Saved'], savedAt: SAVED_AT })
+    expect(load).toHaveBeenCalledTimes(3)
+
+    // The new answer includes the change and is shown; nothing runs after it.
+    await act(async () => rerun.resolve(['Fresh', 'Sent']))
+    expect(result.current).toMatchObject({ status: 'success', data: ['Fresh', 'Sent'], savedAt: null })
+    expect(load).toHaveBeenCalledTimes(3)
+  })
+
+  it('a load that started before setData does not replace it with an error', async () => {
+    const { result, load, outdated, rerun } = await setDataDuringReload()
+
+    const serverBusy = { code: 'PGRST002', message: 'Could not query the database for the schema cache. Retrying.' }
+    await act(async () => outdated.reject(serverBusy))
+    expect(result.current).toMatchObject({ status: 'success', data: ['Saved', 'Sent'], error: null, savedAt: SAVED_AT })
+    expect(load).toHaveBeenCalledTimes(3)
+
+    await act(async () => rerun.resolve(['Fresh', 'Sent']))
+    expect(result.current).toMatchObject({ status: 'success', data: ['Fresh', 'Sent'], savedAt: null })
   })
 
   it('without a signed-in user nothing is saved or read', async () => {

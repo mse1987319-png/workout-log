@@ -1,7 +1,7 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthContext } from '../auth/AuthContext'
 import { supabase } from '../lib/supabase'
 import { setCurrentUser } from '../offline/currentUser'
@@ -73,9 +73,27 @@ async function startRenaming(user, title) {
   return screen.getByRole('textbox', { name: 'Workout title' })
 }
 
+// The next request reaches the backend now, but its reply waits for release().
+function holdNextReply() {
+  let release
+  const released = new Promise((resolve) => {
+    release = resolve
+  })
+  const answer = backend.fetch
+  vi.spyOn(backend, 'fetch').mockImplementationOnce((input, init) => {
+    const reply = answer(input, init)
+    return released.then(() => reply)
+  })
+  return release
+}
+
 describe('PlansPage', () => {
   beforeEach(() => {
     backend.reset()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('shows the Loading state while the plans load', () => {
@@ -446,6 +464,8 @@ describe('PlansPage', () => {
     const wait = (workout = {}, planName = 'Strength block') =>
       addToOutbox({ workout: { ...WAITING, ...workout }, planName })
     const posts = () => backend.requests.filter((request) => request.method === 'POST' && request.path === LOG_WORKOUT)
+    const planLoads = () =>
+      backend.requests.filter((request) => request.method === 'GET' && request.path === '/rest/v1/plans')
 
     it('lists a waiting workout under its plan with a Waiting to send badge, not as a link', async () => {
       backend.reply('GET', '/rest/v1/plans', 200, PLANS)
@@ -564,6 +584,44 @@ describe('PlansPage', () => {
       // It is the first of the plan's workouts, and shown once.
       expect(strength.getAllByRole('listitem')[0]).toContainElement(link)
       expect(strength.getAllByText('Evening ride')).toHaveLength(1)
+    })
+
+    it('a workout sent while the list reloads stays in My plans', async () => {
+      // The plans as the database lists them once the workout is saved.
+      const sent = { id: SENT_ROW.id, title: 'Evening ride', type: 'other', duration_min: 45, created_at: SENT_ROW.created_at }
+      const plansWithSent = [{ ...PLANS[0], workouts: [sent, ...PLANS[0].workouts] }, PLANS[1]]
+      backend.networkDown('GET', '/rest/v1/plans')
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      backend.reply('GET', '/rest/v1/plans', 200, plansWithSent)
+      backend.reply('POST', LOG_WORKOUT, 200, SENT_ROW)
+
+      // Offline, My plans shows the saved plans, with the workout waiting.
+      saveData('plans', PLANS, SAVED_AT)
+      const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+      wait()
+      renderPlans()
+      const strength = await planCard('Strength block')
+      expect(strength.getByText('Waiting to send')).toBeInTheDocument()
+      await waitFor(() => expect(planLoads()).toHaveLength(1))
+
+      // Back online, the plans load again. That answer is read before the
+      // workout is saved (no Evening ride) and arrives last.
+      const release = holdNextReply()
+      onLine.mockReturnValue(true)
+      act(() => window.dispatchEvent(new Event('online')))
+      await waitFor(() => expect(planLoads()).toHaveLength(2))
+
+      // Meanwhile the outbox sends the workout, and it becomes a normal row.
+      await syncOutbox()
+      expect(await strength.findByRole('link', { name: 'Evening ride' })).toBeInTheDocument()
+
+      release()
+
+      // That old answer is not shown: the plans load once more and list it.
+      await waitFor(() => expect(screen.queryByText(/Offline: showing data saved on/)).not.toBeInTheDocument())
+      expect(strength.getByRole('link', { name: 'Evening ride' })).toHaveAttribute('href', `/workouts/${SENT_ROW.id}`)
+      expect(strength.queryByText('Waiting to send')).not.toBeInTheDocument()
+      expect(planLoads()).toHaveLength(3)
     })
   })
 })
