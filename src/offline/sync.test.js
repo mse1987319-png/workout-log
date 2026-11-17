@@ -118,6 +118,59 @@ describe('saving a workout', () => {
     expect(localStorage.getItem(OUTBOX_KEY)).toBeNull()
   })
 
+  it('sends the other waiting workouts right after a save', async () => {
+    backend.reply('POST', LOG_WORKOUT, 200, ROW)
+    logOffline('Monday')
+
+    await expect(save()).resolves.toEqual({ saved: ROW })
+
+    // Nothing else starts a round here: the save getting through does.
+    await vi.waitFor(() => expect(getOutbox()).toEqual([]))
+    expect(posts().map((request) => request.body.p_title)).toEqual(['Leg day', 'Monday'])
+
+    // The same when the phone was too full to keep the workout and sent it directly.
+    logOffline('Tuesday')
+    const setItem = Storage.prototype.setItem
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (key, value) {
+      const grows = value.length > (localStorage.getItem(key)?.length ?? 0)
+      if (key.startsWith('logify.outbox.v1.') && grows) {
+        throw new DOMException('The quota has been exceeded.', 'QuotaExceededError')
+      }
+      return setItem.call(this, key, value)
+    })
+
+    await expect(save()).resolves.toEqual({ saved: ROW })
+
+    await vi.waitFor(() => expect(getOutbox()).toEqual([]))
+    expect(posts().map((request) => request.body.p_title)).toEqual(['Leg day', 'Monday', 'Leg day', 'Tuesday'])
+    expect(posts()[2].body).not.toHaveProperty('p_id')
+  })
+
+  it('a failing sent listener does not fail the save or stop the round', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const broken = new Error('This screen could not show the workout')
+    const failing = vi.fn(() => {
+      throw broken
+    })
+    const working = vi.fn()
+    cleanups.push(onWorkoutSent(failing), onWorkoutSent(working))
+    logOffline('Monday')
+    logOffline('Tuesday')
+    backend.reply('POST', LOG_WORKOUT, 200, ROW)
+
+    // The save still succeeds, so the form doesn't invite a second Save.
+    await expect(save()).resolves.toEqual({ saved: ROW })
+    // And the round after it still sends both waiting workouts.
+    await syncOutbox()
+
+    expect(posts()).toHaveLength(3)
+    expect(getOutbox()).toEqual([])
+    expect(failing).toHaveBeenCalledTimes(3)
+    expect(working).toHaveBeenCalledTimes(3)
+    expect(consoleError).toHaveBeenCalledTimes(3)
+    expect(consoleError).toHaveBeenCalledWith(broken)
+  })
+
   it('keeps the workout when the network is down and sends the same workout in the next round', async () => {
     backend.networkDown('POST', LOG_WORKOUT)
     backend.reply('POST', LOG_WORKOUT, 200, ROW)
@@ -257,6 +310,24 @@ describe('saving a workout', () => {
     // The repeat goes the old way without asking the stored version again.
     expect(posts().map((request) => 'p_id' in request.body)).toEqual([true, false])
     expect(getDbVersion()).toBeNull()
+  })
+
+  it("does not resend the old way with another user's session", async () => {
+    const item = logOffline('Monday')
+    backend.reply('POST', LOG_WORKOUT, 404, { code: 'PGRST202', message: 'Could not find the function', hint: null })
+    backend.reply('POST', LOG_WORKOUT, 200, ROW)
+    const release = holdNextReply()
+    const sending = syncOutbox()
+    await vi.waitFor(() => expect(posts()).toHaveLength(1))
+
+    // Someone else's session arrives while the first answer is on its way.
+    supabase.auth = createFakeAuth({ session: sessionFor(INSTRUCTOR) })
+    release()
+    await sending
+
+    expect(posts()).toHaveLength(1)
+    expect(getDbVersion()).toBe(0)
+    expect(getOutbox()).toEqual([item])
   })
 
   it('on an older database the send is not cut off', async () => {

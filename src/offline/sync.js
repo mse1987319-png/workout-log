@@ -45,21 +45,12 @@ async function hasSessionOf(user) {
   }
 }
 
-// log_workout, with the phone's id and time where the database knows them.
-async function send(item) {
-  const exactlyOnce = supportsExactlyOnce()
+// One call to log_workout, as an outcome. Never throws.
+async function attempt(params) {
   try {
-    return await createWorkout({
-      ...item.workout,
-      ...(exactlyOnce ? { id: item.id, loggedAt: item.loggedAt, signal: AbortSignal.timeout(SEND_LIMIT_MS) } : {}),
-    })
+    return { outcome: 'sent', row: await createWorkout(params) }
   } catch (error) {
-    if (!exactlyOnce || error?.code !== 'PGRST202') throw error
-    // No v5 log_workout after all (rolled back, or PostgREST's schema cache is
-    // behind): remember that, and send this one the old way at once. It doesn't
-    // ask supportsExactlyOnce() again, so a failed write can't make it loop.
-    markDbOlder()
-    return createWorkout(item.workout)
+    return triesLater(error) ? RETRY : { outcome: 'failed', error }
   }
 }
 
@@ -67,11 +58,34 @@ async function send(item) {
 export async function sendItem(item) {
   const owner = getCurrentUser()
   if (!(await hasSessionOf(owner))) return RETRY
-  try {
-    return { outcome: 'sent', row: await send(item) }
-  } catch (error) {
-    return triesLater(error) ? RETRY : { outcome: 'failed', error }
-  }
+  // The phone's id and time go only to a database that knows them.
+  if (!supportsExactlyOnce()) return attempt(item.workout)
+  const result = await attempt({
+    ...item.workout,
+    id: item.id,
+    loggedAt: item.loggedAt,
+    signal: AbortSignal.timeout(SEND_LIMIT_MS),
+  })
+  if (result.error?.code !== 'PGRST202') return result
+  // No v5 log_workout after all (rolled back, or PostgREST's schema cache is
+  // behind): remember that, and send this one the old way at once. It doesn't
+  // ask supportsExactlyOnce() again, so a failed write can't make it loop. A
+  // whole round trip has passed, so the owner's session is checked again.
+  markDbOlder()
+  if (!(await hasSessionOf(owner))) return RETRY
+  return attempt(item.workout)
+}
+
+// A screen's failing listener must not undo a save (the form would invite a
+// second Save: a duplicate workout and email) or end a round.
+function announce(row, item) {
+  sentListeners.forEach((listener) => {
+    try {
+      listener(row, item)
+    } catch (error) {
+      console.error(error)
+    }
+  })
 }
 
 // What a send's outcome does to its owner's outbox. Only the person signed in
@@ -80,7 +94,7 @@ export async function sendItem(item) {
 function record(owner, item, result) {
   if (result.outcome === 'sent') {
     removeItem(item.id, owner)
-    if (getCurrentUser() === owner) sentListeners.forEach((listener) => listener(result.row, item))
+    if (getCurrentUser() === owner) announce(result.row, item)
   } else if (result.outcome === 'retry') {
     updateItem(item.id, { status: 'waiting' }, owner)
   } else {
@@ -122,6 +136,13 @@ async function sendWaiting(current) {
   }
 }
 
+// The save got through, so the server can be reached: the other waiting
+// workouts go now rather than at the next 30 s tick (spec §4).
+function saved(row) {
+  void syncOutbox()
+  return { saved: row }
+}
+
 // The promise's value, or TOO_SLOW once `ms` have passed.
 function within(ms, promise) {
   let timer
@@ -148,7 +169,7 @@ export async function saveWorkout({ workout, planName }) {
     // The phone can't keep it: online it goes the way it did before the
     // outbox (no id, so not exactly-once); offline the form has to say so.
     if (error?.code !== 'storage_full' || !online) throw error
-    return { saved: await createWorkout(workout) }
+    return saved(await createWorkout(workout))
   }
   if (!online) return { kept: item }
 
@@ -164,7 +185,7 @@ export async function saveWorkout({ workout, planName }) {
     throw result.error
   }
   record(owner, item, result)
-  return result.outcome === 'sent' ? { saved: result.row } : { kept: { ...item, status: 'waiting' } }
+  return result.outcome === 'sent' ? saved(result.row) : { kept: { ...item, status: 'waiting' } }
 }
 
 /** Try again, for a workout that couldn't be sent. */
