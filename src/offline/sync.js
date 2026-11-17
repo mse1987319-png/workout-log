@@ -7,6 +7,7 @@ import { isNetworkError } from '../lib/errors'
 import { supabase } from '../lib/supabase'
 import { getCurrentUser, subscribeCurrentUser } from './currentUser'
 import { markDbOlder, supportsExactlyOnce } from './dbVersion'
+import { clearDraft } from './draft'
 import { isOnline } from './network'
 import { addToOutbox, getOutbox, removeItem, updateItem } from './outbox'
 
@@ -168,9 +169,16 @@ export async function saveWorkout({ workout, planName }) {
   } catch (error) {
     // The phone can't keep it: online it goes the way it did before the
     // outbox (no id, so not exactly-once); offline the form has to say so.
+    // The form's draft stays until the server answers: it is the only copy.
     if (error?.code !== 'storage_full' || !online) throw error
     return saved(await createWorkout(workout))
   }
+  // The outbox has it now, so the unsaved form goes at once, not when the
+  // send settles (up to SEND_LIMIT_MS): if the app closed meanwhile, the next
+  // start would send this copy AND restore the form, and a second Save would
+  // be a second workout and email. A send the server refuses throws, and the
+  // form, which keeps its fields then, saves them as the draft again.
+  clearDraft(owner)
   if (!online) return { kept: item }
 
   const sending = sendItem(item)

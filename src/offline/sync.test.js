@@ -4,6 +4,7 @@ import { backend } from '../test/fakeBackend'
 import { ATHLETE, createFakeAuth, INSTRUCTOR, sessionFor } from '../test/fakeSupabase'
 import { setCurrentUser } from './currentUser'
 import { getDbVersion, markDbOlder } from './dbVersion'
+import { readDraft, saveDraft } from './draft'
 import { addToOutbox, getOutbox } from './outbox'
 import { readSaved, saveData } from './savedData'
 import { deleteItem, onWorkoutSent, retryItem, saveWorkout, startOutboxSync, syncOutbox } from './sync'
@@ -144,6 +145,43 @@ describe('saving a workout', () => {
     await vi.waitFor(() => expect(getOutbox()).toEqual([]))
     expect(posts().map((request) => request.body.p_title)).toEqual(['Leg day', 'Monday', 'Leg day', 'Tuesday'])
     expect(posts()[2].body).not.toHaveProperty('p_id')
+  })
+
+  it('drops the unsaved form as soon as the outbox holds the workout', async () => {
+    saveDraft({ planId: 'plan-1', title: 'Leg day', exercises: [] })
+    backend.reply('POST', LOG_WORKOUT, 200, ROW)
+    const release = holdNextReply()
+
+    const saving = save()
+    await vi.waitFor(() => expect(posts()).toHaveLength(1))
+
+    // Still on its way: if the app closed now, the outbox would send it on the
+    // next start, and a restored form would invite a second Save.
+    expect(getOutbox()).toHaveLength(1)
+    expect(readDraft()).toBeNull()
+    release()
+    await expect(saving).resolves.toEqual({ saved: ROW })
+  })
+
+  it('leaves the unsaved form alone while a workout the phone could not keep is sent directly', async () => {
+    saveDraft({ planId: 'plan-1', title: 'Leg day', exercises: [] })
+    const setItem = Storage.prototype.setItem
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (key, value) {
+      if (key.startsWith('logify.outbox.v1.')) {
+        throw new DOMException('The quota has been exceeded.', 'QuotaExceededError')
+      }
+      return setItem.call(this, key, value)
+    })
+    backend.reply('POST', LOG_WORKOUT, 200, ROW)
+    const release = holdNextReply()
+
+    const saving = save()
+    await vi.waitFor(() => expect(posts()).toHaveLength(1))
+
+    // No copy on the phone: the form is all there is until the server answers.
+    expect(readDraft()).toMatchObject({ title: 'Leg day' })
+    release()
+    await expect(saving).resolves.toEqual({ saved: ROW })
   })
 
   it('a failing sent listener does not fail the save or stop the round', async () => {

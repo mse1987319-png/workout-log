@@ -5,6 +5,7 @@ import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
 import { ACTIVITY_VALUES, activityLabel, typeLabel } from '../lib/format'
 import { toSetsPayload, validateExercises } from '../lib/sets'
+import { getCurrentUser } from '../offline/currentUser'
 import { clearDraft, readDraft, saveDraft } from '../offline/draft'
 import { saveWorkout } from '../offline/sync'
 import ExercisesEditor from './ExercisesEditor'
@@ -77,6 +78,8 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
     if (issue) return
 
     const cardio = type === 'other'
+    // Whose form this is: the save can outlast a log out (and someone else's log in).
+    const owner = getCurrentUser()
     setSaving(true)
     try {
       const result = await saveWorkout({
@@ -94,9 +97,13 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
       })
       setFields(EMPTY_FIELDS)
       setRestored(false)
-      clearDraft()
+      clearDraft(owner)
       setOutcome(result)
     } catch (error) {
+      // Not kept after all (refused, or the phone is full), and the fields stay
+      // for a fix: they are the draft again, which saveWorkout dropped when the
+      // outbox took the workout. Only while the same person is signed in.
+      if (getCurrentUser() === owner) saveDraft({ planId, ...fields })
       setSaveError(error)
     } finally {
       setSaving(false)

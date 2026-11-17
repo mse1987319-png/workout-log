@@ -71,6 +71,20 @@ afterEach(() => {
 const posts = (path) =>
   backend.requests.filter((request) => request.method === 'POST' && request.path === path)
 
+// The next request reaches the backend now, but its reply waits for release().
+function holdNextReply() {
+  let release
+  const released = new Promise((resolve) => {
+    release = resolve
+  })
+  const answer = backend.fetch
+  vi.spyOn(backend, 'fetch').mockImplementationOnce((input, init) => {
+    const reply = answer(input, init)
+    return released.then(() => reply)
+  })
+  return release
+}
+
 describe('LogWorkoutPage', () => {
   beforeEach(() => {
     backend.reset()
@@ -257,6 +271,8 @@ describe('LogWorkoutPage', () => {
       expect(await screen.findByRole('alert')).toHaveTextContent("You don't have permission to do that.")
       expect(screen.getByLabelText('Title')).toHaveValue('Leg day')
       expect(getOutbox()).toEqual([])
+      // It wasn't kept, so it is still the unsaved workout a reload brings back.
+      expect(readDraft()).toMatchObject({ planId: 'plan-1', title: 'Leg day', type: 'strength', duration: '60' })
 
       await user.click(screen.getByRole('button', { name: 'Try again' }))
       expect(await screen.findByRole('status')).toHaveTextContent('Workout saved: Leg day.')
@@ -298,6 +314,7 @@ describe('LogWorkoutPage', () => {
       expect(screen.queryByText(/Saved on this phone/)).not.toBeInTheDocument()
       expect(screen.getByLabelText('Title')).toHaveValue('Leg day')
       expect(getOutbox()).toEqual([])
+      expect(readDraft()).toMatchObject({ title: 'Leg day' })
     })
   })
 
@@ -340,6 +357,32 @@ describe('LogWorkoutPage', () => {
 
       expect(screen.getByLabelText('Title')).toHaveValue('')
       expect(screen.queryByText('Unsaved workout restored.')).not.toBeInTheDocument()
+    })
+
+    it('does not restore a workout the outbox already holds when the page closes during Saving…', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+      backend.reply('POST', '/rest/v1/rpc/log_workout', 200, savedWorkout({ type: 'other' }))
+      const first = renderLog()
+      await screen.findByLabelText('Plan')
+      await fillWorkout(first, { title: 'Easy run', type: /^Other/, duration: '30' })
+      const release = holdNextReply()
+      await first.click(screen.getByRole('button', { name: 'Save workout' }))
+      await waitFor(() => expect(posts('/rest/v1/rpc/log_workout')).toHaveLength(1))
+      expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled()
+
+      // The phone closes the app (or it reloads) before the answer comes. The
+      // outbox will send this workout on the next start, so the form must not
+      // offer it again: a second Save would be a second workout and email.
+      cleanup()
+      renderLog()
+      await screen.findByLabelText('Plan')
+
+      expect(screen.queryByText('Unsaved workout restored.')).not.toBeInTheDocument()
+      expect(screen.getByLabelText('Title')).toHaveValue('')
+      expect(getOutbox()).toHaveLength(1)
+
+      release()
+      await waitFor(() => expect(getOutbox()).toEqual([]))
     })
 
     it('Start over clears the restored workout', async () => {
