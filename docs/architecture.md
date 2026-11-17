@@ -195,14 +195,15 @@ flowchart LR
 | Data access | `src/api` | One function per question or write: `from(...)` queries and `rpc(...)` calls; the only place that knows table and function names |
 | Logic | `src/lib` | Pure functions without I/O: progress maths, goals, suggestions, formatting. Easy to test |
 | Texts | `src/i18n` | Every UI text lives in `translations.js` (Lithuanian and English, same keys). `t(key, params)` fills in `{placeholders}` and picks plural forms (Lithuanian has three); the chosen language is kept in `localStorage` and read by components through `useLanguage()`. Lithuanian is the default |
-| Auth | `src/auth` | Session provider; the role in the menu comes from the sign-up metadata |
+| Auth | `src/auth` | Session provider; the role in the menu comes from the sign-up metadata. Offline it falls back to the stored session |
+| Offline | `src/offline`, `src/pwa` | Saved data, the outbox, the draft, the database version, and the service worker's update and install prompts. The only code that touches `localStorage` for them. See section 6 |
 | Database | `supabase/schema.sql` | Tables, policies, functions, triggers; re-runnable. `seed.sql` adds demo data to an empty project |
 
 Tests run without a network: the real `supabase-js` client talks to a fake `fetch` (`src/test/fakeBackend.js`), so they check the exact HTTP requests. The database has its own tests in `supabase/tests`, each of which rolls itself back.
 
 ## 4. Data flows
 
-**Logging a workout.** The form calls `log_workout()` (one transaction: the workout and its sets). The `INSERT` into `workouts` fires the webhook once, with `sets_summary` already in the row, so Zap 1 can put the sets in the email. If anything fails, nothing is saved and nothing is sent.
+**Logging a workout.** The form calls `log_workout()` (one transaction: the workout and its sets). The `INSERT` into `workouts` fires the webhook once, with `sets_summary` already in the row, so Zap 1 can put the sets in the email. If anything fails, nothing is saved and nothing is sent. Since v5 the phone can make the workout's id and time itself and keep the workout when there is no signal: see [section 6](#6-the-offline-layer).
 
 **Sending a report.** The button calls `send_report()`, which builds the numbers from the caller's own last 7 days, stores a `reports` row (at most one per 5 minutes) and so fires the second webhook.
 
@@ -226,6 +227,51 @@ Row Level Security is the access control; the browser never filters by user.
 
 **Changed from the plan:** the plan proposed extra `select` policies for instructors on the athletes' tables. They would have mixed athletes' rows into an instructor's own screens, so instructors read through functions instead and the tables keep "own rows only". See [supabase.md](supabase.md#1-tables-and-policies).
 
+## 6. The offline layer
+
+Since v5 Logify is an installable phone app (a PWA) that opens and works without signal: you can see your plans, history and progress (instructors: their athletes) and log a workout. A workout logged offline waits on the phone and is sent, with the instructor's email, when the signal returns. The full story, with the limits and how to test it, is in [pwa.md](pwa.md).
+
+| Part | Where | What it does |
+|---|---|---|
+| Service worker and manifest | `vite.config.js` (vite-plugin-pwa, Workbox), `src/pwa/` | Keeps the app's own files on the phone, so every screen opens offline; offers an update with **Update**; the install card |
+| Saved data | `src/offline/savedData.js`, `src/lib/useLoad.js` | `useLoad` asks the network first and saves each result per user; the saved copy is shown when the phone is offline, the request fails, or it takes over 4 s |
+| Warm-up and hints | `src/offline/warmUp.js`, `src/offline/hints.js` | Saves plan options and Progress right after sign-in; offline, exercise names and *Last time* come from the saved Progress |
+| Outbox | `src/offline/outbox.js`, `src/offline/sync.js` | Workouts logged on the phone, kept until the server has them; sent in order, one at a time |
+| Draft | `src/offline/draft.js` | The half-filled Log workout form, kept as you type |
+| Database version | `src/offline/dbVersion.js`, `src/api/schema.js` | Asks `schema_version()` and remembers the answer; an older database gets a warning and the old way of sending |
+| Signed-in offline | `src/auth/AuthProvider.jsx`, `src/auth/storedSession.js`, `src/lib/sessionGuard.js` | Uses the stored session when supabase-js can't refresh it; never lets a data request go out without a signed-in session |
+| Layout | `src/components/Layout.jsx`, `src/components/StatusBar.jsx`, `src/index.css` | A bottom tab bar on phones (640 px and below), and the status line under the header |
+
+Everything is per user (`logify.cache.v1.<user id>.…`, `logify.outbox.v1.<user id>`, `logify.draft.v1.<user id>`), so two people on one phone never see each other's data, and log out removes that user's saved data. The database stays the only place that decides who may read what: the saved copy is the same data the user was already allowed to read.
+
+**Logging a workout offline.** Save writes the workout to the outbox with an id made on the phone and the time Save was pressed, then sends it. The database function `log_workout()` takes both as the optional parameters `p_id` and `p_logged_at`. If a workout with that id exists, the function returns it and inserts nothing, so the workout is saved, and the webhook fires, exactly once however many times a send is repeated.
+
+```mermaid
+sequenceDiagram
+  participant U as Athlete
+  participant A as Logify on the phone
+  participant O as Outbox
+  participant S as Supabase
+  participant W as Webhook to Zapier to Gmail
+
+  U->>A: Save workout (no signal)
+  A->>O: keep it with its id and the time of Save
+  A-->>U: Saved on this phone
+  Note over A,S: The signal returns while the app is open
+  A->>O: take the oldest waiting workout
+  A->>S: log_workout(p_id, p_logged_at, ...)
+  S->>S: INSERT into workouts with id p_id and created_at p_logged_at
+  S->>W: the INSERT fires the webhook, once
+  Note over A,S: The answer is lost on the way back
+  A->>S: log_workout(same p_id) on the next try
+  S-->>A: the saved workout, nothing inserted, no second webhook
+  A->>O: remove it, it is a normal workout now
+```
+
+The outbox also decides what to do with a refusal: a missing answer, a timeout, an HTTP 5xx, an expired sign-in or a duplicate id are tried again later; any other error marks that workout *Couldn't send* with **Try again** and **Delete**.
+
+**Both directions are compatible.** The live app from before v5 keeps working against the v5 database, because the new parameters are optional and the other parts of the database are unchanged. The v5 app against an older database works too, with a warning: see [pwa.md](pwa.md#5-the-older-database-warning).
+
 ## Related
 
-[supabase.md](supabase.md) (tables, policies, sharing) · [deployment.md](deployment.md) (Vercel) · [zapier.md](zapier.md) (both Zaps) · [setup.md](setup.md) (local setup)
+[supabase.md](supabase.md) (tables, policies, sharing, v5) · [pwa.md](pwa.md) (the phone app and offline use) · [deployment.md](deployment.md) (Vercel) · [zapier.md](zapier.md) (both Zaps) · [setup.md](setup.md) (local setup)

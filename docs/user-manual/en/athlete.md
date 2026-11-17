@@ -2,7 +2,7 @@
 
 *English · [Lietuviškai](../lt/athlete.md) · [Instructor manual](instructor.md)*
 
-Logify is a web workout log. You follow workout plans (your own, or ones your instructor gave you), log strength and cardio sessions, watch your progress, and let your instructor follow along. There is nothing to install: it runs in the browser on a computer, tablet or phone.
+Logify is a web workout log. You follow workout plans (your own, or ones your instructor gave you), log strength and cardio sessions, watch your progress, and let your instructor follow along. It runs in the browser on a computer, tablet or phone, and on a phone you can also install it like an app and keep using it without signal.
 
 > The people, plans and workouts in the screenshots are made-up demo data.
 
@@ -16,7 +16,9 @@ Logify is a web workout log. You follow workout plans (your own, or ones your in
 6. [Progress](#6-progress)
 7. [Share with your instructor](#7-share-with-your-instructor)
 8. [Using Logify on a phone](#8-using-logify-on-a-phone)
-9. [Messages and what to do](#9-messages-and-what-to-do)
+9. [Install on your phone](#9-install-on-your-phone)
+10. [Using Logify without signal](#10-using-logify-without-signal)
+11. [Messages and what to do](#11-messages-and-what-to-do)
 
 ---
 
@@ -51,11 +53,12 @@ Logify speaks **Lithuanian (LT)** and **English (EN)**. The **LT / EN** switch s
 
 Names you type yourself (plans, exercises, notes) are never translated.
 
-The menu at the top has three entries for athletes:
+On a computer the menu is at the top; on a phone it is a bar at the bottom of the screen (see [Using Logify on a phone](#8-using-logify-on-a-phone)). Athletes have these entries:
 
 | Menu | What it is for |
 |---|---|
 | **My plans** | Your plans and the workouts under each |
+| **Log** (phones only) | Log a workout |
 | **Progress** | Suggestions, goals, the report to your instructor, charts |
 | **Sharing** | Connect with an instructor |
 
@@ -116,6 +119,8 @@ Press **+ Log workout** on a plan card. (You can also arrive here from the *Log 
 7. Press **Save workout**.
 
 ![Empty Log workout form](../images/en/20-log-form-empty.png)
+
+> No signal at the gym? You can still log the workout: Logify keeps it on your phone and sends it later. See [Using Logify without signal](#10-using-logify-without-signal).
 
 > Every saved workout automatically emails the instructor(s) you share with; strength workouts are flagged. This is why the form says so under **Type**. If you share with nobody, nobody is emailed (see [Share with your instructor](#7-share-with-your-instructor)).
 
@@ -228,20 +233,110 @@ To stop, press **Stop sharing** next to the instructor. Your data stays yours; t
 
 ## 8. Using Logify on a phone
 
-Logify is built to be used in the gym. On a narrow screen the menu moves to its own row under the logo, and the buttons stay large enough to tap.
+Logify is built to be used in the gym. On a phone (a screen up to 640 px wide) the menu becomes a **bar at the bottom of the screen**, like an app's: an icon and a label for each of **My plans**, **Log**, **Progress** and **Sharing**. The tab you are on is in the accent color. The **Log** tab opens the Log workout form straight away; it exists on phones only. The header shrinks to one row with the logo, the **LT / EN** switch and **Log out** (on the smallest screens your email is hidden), so there is more room for the screen itself.
+
+Under the header a **status line** appears when there is something to say: you are offline, workouts are waiting to be sent, or a new version is ready. See [Using Logify without signal](#10-using-logify-without-signal).
+
+Buttons and the plan and exercise choices stay large enough to tap.
 
 | My plans | Log workout |
 |---|---|
-| ![My plans on a phone](../images/en/80-phone-plans.png) | ![Log workout on a phone](../images/en/81-phone-log.png) |
+| ![My plans on a phone, with the bottom tab bar](../images/en/80-phone-plans.png) | ![Log workout on a phone, with the bottom tab bar](../images/en/81-phone-log.png) |
 
-## 9. Messages and what to do
+## 9. Install on your phone
+
+Installing puts Logify on your home screen. It then opens full-screen with its own icon, like any app. It is optional, and Logify works without signal either way once you have opened it with a connection and logged in.
+
+**Android (Chrome)**
+
+1. Open Logify. On **My plans** a card says **Install Logify**: *It opens like an app and works without signal.*
+2. Press **Install** and confirm. (If you press **Not now**, the card goes away for good; you can still use the browser's menu → **Install app** or **Add to Home screen**.)
+3. Long-press the icon on the home screen to see two shortcuts, one for logging a workout and one for **Progress**. (Their names are always in Lithuanian: the app's install file can't follow the language switch.)
+
+**iPhone (Safari)**
+
+1. Open Logify in **Safari**. The card on **My plans** says *On iPhone: tap Share, then Add to Home Screen.*
+2. Tap **Share**, then **Add to Home Screen**, then **Add**. Press **Got it** on the card.
+
+> **On iPhone, the installed app keeps its own storage**, separate from Safari. Logging in in Safari does not log you in inside the home-screen app: **log in once more there**. The saved data and workouts waiting to send are separate too.
+
+The card disappears once Logify is installed.
+
+**Updates.** When a new version is ready, the status line says *A new version of Logify is ready.* with **Update**. Logify never reloads by itself; press **Update** when it suits you (a workout you were typing comes back after the reload). An open app also looks for a new version every hour.
+
+## 10. Using Logify without signal
+
+Gyms often have weak or no signal. Logify keeps working: it opens, shows what you saw last, and lets you log a workout, which is sent when the signal returns.
+
+### Get ready once
+
+Open Logify **with a connection** and log in. Right after that Logify quietly saves your plans and your progress, so offline works even for screens you haven't opened yet. To be able to open a workout's details offline, open it once while online (the 30 most recently opened workouts are kept). You stay logged in offline, even if you haven't had signal for hours.
+
+### What you see offline
+
+- The status line says *You're offline. Workouts you log are kept on this phone.*
+- Plans, workouts, **Progress** and **Sharing** show the last data Logify got, with a line such as *Offline: showing data saved on Nov 16, 2026, 6:42 PM.* and **Try again**. When the connection returns, the screen refreshes by itself and the line goes away. Saved data can be old, so look at the time.
+- The same happens on a weak connection: if a screen takes longer than about 4 seconds, you see the saved data (and the fresh data replaces it if it arrives).
+- If something has never been saved on the phone, the screen says *You're offline, and this hasn't been saved on this phone yet.*
+- While logging, the exercise-name suggestions and *Last time* come from your saved progress.
+
+### Log a workout without signal
+
+1. Open **Log** (or **+ Log workout** on a plan) and fill in the workout as usual.
+2. Press **Save workout**. Instead of *Workout saved*, you see *Saved on this phone. It will be sent as soon as there's a connection, and your instructor gets the email then.* The form is empty again.
+3. On **My plans** the workout appears under its plan with the label **Waiting to send**. It is not a link yet: it has no page until it has been sent. The status line says how many are waiting, for example *1 workout waiting to send*.
+
+Your instructor is emailed when the workout is sent, not when you saved it on the phone.
+
+If you are typing a workout and the phone closes the app, or you update Logify, the form comes back with *Unsaved workout restored.* Press **Start over** to clear it.
+
+### When the signal returns
+
+While Logify is open, waiting workouts are sent by themselves: when the connection returns, when you come back to the app, and every 30 seconds. Press **Send now** in the status line to send right away. The status line shows *Sending…* meanwhile, and a sent workout becomes a normal row. **Every workout is saved, and emailed, exactly once**, even if the connection drops in the middle of sending and Logify has to try again.
+
+Logify sends only while the app is open (it can't send in the background), so open it once you are back in range. The time on the workout is the time you pressed **Save workout**, as long as that was in the last 30 days.
+
+### If a workout can't be sent
+
+If the server refuses a workout (for example, the plan was deleted, or your instructor stopped assigning it), it shows **Couldn't send: …** with the reason, and **Try again** and **Delete** buttons on **My plans**. **Delete** asks first: *Delete “…”? It was never sent, so it will be gone.* If the plan is no longer in your list, the workout appears in a card **Workouts waiting to send** at the top of **My plans**. The status line says *1 workout couldn't be sent: see My plans.*
+
+### Logging out with workouts waiting
+
+Logify asks first: *1 workout hasn't been sent yet. It stays on this phone and is sent the next time you log in here.* Log in again on this phone to send them. Logging out also works without signal, and removes your saved data from the phone (not the waiting workouts).
+
+### What still needs signal
+
+Creating, editing and deleting plans, renaming a workout, goals, sending a report, sharing with an instructor and logging in need a connection; without one you will see *Can't reach the server…* (or, on the login screen, *You're offline. Logging in needs a connection.*).
+
+### If the phone's storage is full
+
+Logify drops saved data to make room for your workout. If it still can't keep the workout, the form says *This phone's storage is full, so the workout couldn't be kept here. Free some space, or save it when you're online.* and does not say it was saved.
+
+### An older database
+
+If the project's database hasn't been updated to the latest version yet, Logify still works, but the status line warns that workouts logged offline get the time they are sent, and that after a dropped connection one could be saved twice. Press **Hide** to hide it for the rest of the session. Whoever runs the project fixes it by updating the database ([docs/supabase.md](../../supabase.md#applying-v5-to-an-existing-project)).
+
+## 11. Messages and what to do
 
 | You see | What it means |
 |---|---|
 | *Wrong email or password.* | Check the details; they are case-sensitive for the password. |
 | *An account with this email already exists. Log in instead.* | Use **I already have an account**. |
 | *Please confirm your email first…* | Open the confirmation link in the email you received, then log in. |
-| *Can't reach the server…* | Check your internet connection, then press **Try again**. |
+| *Can't reach the server…* | Check your internet connection, then press **Try again**. (Logging a workout does not need it: it is kept on the phone.) |
+| *You're offline. Logging in needs a connection.* | Log in once with a connection; after that Logify works offline. |
+| *You're offline. Workouts you log are kept on this phone.* | No connection. Everything you log waits on the phone. |
+| *Offline: showing data saved on …* | The screen shows the last saved data. It refreshes by itself when the connection returns, or press **Try again**. |
+| *You're offline, and this hasn't been saved on this phone yet.* | Open that screen once while online. |
+| *Saved on this phone. It will be sent as soon as there's a connection, and your instructor gets the email then.* | Your workout is safe. Leave Logify open once you have signal. |
+| *1 workout waiting to send* · **Waiting to send** | Sent automatically; or press **Send now**. |
+| *Couldn't send: …* | The server refused it; see the reason. **Try again** or **Delete**. |
+| *1 workout couldn't be sent: see My plans.* | Open **My plans** and deal with it. |
+| *This phone's storage is full, so the workout couldn't be kept here…* | Free some space on the phone, or save the workout when you have a connection. |
+| *1 workout hasn't been sent yet. It stays on this phone…* | Shown when you log out. Log in on this phone later to send it. |
+| *Unsaved workout restored.* | The form you were typing came back. **Start over** clears it. |
+| *A new version of Logify is ready.* | Press **Update**. |
+| *Logify's database is an older version than this app…* | See [An older database](#an-older-database). |
 | *Too many attempts…* | Wait a few minutes. |
 | *No instructor has that code…* | Check the code with your instructor. |
 | *That is your own code…* | You typed an instructor account's own code. |

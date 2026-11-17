@@ -44,7 +44,7 @@ Trumpai, ką daro schema:
 | Patikros | name 1–100 simbolių | `type` yra `strength` arba `other`; trukmė 1–1440 min; `activity` yra run/bike/swim/walk/row/other | reps 1–1000; svoris 0–1000 kg (0 = savo svoris); iki 100 serijų treniruotėje |
 | RLS | `user_id = auth.uid()` select, insert, update, delete | tas pats, o treniruotę galima priskirti tik vienam iš savo planų | tas pats, o serijas galima pridėti tik prie savo treniruočių |
 
-Programa treniruotę išsaugo duomenų bazės funkcija **`log_workout()`**: treniruotė ir jos serijos vienoje transakcijoje, kaip prisijungęs naudotojas (todėl taikomos visos aukščiau esančios politikos). `INSERT` į `workouts` vis dar vieną kartą vienai treniruotei paleidžia Database Webhook; jei kas nors nepavyksta, nieko neišsaugoma ir nieko nesiunčiama. Kadangi webhook mato tik treniruotės eilutę, `log_workout()` į ją taip pat įrašo vienos eilutės serijų santrauką (`sets_summary`, sudaro **`format_sets()`**), kad trenerio laiške jas būtų galima išvardyti.
+Programa treniruotę išsaugo duomenų bazės funkcija **`log_workout()`**: treniruotė ir jos serijos vienoje transakcijoje, kaip prisijungęs naudotojas (todėl taikomos visos aukščiau esančios politikos). `INSERT` į `workouts` vis dar vieną kartą vienai treniruotei paleidžia Database Webhook; jei kas nors nepavyksta, nieko neišsaugoma ir nieko nesiunčiama. Kadangi webhook mato tik treniruotės eilutę, `log_workout()` į ją taip pat įrašo vienos eilutės serijų santrauką (`sets_summary`, sudaro **`format_sets()`**), kad trenerio laiške jas būtų galima išvardyti. Nuo v5 funkcija gali priimti ir treniruotės id bei laiką iš telefono, todėl be ryšio įrašyta treniruotė išsaugoma lygiai vieną kartą: žr. [6 skyrių](#6-treniruočių-įrašymas-be-ryšio-v5).
 
 [`supabase/tests/sets_summary.test.sql`](../../supabase/tests/sets_summary.test.sql) testuoja abi funkcijas. Įklijuokite jį į SQL Editor ir paleiskite: jis visada baigiasi klaida, kuri viską atšaukia, o viskam gerai – parašo *TESTS PASSED (…)*, todėl niekada neišsaugo treniruotės ir nesiunčia laiško.
 
@@ -120,6 +120,43 @@ Pakeitę `.env.local`, paleiskite `npm run dev` iš naujo.
    Tikimasi: naudotojas B mato Tuščią būseną be nieko iš naudotojo A. *(4 testas: RLS veikia)*
 4. Table Editor rodo visų eilutes. Taip ir turi būti: skydelis veikia kaip administratorius ir apeina RLS. Programa to niekada nedaro.
 
+## 6. Treniruočių įrašymas be ryšio (v5)
+
+v5 paverčia „Logify“ telefono programėle, kuri veikia be ryšio ([pwa.md](pwa.md)). Be ryšio įrašyta treniruotė lieka telefone ir siunčiama vėliau, todėl duomenų bazė turi ją išsaugoti **lygiai vieną kartą** ir priskirti dienai, kada ji buvo įrašyta, kad ir kiek kartų telefonas kartotų siuntimą. `supabase/schema.sql` keičiasi du dalykai:
+
+**`log_workout()` gauna du neprivalomus parametrus** (po esamų aštuonių):
+
+| Parametras | Ką daro |
+|---|---|
+| `p_id uuid` | Treniruotės id, sukurtas telefone. Jei šis naudotojas jau turi treniruotę su tuo id, funkcija **ją grąžina ir nieko neįterpia**: jokios antros eilutės, jokių antrų serijų, jokio antro webhook, jokio antro laiško. Jei du siuntimai lenktyniauja, antrasis atsitrenkia į pirminį raktą (klaida `23505`); programa bando dar kartą, o funkcija randa treniruotę ir ją grąžina |
+| `p_logged_at timestamptz` | Kada paspaustas Išsaugoti. Jis tampa treniruotės `created_at` (ir jos serijų `created_at`), jei yra per pastarąsias 30 dienų ir ne ateityje; kitaip naudojamas serverio laikas. Todėl po kelių valandų išsiųsta treniruotė diagramose ir *Praėjusį kartą* vis tiek patenka į teisingą dieną |
+
+Abu pagal numatytąją reikšmę yra `null`, todėl programos prieš v5 siunčiamas kvietimas (aštuoni vardiniai parametrai) veikia nepakitęs: veikianti programa šakoje `main` nenukenčia. `schema.sql` pirmiausia pašalina senąją aštuonių parametrų versiją, nes PostgREST negali pasirinkti tarp dviejų versijų, kurios abi tinka kvietimui; ji palieka teises (kviesti gali tik `authenticated`) ir saugu ją paleisti pakartotinai.
+
+**`schema_version()`** yra nauja funkcija, grąžinanti `5`. Ją gali kviesti `anon` ir `authenticated`. Programa paklausia jos vieną kartą per paleidimą, kad sužinotų, ar duomenų bazė naujausia; senesnėje jos nėra („funkcija nerasta“), ir programa tada parodo įspėjimą bei siunčia senuoju būdu ([pwa.md](pwa.md#5-senesnės-duomenų-bazės-įspėjimas)).
+
+[`supabase/tests/log_workout_offline.test.sql`](../../supabase/tests/log_workout_offline.test.sql) tai viską testuoja ir atšaukia, kaip ir kiti. Jis tikrina, kad:
+
+- `schema_version()` grąžina 5;
+- id ir laikas iš telefono išsaugomi treniruotei ir jos serijoms;
+- tas pats du kartus išsiųstas id sukuria vieną treniruotę, vieną serijų rinkinį ir vieną webhook užklausą;
+- laikas ateityje arba senesnis nei 30 dienų pakeičiamas serverio laiku;
+- senojo stiliaus kvietimas (be `p_id` ir `p_logged_at`) vis dar veikia.
+
+Jam reikia bent vieno plano projekte (demonstraciniuose duomenyse jų yra); tuščiame projekte jis patikrina `schema_version()` ir tai pasako.
+
+### v5 pritaikymas esamam projektui
+
+Jūsų projekte lentelės jau yra, todėl nieko kurti iš naujo nereikia:
+
+1. Supabase → **SQL Editor** → **New query**, įklijuokite visą [`supabase/schema.sql`](../../supabase/schema.sql) ir paspauskite **Run**. Ją galima paleisti pakartotinai, ir ji pritaiko v5 bloką: senoji `log_workout()` pakeičiama nauja ir pridedama `schema_version()`.
+2. **New query** → įklijuokite visą [`supabase/tests/log_workout_offline.test.sql`](../../supabase/tests/log_workout_offline.test.sql) → **Run**. Tikimasi: klaida, kuri baigiasi *TESTS PASSED (…)* – tai testas, pats save atšaukiantis. Jei norite patikrinti viską, kitus `supabase/tests` testus paleiskite taip pat.
+3. Perkraukite programą. Senesnės duomenų bazės įspėjimas išnyksta, kai programa sužino, kad versija yra 5.
+
+**Tai saugu jau veikiančiai programai.** Nauji parametrai neprivalomi, todėl šiandien programos siunčiamas kvietimas vis dar tinka, o nieko kito, ką programa naudoja, nesikeičia (lentelės, politikos, trigeriai ir webhook nepaliesti).
+
+Jei šio žingsnio praleisite, v5 programa su senesne duomenų baze vis tiek veikia, tik su įspėjimu: be ryšio įrašytoms treniruotėms priskiriamas jų išsiuntimo laikas, o nutrūkus ryšiui viena gali būti išsaugota du kartus.
+
 ## Trikčių šalinimas
 
 | Simptomas | Priežastis | Sprendimas |
@@ -131,3 +168,4 @@ Pakeitę `.env.local`, paleiskite `npm run dev` iš naujo.
 | „Per daug bandymų. Palaukite kelias minutes…“ | Supabase autentifikacijos užklausų riba | Palaukite arba išjunkite **Confirm email** (2 žingsnis) |
 | „Nepavyksta pasiekti serverio…“ po ~7 s | Neteisingas `VITE_SUPABASE_URL` arba nėra ryšio. Klientas prieš rodydamas klaidą bando 3 kartus | Pataisykite `.env.local`, paleiskite `npm run dev` iš naujo |
 | „Programėlė dar nesukonfigūruota…“ | Trūksta kintamojo arba jis vis dar vietos žymeklis | Užpildykite `.env.local`, paleiskite `npm run dev` iš naujo |
+| Eilutė po antrašte sako, kad duomenų bazė *senesnė nei ši programėlė* | `schema.sql` nebuvo paleista iš naujo po v5 | [v5 pritaikymas esamam projektui](#v5-pritaikymas-esamam-projektui) |

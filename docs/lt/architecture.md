@@ -195,14 +195,15 @@ flowchart LR
 | Duomenų prieiga | `src/api` | Viena funkcija vienam klausimui ar įrašymui: `from(...)` užklausos ir `rpc(...)` kvietimai; vienintelė vieta, kuri žino lentelių ir funkcijų pavadinimus |
 | Logika | `src/lib` | Grynosios funkcijos be įvesties/išvesties: pažangos skaičiavimai, tikslai, pasiūlymai, formatavimas. Lengva testuoti |
 | Tekstai | `src/i18n` | Kiekvienas sąsajos tekstas yra `translations.js` (lietuvių ir anglų, tie patys raktai). `t(key, params)` įstato `{vietoženklius}` ir parenka daugiskaitos formas (lietuvių kalboje jų trys); pasirinkta kalba saugoma `localStorage`, o komponentai ją skaito per `useLanguage()`. Numatytoji kalba – lietuvių |
-| Auth | `src/auth` | Sesijos tiekėjas; vaidmuo meniu imamas iš registracijos metaduomenų |
+| Auth | `src/auth` | Sesijos tiekėjas; vaidmuo meniu imamas iš registracijos metaduomenų. Be ryšio grįžtama prie išsaugotos sesijos |
+| Be ryšio | `src/offline`, `src/pwa` | Išsaugoti duomenys, siuntimo eilė, juodraštis, duomenų bazės versija ir service worker atnaujinimo bei įdiegimo pasiūlymai. Vienintelis kodas, kuris tam liečia `localStorage`. Žr. 6 skyrių |
 | Duomenų bazė | `supabase/schema.sql` | Lentelės, politikos, funkcijos, trigeriai; galima paleisti pakartotinai. `seed.sql` prideda demonstracinius duomenis į tuščią projektą |
 
 Testai veikia be tinklo: tikras `supabase-js` klientas kalbasi su netikru `fetch` (`src/test/fakeBackend.js`), todėl jie tikrina tikslias HTTP užklausas. Duomenų bazė turi savo testus aplanke `supabase/tests`, kurių kiekvienas pats save atšaukia.
 
 ## 4. Duomenų srautai
 
-**Treniruotės įrašymas.** Forma kviečia `log_workout()` (viena transakcija: treniruotė ir jos serijos). `INSERT` į `workouts` vieną kartą paleidžia webhook, o `sets_summary` jau yra eilutėje, todėl Zap 1 gali įtraukti serijas į laišką. Jei kas nors nepavyksta, nieko neišsaugoma ir nieko nesiunčiama.
+**Treniruotės įrašymas.** Forma kviečia `log_workout()` (viena transakcija: treniruotė ir jos serijos). `INSERT` į `workouts` vieną kartą paleidžia webhook, o `sets_summary` jau yra eilutėje, todėl Zap 1 gali įtraukti serijas į laišką. Jei kas nors nepavyksta, nieko neišsaugoma ir nieko nesiunčiama. Nuo v5 telefonas pats gali sukurti treniruotės id ir laiką bei išsaugoti treniruotę, kai nėra ryšio: žr. [6 skyrių](#6-veikimo-be-ryšio-sluoksnis).
 
 **Ataskaitos siuntimas.** Mygtukas kviečia `send_report()`, kuri sudaro skaičius iš kvietėjo paties pastarųjų 7 dienų, išsaugo `reports` eilutę (daugiausia vieną per 5 minutes) ir taip paleidžia antrąjį webhook.
 
@@ -226,6 +227,51 @@ Row Level Security yra prieigos kontrolė; naršyklė niekada nefiltruoja pagal 
 
 **Kuo skiriasi nuo plano:** plane buvo siūloma treneriams pridėti papildomas `select` politikas sportininkų lentelėse. Jos būtų sumaišiusios sportininkų eilutes su paties trenerio ekranais, todėl treneriai skaito per funkcijas, o lentelėse paliekama „tik savo eilutės“. Žr. [supabase.md](supabase.md#1-lentelės-ir-politikos).
 
+## 6. Veikimo be ryšio sluoksnis
+
+Nuo v5 „Logify“ yra įdiegiama telefono programėlė (PWA), kuri atsidaro ir veikia be ryšio: matote savo planus, istoriją ir pažangą (treneriai – savo sportininkus) ir galite įrašyti treniruotę. Be ryšio įrašyta treniruotė lieka telefone ir, grįžus ryšiui, išsiunčiama kartu su trenerio laišku. Visa istorija su ribomis ir bandymo būdais yra [pwa.md](pwa.md).
+
+| Dalis | Kur | Ką daro |
+|---|---|---|
+| Service worker ir manifestas | `vite.config.js` (vite-plugin-pwa, Workbox), `src/pwa/` | Telefone laiko pačios programos failus, todėl kiekvienas ekranas atsidaro be ryšio; siūlo atnaujinimą mygtuku **Atnaujinti**; įdiegimo kortelė |
+| Išsaugoti duomenys | `src/offline/savedData.js`, `src/lib/useLoad.js` | `useLoad` pirmiausia klausia tinklo ir kiekvieną rezultatą išsaugo pagal naudotoją; išsaugota kopija rodoma, kai telefonas be ryšio, užklausa nepavyksta arba trunka ilgiau nei 4 s |
+| Pasiruošimas ir užuominos | `src/offline/warmUp.js`, `src/offline/hints.js` | Iškart po prisijungimo išsaugo planų parinktis ir Pažangą; be ryšio pratimų pavadinimai ir *Praėjusį kartą* imami iš išsaugotos Pažangos |
+| Siuntimo eilė | `src/offline/outbox.js`, `src/offline/sync.js` | Telefone įrašytos treniruotės, laikomos, kol jas gauna serveris; siunčiamos iš eilės, po vieną |
+| Juodraštis | `src/offline/draft.js` | Pusiau užpildyta treniruotės įrašymo forma, išsaugoma jums rašant |
+| Duomenų bazės versija | `src/offline/dbVersion.js`, `src/api/schema.js` | Paklausia `schema_version()` ir įsimena atsakymą; senesnė duomenų bazė gauna įspėjimą ir senąjį siuntimo būdą |
+| Prisijungęs be ryšio | `src/auth/AuthProvider.jsx`, `src/auth/storedSession.js`, `src/lib/sessionGuard.js` | Naudoja išsaugotą sesiją, kai supabase-js jos negali atnaujinti; niekada neleidžia išeiti duomenų užklausai be prisijungusios sesijos |
+| Maketas | `src/components/Layout.jsx`, `src/components/StatusBar.jsx`, `src/index.css` | Apatinė kortelių juosta telefonuose (640 px ir siauriau) ir būsenos eilutė po antrašte |
+
+Viskas atskira kiekvienam naudotojui (`logify.cache.v1.<naudotojo id>.…`, `logify.outbox.v1.<naudotojo id>`, `logify.draft.v1.<naudotojo id>`), todėl du žmonės viename telefone niekada nemato vienas kito duomenų, o atsijungimas pašalina to naudotojo išsaugotus duomenis. Duomenų bazė lieka vienintelė vieta, kuri sprendžia, kas ką gali skaityti: išsaugota kopija yra tie patys duomenys, kuriuos naudotojas jau galėjo skaityti.
+
+**Treniruotės įrašymas be ryšio.** Išsaugojimas įrašo treniruotę į siuntimo eilę su telefone sukurtu id ir laiku, kada paspaustas Išsaugoti, tada ją siunčia. Duomenų bazės funkcija `log_workout()` abu priima kaip neprivalomus parametrus `p_id` ir `p_logged_at`. Jei treniruotė su tuo id jau yra, funkcija ją grąžina ir nieko neįterpia, todėl treniruotė išsaugoma, ir webhook paleidžiamas, lygiai vieną kartą, kad ir kiek kartų siuntimas būtų kartojamas.
+
+```mermaid
+sequenceDiagram
+  participant U as Sportininkas
+  participant A as Logify telefone
+  participant O as Siuntimo eilė
+  participant S as Supabase
+  participant W as Webhook į Zapier ir Gmail
+
+  U->>A: Išsaugoti treniruotę (nėra ryšio)
+  A->>O: laiko ją su id ir išsaugojimo laiku
+  A-->>U: Išsaugota šiame telefone
+  Note over A,S: Ryšys grįžta, kol programa atidaryta
+  A->>O: paima seniausią laukiančią treniruotę
+  A->>S: log_workout(p_id, p_logged_at, ...)
+  S->>S: INSERT į workouts su id p_id ir created_at p_logged_at
+  S->>W: INSERT vieną kartą paleidžia webhook
+  Note over A,S: Atsakymas pakeliui atgal pasimeta
+  A->>S: log_workout(tas pats p_id) kitu bandymu
+  S-->>A: išsaugota treniruotė, nieko neįterpta, jokio antro webhook
+  A->>O: pašalina ją, dabar tai įprasta treniruotė
+```
+
+Siuntimo eilė taip pat sprendžia, ką daryti su atmetimu: nėra atsakymo, viršytas laikas, HTTP 5xx, pasibaigęs prisijungimas ar pasikartojantis id – bandoma vėliau; bet kuri kita klaida pažymi tą treniruotę *Nepavyko išsiųsti* su **Bandyti dar kartą** ir **Ištrinti**.
+
+**Suderinama abiem kryptimis.** Gyva programa iš laikų prieš v5 toliau veikia su v5 duomenų baze, nes nauji parametrai neprivalomi, o kitos duomenų bazės dalys nepakeistos. V5 programa su senesne duomenų baze taip pat veikia, tik su įspėjimu: žr. [pwa.md](pwa.md#5-senesnės-duomenų-bazės-įspėjimas).
+
 ## Susiję
 
-[supabase.md](supabase.md) (lentelės, politikos, dalijimasis) · [deployment.md](deployment.md) (Vercel) · [zapier.md](zapier.md) (abu Zap) · [setup.md](setup.md) (vietinis paruošimas)
+[supabase.md](supabase.md) (lentelės, politikos, dalijimasis, v5) · [pwa.md](pwa.md) (telefono programėlė ir darbas be ryšio) · [deployment.md](deployment.md) (Vercel) · [zapier.md](zapier.md) (abu Zap) · [setup.md](setup.md) (vietinis paruošimas)

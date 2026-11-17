@@ -15,7 +15,8 @@ As an instructor you follow your athletes' training, give them plans, and receiv
 5. [Create plans and assign them](#5-create-plans-and-assign-them)
 6. [Read an athlete's progress](#6-read-an-athletes-progress)
 7. [Emails you receive](#7-emails-you-receive)
-8. [Messages and what to do](#8-messages-and-what-to-do)
+8. [On a phone, and without signal](#8-on-a-phone-and-without-signal)
+9. [Messages and what to do](#9-messages-and-what-to-do)
 
 ---
 
@@ -36,11 +37,12 @@ To log in later, use your email and password and press **Log in**. A wrong email
 
 The **LT / EN** switch at the top, next to the logo, changes the language of the whole app; it is remembered in this browser. Names typed by users (plans, exercises, notes) are not translated, and neither are the report summaries and set summaries the database writes (they are always in English, also in the emails).
 
-Instructors have three menu entries:
+On a computer the menu is at the top; on a phone it is a bar at the bottom of the screen (see [On a phone, and without signal](#8-on-a-phone-and-without-signal)). Instructors have these entries:
 
 | Menu | What it is for |
 |---|---|
 | **My plans** | The plans you create (and, if you log workouts yourself, your own workouts) |
+| **Log** (phones only) | Log a workout of your own |
 | **My athletes** | Your code, the athletes who share with you, and each athlete's page |
 | **Progress** | Your own progress, like an athlete's (empty until you log a workout) |
 
@@ -136,7 +138,29 @@ Logify emails you automatically, without anyone pressing anything:
 
 You only receive emails about athletes who **share with you** (they typed your code under **Sharing**). If an athlete shares with several instructors, each of them gets the email; if an athlete stops sharing, the emails stop too. Renaming a workout does not send another email. The emails are sent to the address you signed up with.
 
-## 8. Messages and what to do
+## 8. On a phone, and without signal
+
+**The bottom bar.** On a phone (a screen up to 640 px wide) the menu becomes a bar at the bottom of the screen: an icon and a label for **My plans**, **Log**, **Progress** and **My athletes**, with the tab you are on in the accent color. The header shrinks to one row (logo, **LT / EN**, **Log out**). Under the header a status line appears when you are offline, workouts are waiting to be sent, or a new version is ready.
+
+**Install it.** Logify can be put on your home screen and opens full-screen like an app. The card on **My plans** shows how on Android and iPhone; the steps are the same as for athletes: see [Install on your phone](athlete.md#9-install-on-your-phone). On iPhone the installed app keeps its own storage, so you log in once more inside it.
+
+**Viewing athletes without signal.** Once you have opened Logify with a connection and logged in, it keeps working when the signal is gone:
+
+- It opens, and you stay logged in.
+- **My athletes** shows the list as Logify last got it (your code, each athlete's recent activity), with a line such as *Offline: showing data saved on …*.
+- **An athlete's page** shows what Logify last got of that athlete (suggestions, goals, recent workouts, reports, charts), but only for athletes you have opened before while online (the 30 most recently opened are kept). Open the ones you care about once with a connection. If you open one that was never saved, the screen says *You're offline, and this hasn't been saved on this phone yet.*
+- **My plans** and **Progress** show their last saved data too. The saved data can be old, so look at the time in the line. When the connection returns, the screen refreshes by itself.
+- Everything on the athletes' side stays read-only, as always.
+
+**What still needs signal.** Creating, editing, deleting and assigning plans, renaming a workout, goals, reports and logging in need a connection; without one you will see *Can't reach the server…*.
+
+**Your own workouts.** If you log workouts yourself, logging works without signal too: it is kept on the phone as **Waiting to send** under its plan, and sent when the signal returns. The details are in [Using Logify without signal](athlete.md#10-using-logify-without-signal).
+
+**Emails about athletes' workouts.** When an athlete logs a workout without signal, you get the email when their phone sends it, not when they pressed Save; you get exactly one email per workout, however many times the send is retried. The email and the athlete's page carry the time the athlete pressed Save (as long as that was in the last 30 days and the database is up to date).
+
+**A new version.** The status line says *A new version of Logify is ready.* with **Update**; Logify never reloads by itself.
+
+## 9. Messages and what to do
 
 | You see | What it means |
 |---|---|
@@ -146,5 +170,9 @@ You only receive emails about athletes who **share with you** (they typed your c
 | *Athletes have logged workouts under this plan, so it can't be deleted.* | Keep the plan; athletes' workouts depend on it. |
 | *You don't have permission to do that.* | Only the owner can change that data. |
 | *Can't reach the server…* | Check your internet connection and press **Try again**. |
+| *You're offline. Workouts you log are kept on this phone.* | No connection. You can still read saved data; see [On a phone, and without signal](#8-on-a-phone-and-without-signal). |
+| *Offline: showing data saved on …* | The screen shows the last saved data. It refreshes by itself when the connection returns, or press **Try again**. |
+| *You're offline, and this hasn't been saved on this phone yet.* | Open that athlete (or screen) once while online. |
+| *A new version of Logify is ready.* | Press **Update**. |
 
 Every screen that loads or saves shows one of four states: **Loading**, **Error** (with **Try again**), **Empty** or **Success**.

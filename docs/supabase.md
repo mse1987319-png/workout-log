@@ -44,7 +44,7 @@ What the schema does, in short:
 | Checks | name 1–100 characters | `type` is `strength` or `other`; duration 1–1440 min; `activity` is run/bike/swim/walk/row/other | reps 1–1000; weight 0–1000 kg (0 = bodyweight); up to 100 sets per workout |
 | RLS | `user_id = auth.uid()` for select, insert, update, delete | same, and a workout can only be filed under one of your own plans | same, and sets can only be added to your own workouts |
 
-The app saves a workout through the database function **`log_workout()`**: the workout and its sets in one transaction, as the signed-in user (so every policy above applies). The INSERT into `workouts` still fires the Database Webhook once per workout; if anything fails, nothing is saved and nothing is sent. Because the webhook only sees the workout row, `log_workout()` also writes a one-line summary of the sets into it (`sets_summary`, built by **`format_sets()`**), so the instructor's email can list them.
+The app saves a workout through the database function **`log_workout()`**: the workout and its sets in one transaction, as the signed-in user (so every policy above applies). The INSERT into `workouts` still fires the Database Webhook once per workout; if anything fails, nothing is saved and nothing is sent. Because the webhook only sees the workout row, `log_workout()` also writes a one-line summary of the sets into it (`sets_summary`, built by **`format_sets()`**), so the instructor's email can list them. Since v5 the function can also take the workout's id and time from the phone, so a workout logged offline is saved exactly once: see [section 6](#6-offline-logging-v5).
 
 [`supabase/tests/sets_summary.test.sql`](../supabase/tests/sets_summary.test.sql) tests both functions. Paste it into the SQL Editor and run it: it always ends with an error that rolls everything back, reading *TESTS PASSED (…)* when all is well, so it never saves a workout or sends an email.
 
@@ -120,6 +120,43 @@ Restart `npm run dev` after editing `.env.local`.
    Expected: user B sees the Empty state, with nothing of user A's. *(Test 4: RLS works)*
 4. The Table Editor shows everyone's rows. That's expected: the dashboard works as an admin and bypasses RLS. The app never does.
 
+## 6. Offline logging (v5)
+
+v5 makes Logify a phone app that works without signal ([pwa.md](pwa.md)). A workout logged offline is kept on the phone and sent later, so the database has to save it **exactly once** and put it on the day it was logged, however many times the phone repeats the send. Two things change in `supabase/schema.sql`:
+
+**`log_workout()` gets two optional parameters** (after the existing eight):
+
+| Parameter | What it does |
+|---|---|
+| `p_id uuid` | The workout's id, made on the phone. If this user already has a workout with that id, the function **returns it and inserts nothing**: no second row, no second set, no second webhook, no second email. If two sends race, the second hits the primary key (error `23505`); the app then tries again, and the function finds the workout and returns it |
+| `p_logged_at timestamptz` | When Save was pressed. It becomes the workout's `created_at` (and its sets' `created_at`) if it is within the last 30 days and not in the future; otherwise the server's time is used. So a workout sent hours later still lands on the right day in the charts and *Last time* |
+
+Both default to `null`, so the call the app made before v5 (eight named parameters) still works unchanged: the live app on `main` is unaffected. `schema.sql` drops the old eight-parameter version first, because PostgREST can't choose between two versions that both match a call; it keeps the grants (only `authenticated` may call it) and stays safe to re-run.
+
+**`schema_version()`** is a new function that returns `5`. It is callable by `anon` and `authenticated`. The app asks it once per start to learn whether the database is current; an older database doesn't have it ("function not found"), and the app then shows a warning and sends the old way ([pwa.md](pwa.md#5-the-older-database-warning)).
+
+[`supabase/tests/log_workout_offline.test.sql`](../supabase/tests/log_workout_offline.test.sql) tests all of this, rolled back like the others. It checks that:
+
+- `schema_version()` returns 5;
+- the id and time from the phone are kept, on the workout and on its sets;
+- the same id sent twice gives one workout, one set of sets and one webhook request;
+- a time in the future, or more than 30 days old, is replaced by the server's time;
+- an old-style call (no `p_id`, no `p_logged_at`) still works.
+
+It needs at least one plan in the project (the seed data has them); on an empty project it checks `schema_version()` and says so.
+
+### Applying v5 to an existing project
+
+Your project already has the tables, so there is nothing to recreate:
+
+1. Supabase → **SQL Editor** → **New query**, paste the whole of [`supabase/schema.sql`](../supabase/schema.sql) and press **Run**. It is re-runnable, and it applies the v5 block: the old `log_workout()` is replaced by the new one and `schema_version()` is added.
+2. **New query** → paste the whole of [`supabase/tests/log_workout_offline.test.sql`](../supabase/tests/log_workout_offline.test.sql) → **Run**. Expected: an error ending in *TESTS PASSED (…)*, which is the test rolling itself back. Run the other tests in `supabase/tests` the same way if you want to check everything.
+3. Reload the app. The older-database warning is gone once the app learns the version is 5.
+
+**This is safe for an app that is already live.** The new parameters are optional, so the call the app sends today still matches, and nothing else the app uses changes (tables, policies, triggers and the webhooks are untouched).
+
+If you skip this step, a v5 app still works against the older database, with a warning: workouts logged offline get the time they are sent, and after a dropped connection one could be saved twice.
+
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
@@ -131,3 +168,4 @@ Restart `npm run dev` after editing `.env.local`.
 | "Too many attempts. Wait a few minutes…" | Supabase's auth rate limit | Wait, or turn **Confirm email** off (step 2) |
 | "Can't reach the server…" after ~7 s | Wrong `VITE_SUPABASE_URL`, or offline. The client retries 3 times before showing the error | Fix `.env.local`, restart `npm run dev` |
 | "The app is not set up yet…" | A variable is missing or still a placeholder | Fill in `.env.local`, restart `npm run dev` |
+| The line under the header says the database is *an older version than this app* | `schema.sql` has not been re-run since v5 | [Applying v5 to an existing project](#applying-v5-to-an-existing-project) |
