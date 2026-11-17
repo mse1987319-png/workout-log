@@ -13,6 +13,7 @@ import LogWorkoutPage from './pages/LogWorkoutPage'
 import NewPlanPage from './pages/NewPlanPage'
 import PlansPage from './pages/PlansPage'
 import SharingPage from './pages/SharingPage'
+import { useRegisterServiceWorker } from './pwa/serviceWorker'
 
 // Screens that are never the first one shown load on demand, keeping the
 // first download small (Progress and an athlete's page carry the charts library).
@@ -26,6 +27,7 @@ function OnDemand({ loading, children }) {
 
 export default function App() {
   const { t } = useLanguage()
+  useRegisterServiceWorker()
 
   if (configError) {
     return (

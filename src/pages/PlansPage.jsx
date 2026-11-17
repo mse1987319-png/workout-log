@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listPlans } from '../api/plans'
 import { useAuth } from '../auth/AuthContext'
+import InstallCard from '../components/InstallCard'
 import OutboxItem from '../components/OutboxItem'
 import PlanCard from '../components/PlanCard'
 import SavedDataNotice from '../components/SavedDataNotice'
@@ -73,6 +74,7 @@ export default function PlansPage() {
           {t('plans.new')}
         </Link>
       </div>
+      <InstallCard />
       {savedAt && <SavedDataNotice savedAt={savedAt} onRetry={reload} />}
 
       {deletedNotice && <SuccessMessage>{t('plans.deleted')}</SuccessMessage>}

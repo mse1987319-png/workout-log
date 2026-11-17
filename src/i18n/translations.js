@@ -75,6 +75,14 @@ export const translations = {
     'outbox.cardTitle': 'Workouts waiting to send',
     'outbox.confirmDelete': 'Delete “{title}”? It was never sent, so it will be gone.',
 
+    // Install card (My plans)
+    'install.title': 'Install Logify',
+    'install.text': 'It opens like an app and works without signal.',
+    'install.button': 'Install',
+    'install.notNow': 'Not now',
+    'install.ios': 'On iPhone: tap Share, then Add to Home Screen.',
+    'install.gotIt': 'Got it',
+
     // Configuration (shown when the Supabase settings are missing)
     'config.and': ' and ',
     'config.missing':
@@ -422,6 +430,14 @@ export const translations = {
     'outbox.failed': 'Nepavyko išsiųsti: {reason}',
     'outbox.cardTitle': 'Išsiuntimo laukiančios treniruotės',
     'outbox.confirmDelete': 'Ištrinti „{title}“? Ji nebuvo išsiųsta, todėl dings visam laikui.',
+
+    // Install card (My plans)
+    'install.title': 'Įdiekite Logify',
+    'install.text': 'Logify atsidaro kaip programėlė ir veikia be ryšio.',
+    'install.button': 'Įdiegti',
+    'install.notNow': 'Ne dabar',
+    'install.ios': 'iPhone: bakstelėkite „Bendrinti“, tada „Pridėti prie pradžios ekrano“.',
+    'install.gotIt': 'Supratau',
 
     // Configuration (shown when the Supabase settings are missing)
     'config.and': ' ir ',
