@@ -55,6 +55,27 @@ describe('outbox', () => {
     expect(getOutbox()).toEqual([item])
   })
 
+  it('makes a version-4 id where crypto.randomUUID is missing (http on a LAN address)', () => {
+    const own = Object.getOwnPropertyDescriptor(crypto, 'randomUUID')
+    Object.defineProperty(crypto, 'randomUUID', { value: undefined, configurable: true, writable: true })
+    try {
+      const first = keep('Monday')
+      const second = keep('Tuesday')
+
+      expect(first.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+      expect(second.id).not.toBe(first.id)
+      expect(getOutbox()).toEqual([first, second])
+
+      // The version and variant bits are set whatever the random bytes are.
+      vi.spyOn(crypto, 'getRandomValues').mockImplementationOnce((bytes) => bytes.fill(0xff))
+      expect(keep('Wednesday').id).toBe('ffffffff-ffff-4fff-bfff-ffffffffffff')
+    } finally {
+      if (own) Object.defineProperty(crypto, 'randomUUID', own)
+      else delete crypto.randomUUID
+    }
+    expect(typeof crypto.randomUUID).toBe('function')
+  })
+
   it('returns the same list until it changes', () => {
     const empty = getOutbox()
     expect(getOutbox()).toBe(empty)
