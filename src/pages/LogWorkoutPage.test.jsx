@@ -810,4 +810,45 @@ describe('LogWorkoutPage: offline', () => {
       expect(options).toEqual(['Squat', 'Bench press'])
     })
   })
+
+  describe('when the phone says it is offline', () => {
+    // A request would only fail, after supabase-js's retries (about 7 s in
+    // production). Here it never answers: the hints must not wait for it.
+    beforeEach(() => {
+      backend.reset()
+      backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+      backend.hang('GET', '/rest/v1/workout_sets')
+      saveData('progress', SAVED_PROGRESS, SAVED_AT)
+    })
+
+    const hintRequests = () => backend.requests.filter((request) => request.path === '/rest/v1/workout_sets')
+
+    it('shows last time from the saved progress at once', async () => {
+      const user = renderLog()
+      await screen.findByLabelText('Plan')
+      goOffline()
+      await startStrength(user)
+
+      await user.type(screen.getByLabelText('Exercise 1 name'), 'Squat')
+      await user.tab()
+
+      expect(await screen.findByText(/^Last time \(.+\): 5 @ 100 kg$/)).toBeInTheDocument()
+      expect(hintRequests()).toHaveLength(0)
+    })
+
+    it('suggests exercise names from the saved progress at once', async () => {
+      const user = renderLog()
+      await screen.findByLabelText('Plan')
+      goOffline()
+      await startStrength(user)
+
+      const input = screen.getByLabelText('Exercise 1 name')
+      await waitFor(() => {
+        const listId = input.getAttribute('list')
+        const options = [...document.querySelectorAll(`datalist[id="${listId}"] option`)].map((o) => o.value)
+        expect(options).toEqual(['Squat', 'Bench press'])
+      })
+      expect(hintRequests()).toHaveLength(0)
+    })
+  })
 })

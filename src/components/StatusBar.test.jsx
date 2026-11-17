@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setCurrentUser } from '../offline/currentUser'
 import { markDbOlder } from '../offline/dbVersion'
-import { addToOutbox, updateItem } from '../offline/outbox'
+import { addToOutbox, removeItem, updateItem } from '../offline/outbox'
 import StatusBar from './StatusBar'
 
 const syncOutbox = vi.fn(async () => {})
@@ -90,6 +90,21 @@ describe('StatusBar', () => {
     expect(screen.getByText('A new version of Logify is ready.')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Update' }))
     expect(update).toHaveBeenCalledTimes(1)
+  })
+
+  it('offers the new version only once no workout is being sent', () => {
+    updateReady = true
+    const item = keep()
+    updateItem(item.id, { status: 'sending' })
+    render(<StatusBar />)
+
+    // Update reloads the page, which would cut the send off.
+    expect(screen.queryByText('A new version of Logify is ready.')).not.toBeInTheDocument()
+    expect(screen.getByText('Sending…')).toBeInTheDocument()
+
+    act(() => removeItem(item.id))
+
+    expect(screen.getByText('A new version of Logify is ready.')).toBeInTheDocument()
   })
 
   it('shows nothing when all is well', () => {

@@ -31,6 +31,9 @@ export default function StatusBar() {
   const waiting = items.filter((item) => item.status === 'waiting').length
   const failed = items.filter((item) => item.status === 'failed').length
   const showOldDb = isDbOlder() && !hidden
+  // Update reloads the page, which would cut off a workout on its way (on an
+  // older database that can mean a second copy): it is offered once none is.
+  const offerUpdate = updateReady && !sending
 
   function hide() {
     try {
@@ -41,11 +44,11 @@ export default function StatusBar() {
     setHidden(true)
   }
 
-  if (!updateReady && online && !sending && !waiting && !failed && !showOldDb) return null
+  if (!offerUpdate && online && !sending && !waiting && !failed && !showOldDb) return null
 
   return (
     <div className="status-bar" role="status">
-      {updateReady && (
+      {offerUpdate && (
         <p>
           <span>{t('status.update')}</span>
           <button type="button" className="link-button" onClick={update}>

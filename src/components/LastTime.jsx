@@ -5,6 +5,7 @@ import { formatDay } from '../lib/format'
 import { isNetworkError } from '../lib/errors'
 import { formatSets } from '../lib/sets'
 import { savedLastSession } from '../offline/hints'
+import { isOnline } from '../offline/network'
 
 /**
  * "Last time (10 Nov): 2 × 5 @ 100 kg" for an exercise, or "First time
@@ -22,12 +23,17 @@ export default function LastTime({ name, before }) {
   useEffect(() => {
     if (!name) return undefined
     let current = true
-    lastSession(name, { before }).then(
+    // When the phone says it is offline, the saved progress is used at once:
+    // asking the server would only fail, after supabase-js's retries (~7 s).
+    const lookup = isOnline()
+      ? lastSession(name, { before })
+      : Promise.resolve().then(() => savedLastSession(name, { before }))
+    lookup.then(
       (session) => {
         if (current) setResult({ key: `${name}|${before ?? ''}`, session })
       },
       (error) => {
-        // Offline: the saved progress, if there is any (undefined shows nothing).
+        // No network after all: the saved progress, if there is any (undefined shows nothing).
         const session = isNetworkError(error) ? savedLastSession(name, { before }) : undefined
         if (current) setResult({ key: `${name}|${before ?? ''}`, session })
       },

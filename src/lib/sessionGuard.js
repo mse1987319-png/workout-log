@@ -4,7 +4,10 @@
 // lists, which a screen would save over good saved data as fresh. Such a
 // request fails here like a dropped connection instead: screens keep their
 // saved data and the outbox waits. Sign-in requests (/auth/v1/) always carry
-// the project key, and pass.
+// the project key, and pass. So does the database version check: anyone may
+// call schema_version(), which returns a constant, so it is learned as soon
+// as the phone is back online, before the session is usable again.
+const OPEN_DATABASE_PATH = '/rest/v1/rpc/schema_version'
 
 // The URL's path; empty when it isn't a web address (nothing to guard).
 function pathOf(input) {
@@ -20,7 +23,8 @@ export function sessionGuardedFetch(supabaseKey, baseFetch = (...args) => fetch(
   const keyAsBearer = `Bearer ${supabaseKey}`
   return async (input, init) => {
     const authorization = new Headers(init?.headers ?? input?.headers).get('Authorization')
-    if (authorization === keyAsBearer && pathOf(input).includes('/rest/v1/')) {
+    const path = pathOf(input)
+    if (authorization === keyAsBearer && path.includes('/rest/v1/') && !path.endsWith(OPEN_DATABASE_PATH)) {
       throw new TypeError('Failed to fetch: no signed-in session yet')
     }
     return baseFetch(input, init)

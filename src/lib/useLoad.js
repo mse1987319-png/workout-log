@@ -14,7 +14,7 @@ const LOADING = { status: 'loading', data: null, error: null, savedAt: null }
  * status is 'loading' | 'success' | 'error'. `reload` is for the
  * "Try again" button; `setData` updates the loaded data in place.
  * `load` must be a stable function, such as an imported API call.
- * A load that started before a `setData` can't contain that change, so its
+ * A load that started before a `setData` may not contain that change, so its
  * answer is dropped and the load runs again, with the change kept on screen.
  *
  * With a `key` and someone signed in, the loaded data is also kept on the
@@ -27,7 +27,7 @@ const LOADING = { status: 'loading', data: null, error: null, savedAt: null }
 export function useLoad(load, key = null, save = saveData) {
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState(LOADING)
-  // Counts setData calls: a load that started before one can't contain it.
+  // Counts setData calls: a load that started before one may not contain it.
   const changes = useRef(0)
 
   useEffect(() => {

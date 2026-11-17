@@ -22,7 +22,7 @@ The service worker caches the built app only: the HTML, every JavaScript chunk (
 
 ### Updates
 
-A new version is downloaded in the background and then waits. A line under the header says *A new version of Logify is ready.* with **Update**; the app never reloads by itself, so a half-filled workout is never wiped. An open app asks for a new version every hour (`UPDATE_CHECK_MS` in `src/pwa/serviceWorker.js`). Pressing **Update** reloads the page into the new version; the unsaved workout comes back from the draft (section 4).
+A new version is downloaded in the background and then waits. A line under the header says *A new version of Logify is ready.* with **Update**; the app never reloads by itself, so a half-filled workout is never wiped. An open app asks for a new version every hour (`UPDATE_CHECK_MS` in `src/pwa/serviceWorker.js`); a check that fails (offline) is simply made again the next hour. Pressing **Update** reloads the page into the new version; the unsaved workout comes back from the draft (section 4). While a workout is being sent, the line waits, because the reload would cut the send off. The very first service worker takes over the open page at once (`clientsClaim`), so the first session after installing already works offline; later versions still wait for **Update**.
 
 ## 2. What is kept on the phone, and where
 
@@ -65,7 +65,7 @@ Every screen that reads data (`useLoad` in `src/lib/useLoad.js`) tries the netwo
 
 **Hints while logging.** Offline, the exercise-name suggestions and *Last time* come from the saved Progress data (`src/offline/hints.js`).
 
-**No data request without a sign-in.** After a long offline period the access token has expired. Until supabase-js has a usable session again (after reconnecting it can wait up to a minute before it refreshes), it would send database requests with only the project key, and Row Level Security would answer with empty lists, which a screen would save over good data. `src/lib/sessionGuard.js` makes such a request fail like a dropped connection instead, so screens keep their saved data and the outbox waits.
+**No data request without a sign-in.** After a long offline period the access token has expired. Until supabase-js has a usable session again (after reconnecting it can wait up to a minute before it refreshes), it would send database requests with only the project key, and Row Level Security would answer with empty lists, which a screen would save over good data. `src/lib/sessionGuard.js` makes such a request fail like a dropped connection instead, so screens keep their saved data and the outbox waits. The database version check (`schema_version()`) is the one exception: anyone may call it and it only returns a constant, so it goes out at once and the version is known as soon as the connection returns.
 
 ### Staying signed in offline
 

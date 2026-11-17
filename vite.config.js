@@ -54,6 +54,10 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
+        // The first service worker takes over the open page at once, so the
+        // very first session after install already works offline. An update
+        // still waits for "Update": skipWaiting stays off (registerType 'prompt').
+        clientsClaim: true,
       },
     }),
   ],

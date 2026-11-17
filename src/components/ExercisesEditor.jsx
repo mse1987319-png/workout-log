@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from 'react'
 import { listExerciseNames } from '../api/sets'
 import { useLanguage } from '../i18n/useLanguage'
 import { savedExerciseNames } from '../offline/hints'
+import { isOnline } from '../offline/network'
 import { newExercise, newSet } from './exerciseKeys'
 import LastTime from './LastTime'
 
@@ -16,7 +17,10 @@ export default function ExercisesEditor({ exercises, onChange }) {
 
   useEffect(() => {
     let current = true
-    listExerciseNames().then(
+    // When the phone says it is offline, the saved progress is used at once
+    // (see LastTime).
+    const lookup = isOnline() ? listExerciseNames() : Promise.resolve().then(savedExerciseNames)
+    lookup.then(
       (list) => {
         if (current) setNames(list)
       },

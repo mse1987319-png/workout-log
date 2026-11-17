@@ -22,7 +22,7 @@ Service worker laiko tik sukurtą programą: HTML, kiekvieną „JavaScript“ d
 
 ### Atnaujinimai
 
-Nauja versija atsisiunčiama fone ir laukia. Eilutė po antrašte parašo *Paruošta nauja Logify versija.* su **Atnaujinti**; programa niekada pati nesiperkrauna, todėl pusiau užpildyta treniruotė niekada nedingsta. Atidaryta programa kas valandą pasiteirauja, ar yra nauja versija (`UPDATE_CHECK_MS` faile `src/pwa/serviceWorker.js`). Paspaudus **Atnaujinti**, puslapis persikrauna į naują versiją; neišsaugota treniruotė grįžta iš juodraščio (4 skyrius).
+Nauja versija atsisiunčiama fone ir laukia. Eilutė po antrašte parašo *Paruošta nauja Logify versija.* su **Atnaujinti**; programa niekada pati nesiperkrauna, todėl pusiau užpildyta treniruotė niekada nedingsta. Atidaryta programa kas valandą pasiteirauja, ar yra nauja versija (`UPDATE_CHECK_MS` faile `src/pwa/serviceWorker.js`); nepavykusi patikra (be ryšio) tiesiog pakartojama po valandos. Paspaudus **Atnaujinti**, puslapis persikrauna į naują versiją; neišsaugota treniruotė grįžta iš juodraščio (4 skyrius). Kol siunčiama treniruotė, ši eilutė nerodoma, nes perkrovimas nutrauktų siuntimą. Pats pirmasis service worker atidarytą puslapį perima iškart (`clientsClaim`), todėl jau pirmoji sesija po įdiegimo veikia be ryšio; vėlesnės versijos vis tiek laukia **Atnaujinti**.
 
 ## 2. Kas laikoma telefone ir kur
 
@@ -65,7 +65,7 @@ Kiekvienas ekranas, kuris skaito duomenis (`useLoad` faile `src/lib/useLoad.js`)
 
 **Užuominos įrašant.** Be ryšio pratimų pavadinimų siūlymai ir *Praėjusį kartą* imami iš išsaugotų Pažangos duomenų (`src/offline/hints.js`).
 
-**Jokių duomenų užklausų be prisijungimo.** Po ilgo laiko be ryšio prieigos raktas būna pasibaigęs. Kol supabase-js dar neturi tinkamos sesijos (grįžus ryšiui jis gali palaukti iki minutės, kol ją atnaujins), duomenų bazės užklausas jis siųstų tik su projekto raktu, o Row Level Security atsakytų tuščiais sąrašais, kuriuos ekranas išsaugotų vietoje gerų duomenų. `src/lib/sessionGuard.js` tokią užklausą priverčia nepavykti kaip nutrūkusį ryšį, todėl ekranai išlaiko savo išsaugotus duomenis, o siuntimo eilė laukia.
+**Jokių duomenų užklausų be prisijungimo.** Po ilgo laiko be ryšio prieigos raktas būna pasibaigęs. Kol supabase-js dar neturi tinkamos sesijos (grįžus ryšiui jis gali palaukti iki minutės, kol ją atnaujins), duomenų bazės užklausas jis siųstų tik su projekto raktu, o Row Level Security atsakytų tuščiais sąrašais, kuriuos ekranas išsaugotų vietoje gerų duomenų. `src/lib/sessionGuard.js` tokią užklausą priverčia nepavykti kaip nutrūkusį ryšį, todėl ekranai išlaiko savo išsaugotus duomenis, o siuntimo eilė laukia. Vienintelė išimtis – duomenų bazės versijos patikra (`schema_version()`): ją gali kviesti bet kas, ir ji grąžina tik pastovią reikšmę, todėl siunčiama iškart, o versija sužinoma vos grįžus ryšiui.
 
 ### Prisijungęs išlieka be ryšio
 

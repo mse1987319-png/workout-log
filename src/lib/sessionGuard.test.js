@@ -34,6 +34,16 @@ describe('sessionGuardedFetch', () => {
     expect(baseFetch).not.toHaveBeenCalled()
   })
 
+  it('passes the database version check, which needs no sign-in', async () => {
+    const baseFetch = answering()
+    const url = `${URL_BASE}/rest/v1/rpc/schema_version`
+    const init = { method: 'POST', headers: new Headers({ apikey: KEY, Authorization: `Bearer ${KEY}` }) }
+
+    await sessionGuardedFetch(KEY, baseFetch)(url, init)
+
+    expect(baseFetch).toHaveBeenCalledWith(url, init)
+  })
+
   it('passes sign-in requests, which always carry the project key', async () => {
     const baseFetch = answering()
     const url = `${URL_BASE}/auth/v1/token?grant_type=refresh_token`
