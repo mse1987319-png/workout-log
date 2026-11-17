@@ -4,6 +4,7 @@ import { deletePlan } from '../api/plans'
 import { t } from '../i18n/i18n'
 import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
+import OutboxItem from './OutboxItem'
 import PlanForm from './PlanForm'
 import { ErrorState, SuccessMessage } from './States'
 import WorkoutItem from './WorkoutItem'
@@ -19,8 +20,17 @@ function confirmText(plan) {
 }
 
 // One plan with its workouts. assigned: an instructor's plan assigned to me;
-// I log my own workouts under it but can't edit or delete it.
-export default function PlanCard({ plan, assigned = false, onWorkoutRenamed, onPlanUpdated, onPlanDeleted }) {
+// I log my own workouts under it but can't edit or delete it. waiting: the
+// workouts logged under it that are still on this phone (outbox items); they
+// come before the saved ones.
+export default function PlanCard({
+  plan,
+  assigned = false,
+  waiting = [],
+  onWorkoutRenamed,
+  onPlanUpdated,
+  onPlanDeleted,
+}) {
   const [mode, setMode] = useState('view') // 'view' | 'edit' | 'delete'
   const [updated, setUpdated] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -118,10 +128,13 @@ export default function PlanCard({ plan, assigned = false, onWorkoutRenamed, onP
             </div>
           )}
 
-          {plan.workouts.length === 0 ? (
+          {plan.workouts.length === 0 && waiting.length === 0 ? (
             <p className="muted">{t('plan.noWorkouts')}</p>
           ) : (
             <ul className="workout-list">
+              {waiting.map((item) => (
+                <OutboxItem key={item.id} item={item} />
+              ))}
               {plan.workouts.map((workout) => (
                 <WorkoutItem key={workout.id} workout={workout} onRenamed={onWorkoutRenamed} />
               ))}

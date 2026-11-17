@@ -68,6 +68,13 @@ export const translations = {
     // Offline
     'offline.savedData': 'Offline: showing data saved on {time}.',
 
+    // Workouts waiting to send (My plans)
+    'outbox.waiting': 'Waiting to send',
+    'outbox.badgeFailed': "Couldn't send",
+    'outbox.failed': "Couldn't send: {reason}",
+    'outbox.cardTitle': 'Workouts waiting to send',
+    'outbox.confirmDelete': 'Delete “{title}”? It was never sent, so it will be gone.',
+
     // Configuration (shown when the Supabase settings are missing)
     'config.and': ' and ',
     'config.missing':
@@ -407,6 +414,13 @@ export const translations = {
 
     // Offline
     'offline.savedData': 'Nėra ryšio: rodomi duomenys, išsaugoti {time}.',
+
+    // Workouts waiting to send (My plans)
+    'outbox.waiting': 'Laukia išsiuntimo',
+    'outbox.badgeFailed': 'Nepavyko išsiųsti',
+    'outbox.failed': 'Nepavyko išsiųsti: {reason}',
+    'outbox.cardTitle': 'Išsiuntimo laukiančios treniruotės',
+    'outbox.confirmDelete': 'Ištrinti „{title}“? Ji nebuvo išsiųsta, todėl dings visam laikui.',
 
     // Configuration (shown when the Supabase settings are missing)
     'config.and': ' ir ',
