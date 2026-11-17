@@ -51,7 +51,8 @@ describe('service worker registration', () => {
   it('checks for a new version every hour and stops when the app unmounts', () => {
     vi.useFakeTimers()
     registerState.needRefresh = false
-    const registration = { update: vi.fn() }
+    // Like the browser's: update() returns a promise.
+    const registration = { update: vi.fn(async () => {}) }
     const { unmount } = renderHook(() => useRegisterServiceWorker())
 
     act(() => registerState.onRegisteredSW('/sw.js', registration))
@@ -62,5 +63,33 @@ describe('service worker registration', () => {
     unmount()
     vi.advanceTimersByTime(UPDATE_CHECK_MS * 2)
     expect(registration.update).toHaveBeenCalledTimes(1)
+  })
+
+  it('lets a failed check go quietly: the next hour checks again', async () => {
+    vi.useFakeTimers()
+    registerState.needRefresh = false
+    const unhandled = vi.fn()
+    process.on('unhandledRejection', unhandled)
+    // Offline, the browser can't fetch the service worker script. (A plain
+    // function: a vi.fn would handle the rejection itself, to record it.)
+    let checks = 0
+    const registration = {
+      update() {
+        checks += 1
+        return Promise.reject(new TypeError('Failed to fetch'))
+      },
+    }
+    const { unmount } = renderHook(() => useRegisterServiceWorker())
+    act(() => registerState.onRegisteredSW('/sw.js', registration))
+
+    vi.advanceTimersByTime(UPDATE_CHECK_MS * 2)
+    vi.useRealTimers()
+    // Node reports a rejection nobody handled once the current task is done.
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    process.off('unhandledRejection', unhandled)
+    unmount()
+
+    expect(checks).toBe(2)
+    expect(unhandled).not.toHaveBeenCalled()
   })
 })

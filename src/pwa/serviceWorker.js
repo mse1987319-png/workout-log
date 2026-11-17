@@ -29,7 +29,8 @@ export function useRegisterServiceWorker() {
     onRegisteredSW(url, registration) {
       clearInterval(checkTimer.current)
       if (registration) {
-        checkTimer.current = setInterval(() => registration.update(), UPDATE_CHECK_MS)
+        // A failed check (offline, say) is tried again the next hour.
+        checkTimer.current = setInterval(() => registration.update().catch(() => {}), UPDATE_CHECK_MS)
       }
     },
   })

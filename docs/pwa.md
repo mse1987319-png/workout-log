@@ -81,7 +81,7 @@ The outbox is `src/offline/outbox.js` (what is kept) and `src/offline/sync.js` (
 2. **Online:** it is sent at once, waiting at most **15 seconds**. If the server has it, you see *Workout saved*, as before.
 3. **Offline, no answer, or no answer within 15 seconds:** the form says *Saved on this phone. It will be sent as soon as there's a connection, and your instructor gets the email then.* and clears. The workout shows as **Waiting to send** under its plan on **My plans**.
 4. **Any other error** (for example the plan was deleted, or the instructor stopped assigning it): the workout is not kept, and the form shows the error so it can be fixed.
-5. **If the phone's storage is full:** saved data is dropped to make room. If the workout still can't be kept, the form says so and never says it was saved.
+5. **If the phone's storage is full:** saved data is dropped to make room. If the workout still can't be kept on the phone, then **online** it is sent directly, the way it was before the outbox (without the phone's id, so it isn't protected against a second copy after a dropped connection), and you see *Workout saved* as usual; only **offline** does the form say it couldn't be kept, and it never says it was saved.
 
 **Sending.** Waiting workouts are sent oldest first, one at a time, while the app is open: when the app starts, when the connection returns, when the app comes back into view, right after a successful save, every **30 seconds** while something waits, and on **Send now** in the status line. Before each send it checks that Supabase holds *this user's own* session; if not, it waits.
 

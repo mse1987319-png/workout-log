@@ -18,8 +18,15 @@ export default function Layout() {
   const { user, role, signOut } = useAuth()
   const [logoutError, setLogoutError] = useState('')
   const [confirmingLogout, setConfirmingLogout] = useState(false)
-  const waiting = useOutbox().length
+  // Log out asks only about workouts that would be sent by themselves (waiting,
+  // or on their way). One that couldn't be sent is never sent automatically:
+  // it waits on My plans for Try again or Delete, after a log out too.
+  const unsent = useOutbox().filter((item) => item.status === 'waiting' || item.status === 'sending').length
   const { t } = useLanguage()
+
+  // Once none is left while the question is open (they were sent meanwhile),
+  // it closes by itself.
+  if (confirmingLogout && unsent === 0) setConfirmingLogout(false)
 
   useBackgroundSync({ userId: user?.id, role })
 
@@ -72,7 +79,7 @@ export default function Layout() {
             <button
               type="button"
               className="button button-secondary"
-              onClick={waiting > 0 ? () => setConfirmingLogout(true) : handleLogout}
+              onClick={unsent > 0 ? () => setConfirmingLogout(true) : handleLogout}
             >
               {t('account.logOut')}
             </button>
@@ -80,7 +87,7 @@ export default function Layout() {
         </div>
         {confirmingLogout && (
           <div className="confirm-delete" role="group" aria-label={t('account.logOut')}>
-            <p>{t('account.unsent', { count: waiting })}</p>
+            <p>{t('account.unsent', { count: unsent })}</p>
             <div className="form-actions">
               <button type="button" className="button button-danger-solid" onClick={handleLogout}>
                 {t('account.logOut')}

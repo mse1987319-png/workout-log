@@ -117,123 +117,127 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
 
   return (
     <form className="form" onSubmit={handleSubmit} noValidate>
-      {restored && (
-        <p className="state state-restored" role="status">
-          {t('workout.draftRestored')}{' '}
-          <button type="button" className="link-button" onClick={startOver}>
-            {t('workout.startOver')}
-          </button>
-        </p>
-      )}
+      {/* Locked while saving: the form clears when the workout is saved or
+          kept, so anything typed meanwhile would be lost without a word. */}
+      <fieldset className="form-fields" disabled={saving}>
+        {restored && (
+          <p className="state state-restored" role="status">
+            {t('workout.draftRestored')}{' '}
+            <button type="button" className="link-button" onClick={startOver}>
+              {t('workout.startOver')}
+            </button>
+          </p>
+        )}
 
-      <div className="field">
-        <label htmlFor="workout-plan">{t('workout.plan')}</label>
-        <select id="workout-plan" value={planId} onChange={(event) => {
-            onPlanChange(event.target.value)
-            change({}, event.target.value)
-          }}
-        >
-          {plans.map((plan) => (
-            <option key={plan.id} value={plan.id}>
-              {plan.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="field">
-        <label htmlFor="workout-title">{t('workout.titleLabel')}</label>
-        <input
-          id="workout-title"
-          value={title}
-          maxLength={100}
-          placeholder={t('workout.titlePlaceholder')}
-          onChange={(event) => change({ title: event.target.value })}
-        />
-      </div>
-
-      <fieldset className="field choice-group">
-        <legend>{t('workout.type')}</legend>
-        <div className="choices">
-          <label className="choice">
-            <input
-              type="radio"
-              name="workout-type"
-              value="strength"
-              checked={type === 'strength'}
-              onChange={() => change({ type: 'strength' })}
-            />
-            {typeLabel('strength')}
-          </label>
-          <label className="choice">
-            <input
-              type="radio"
-              name="workout-type"
-              value="other"
-              checked={type === 'other'}
-              onChange={() => change({ type: 'other' })}
-            />
-            {t('workout.typeOtherLong')}
-          </label>
+        <div className="field">
+          <label htmlFor="workout-plan">{t('workout.plan')}</label>
+          <select id="workout-plan" value={planId} onChange={(event) => {
+              onPlanChange(event.target.value)
+              change({}, event.target.value)
+            }}
+          >
+            {plans.map((plan) => (
+              <option key={plan.id} value={plan.id}>
+                {plan.name}
+              </option>
+            ))}
+          </select>
         </div>
-        <p className="hint">{t('workout.typeHint')}</p>
+
+        <div className="field">
+          <label htmlFor="workout-title">{t('workout.titleLabel')}</label>
+          <input
+            id="workout-title"
+            value={title}
+            maxLength={100}
+            placeholder={t('workout.titlePlaceholder')}
+            onChange={(event) => change({ title: event.target.value })}
+          />
+        </div>
+
+        <fieldset className="field choice-group">
+          <legend>{t('workout.type')}</legend>
+          <div className="choices">
+            <label className="choice">
+              <input
+                type="radio"
+                name="workout-type"
+                value="strength"
+                checked={type === 'strength'}
+                onChange={() => change({ type: 'strength' })}
+              />
+              {typeLabel('strength')}
+            </label>
+            <label className="choice">
+              <input
+                type="radio"
+                name="workout-type"
+                value="other"
+                checked={type === 'other'}
+                onChange={() => change({ type: 'other' })}
+              />
+              {t('workout.typeOtherLong')}
+            </label>
+          </div>
+          <p className="hint">{t('workout.typeHint')}</p>
+        </fieldset>
+
+        <div className="field">
+          <label htmlFor="workout-duration">{t('workout.duration')}</label>
+          <input
+            id="workout-duration"
+            type="number"
+            inputMode="numeric"
+            min="1"
+            max={MAX_MINUTES}
+            step="1"
+            value={duration}
+            onChange={(event) => change({ duration: event.target.value })}
+          />
+        </div>
+
+        {type === 'strength' && <ExercisesEditor exercises={exercises} onChange={(next) => change({ exercises: next })} />}
+
+        {type === 'other' && (
+          <div className="field-row">
+            <div className="field">
+              <label htmlFor="workout-activity">{t('workout.activity')}</label>
+              <select id="workout-activity" value={activity} onChange={(event) => change({ activity: event.target.value })}>
+                <option value="">—</option>
+                {ACTIVITY_VALUES.map((value) => (
+                  <option key={value} value={value}>
+                    {activityLabel(value)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="workout-distance">{t('workout.distance')}</label>
+              <input
+                id="workout-distance"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                max={MAX_KM}
+                step="any"
+                value={distance}
+                onChange={(event) => change({ distance: event.target.value })}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="field">
+          <label htmlFor="workout-notes">{t('workout.notes')}</label>
+          <textarea
+            id="workout-notes"
+            rows={2}
+            maxLength={500}
+            value={notes}
+            onChange={(event) => change({ notes: event.target.value })}
+          />
+        </div>
       </fieldset>
-
-      <div className="field">
-        <label htmlFor="workout-duration">{t('workout.duration')}</label>
-        <input
-          id="workout-duration"
-          type="number"
-          inputMode="numeric"
-          min="1"
-          max={MAX_MINUTES}
-          step="1"
-          value={duration}
-          onChange={(event) => change({ duration: event.target.value })}
-        />
-      </div>
-
-      {type === 'strength' && <ExercisesEditor exercises={exercises} onChange={(next) => change({ exercises: next })} />}
-
-      {type === 'other' && (
-        <div className="field-row">
-          <div className="field">
-            <label htmlFor="workout-activity">{t('workout.activity')}</label>
-            <select id="workout-activity" value={activity} onChange={(event) => change({ activity: event.target.value })}>
-              <option value="">—</option>
-              {ACTIVITY_VALUES.map((value) => (
-                <option key={value} value={value}>
-                  {activityLabel(value)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="workout-distance">{t('workout.distance')}</label>
-            <input
-              id="workout-distance"
-              type="number"
-              inputMode="decimal"
-              min="0"
-              max={MAX_KM}
-              step="any"
-              value={distance}
-              onChange={(event) => change({ distance: event.target.value })}
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="field">
-        <label htmlFor="workout-notes">{t('workout.notes')}</label>
-        <textarea
-          id="workout-notes"
-          rows={2}
-          maxLength={500}
-          value={notes}
-          onChange={(event) => change({ notes: event.target.value })}
-        />
-      </div>
 
       {problem && (
         <p className="form-error" role="alert">

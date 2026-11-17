@@ -225,16 +225,45 @@ describe('LogWorkoutPage', () => {
       expect(posts('/rest/v1/rpc/log_workout')).toHaveLength(0)
     })
 
+    // The reply is held, then let through: a reply that never came would leave
+    // the form's 15 s limit running into later tests (it clears the draft).
     it('shows Saving… while the workout is being saved', async () => {
       backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
-      backend.hang('POST', '/rest/v1/rpc/log_workout')
+      backend.reply('POST', '/rest/v1/rpc/log_workout', 200, savedWorkout({ type: 'other' }))
       const user = renderLog()
       await screen.findByLabelText('Plan')
 
-      await fillWorkout(user, { title: 'Leg day', type: 'Strength', duration: '60' })
+      await fillWorkout(user, { title: 'Leg day', type: /^Other/, duration: '60' })
+      const release = holdNextReply()
       await user.click(screen.getByRole('button', { name: 'Save workout' }))
 
       expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled()
+      release()
+      expect(await screen.findByRole('status')).toHaveTextContent('Workout saved: Leg day.')
+    })
+
+    it('locks the form while the workout is being saved, so nothing typed then is lost', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+      backend.reply('POST', '/rest/v1/rpc/log_workout', 200, savedWorkout({ type: 'other' }))
+      const user = renderLog()
+      await screen.findByLabelText('Plan')
+      await fillWorkout(user, { title: 'Leg day', type: /^Other/, duration: '60' })
+      const release = holdNextReply()
+
+      await user.click(screen.getByRole('button', { name: 'Save workout' }))
+      await waitFor(() => expect(posts('/rest/v1/rpc/log_workout')).toHaveLength(1))
+
+      for (const field of ['Plan', 'Title', 'Duration (minutes)', 'Activity', 'Distance (km)', 'Notes (optional)']) {
+        expect(screen.getByLabelText(field)).toBeDisabled()
+      }
+      expect(screen.getByRole('radio', { name: 'Strength' })).toBeDisabled()
+      await user.type(screen.getByLabelText('Notes (optional)'), 'Felt easy')
+      expect(screen.getByLabelText('Notes (optional)')).toHaveValue('')
+
+      release()
+      expect(await screen.findByRole('status')).toHaveTextContent('Workout saved: Leg day.')
+      expect(screen.getByLabelText('Title')).toBeEnabled()
+      expect(screen.getByLabelText('Notes (optional)')).toBeEnabled()
     })
 
     it('keeps the workout on the phone when the network fails, and later sends the same workout', async () => {

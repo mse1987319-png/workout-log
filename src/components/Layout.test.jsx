@@ -1,10 +1,10 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { AuthContext } from '../auth/AuthContext'
 import { setCurrentUser } from '../offline/currentUser'
-import { addToOutbox } from '../offline/outbox'
+import { addToOutbox, removeItem, updateItem } from '../offline/outbox'
 import Layout from './Layout'
 
 // The background work makes requests of its own; its behavior is covered by
@@ -71,6 +71,52 @@ describe('Layout', () => {
     await user.click(screen.getByRole('button', { name: 'Log out' }))
 
     expect(signOut).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('group', { name: 'Log out' })).not.toBeInTheDocument()
+  })
+
+  it('counts only the workouts that will be sent by themselves: waiting or being sent', async () => {
+    setCurrentUser('user-1')
+    addToOutbox({ workout: WORKOUT, planName: 'Plan' })
+    addToOutbox({ workout: WORKOUT, planName: 'Plan', status: 'sending' })
+    const failed = addToOutbox({ workout: WORKOUT, planName: 'Plan' })
+    updateItem(failed.id, { status: 'failed', error: { message: 'Plan deleted', code: '23503' } })
+    const { user } = renderLayout('athlete')
+
+    await user.click(screen.getByRole('button', { name: 'Log out' }))
+
+    expect(screen.getByRole('group', { name: 'Log out' })).toHaveTextContent(
+      "2 workouts haven't been sent yet. They stay on this phone and are sent the next time you log in here.",
+    )
+  })
+
+  it("logs out straight away when the only workouts left couldn't be sent", async () => {
+    setCurrentUser('user-1')
+    const failed = addToOutbox({ workout: WORKOUT, planName: 'Plan' })
+    updateItem(failed.id, { status: 'failed', error: { message: 'Plan deleted', code: '23503' } })
+    const { signOut, user } = renderLayout('athlete')
+
+    await user.click(screen.getByRole('button', { name: 'Log out' }))
+
+    expect(signOut).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('group', { name: 'Log out' })).not.toBeInTheDocument()
+  })
+
+  it('closes the question by itself once the workout has been sent', async () => {
+    setCurrentUser('user-1')
+    const sending = addToOutbox({ workout: WORKOUT, planName: 'Plan', status: 'sending' })
+    const { signOut, user } = renderLayout('athlete')
+    await user.click(screen.getByRole('button', { name: 'Log out' }))
+    expect(screen.getByRole('group', { name: 'Log out' })).toBeInTheDocument()
+
+    // The server takes it while the question is open.
+    act(() => removeItem(sending.id))
+
+    expect(screen.queryByRole('group', { name: 'Log out' })).not.toBeInTheDocument()
+    expect(signOut).not.toHaveBeenCalled()
+    // Closed, not just hidden: another workout kept later doesn't bring it back.
+    act(() => {
+      addToOutbox({ workout: WORKOUT, planName: 'Plan' })
+    })
     expect(screen.queryByRole('group', { name: 'Log out' })).not.toBeInTheDocument()
   })
 })

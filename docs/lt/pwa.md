@@ -81,7 +81,7 @@ Siuntimo eilė (angl. outbox) yra `src/offline/outbox.js` (kas laikoma) ir `src/
 2. **Su ryšiu:** ji siunčiama iškart, laukiant daugiausia **15 sekundžių**. Jei serveris ją gavo, matote *Treniruotė išsaugota*, kaip anksčiau.
 3. **Be ryšio, nėra atsakymo arba jo nėra per 15 sekundžių:** forma parašo *Išsaugota šiame telefone. Treniruotė bus išsiųsta, kai tik atsiras ryšys; tada treneris gaus ir laišką.* ir išsivalo. Skiltyje **Mano planai** treniruotė po savo planu rodoma kaip **Laukia išsiuntimo**.
 4. **Bet kuri kita klaida** (pavyzdžiui, planas ištrintas arba treneris nebepriskiria jo): treniruotė nesaugoma, o forma parodo klaidą, kad ją būtų galima ištaisyti.
-5. **Jei telefono atmintis pilna:** išsaugoti duomenys šalinami vietai atlaisvinti. Jei treniruotės vis tiek išsaugoti nepavyksta, forma tai pasako ir niekada nesako, kad ji išsaugota.
+5. **Jei telefono atmintis pilna:** išsaugoti duomenys šalinami vietai atlaisvinti. Jei treniruotės telefone vis tiek išlaikyti nepavyksta, tada **su ryšiu** ji siunčiama tiesiai, kaip iki siuntimo eilės (be telefone sukurto id, todėl nutrūkus ryšiui ji neapsaugota nuo antros kopijos), ir matote įprastą *Treniruotė išsaugota*; tik **be ryšio** forma pasako, kad jos išsaugoti nepavyko, ir niekada nesako, kad ji išsaugota.
 
 **Siuntimas.** Laukiančios treniruotės siunčiamos nuo seniausios, po vieną, kol programa atidaryta: paleidus programą, grįžus ryšiui, programai vėl atsidūrus ekrane, iškart po sėkmingo išsaugojimo, kas **30 sekundžių**, kol kas nors laukia, ir paspaudus **Siųsti dabar** būsenos eilutėje. Prieš kiekvieną siuntimą patikrinama, ar Supabase turi *šio naudotojo paties* sesiją; jei ne, laukiama.
 

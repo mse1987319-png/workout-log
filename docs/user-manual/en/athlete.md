@@ -310,7 +310,7 @@ Creating, editing and deleting plans, renaming a workout, goals, sending a repor
 
 ### If the phone's storage is full
 
-Logify drops saved data to make room for your workout. If it still can't keep the workout, the form says *This phone's storage is full, so the workout couldn't be kept here. Free some space, or save it when you're online.* and does not say it was saved.
+Logify drops saved data to make room for your workout. If it still can't keep the workout on the phone, then with a connection the workout is sent straight away, as usual, and you see *Workout saved*. Only without a connection does the form say *This phone's storage is full, so the workout couldn't be kept here. Free some space, or save it when you're online.*, and it does not say the workout was saved.
 
 ### An older database
 

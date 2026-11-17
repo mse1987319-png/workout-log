@@ -310,7 +310,7 @@ Planų kūrimui, redagavimui ir trynimui, treniruotės pervadinimui, tikslams, a
 
 ### Jei telefono atmintis pilna
 
-„Logify“ pašalina išsaugotus duomenis, kad atlaisvintų vietos jūsų treniruotei. Jei treniruotės vis tiek išsaugoti nepavyksta, forma parašo *Šio telefono atmintis pilna, todėl treniruotės čia išsaugoti nepavyko. Atlaisvinkite vietos arba išsaugokite, kai bus ryšys.* ir nesako, kad ji išsaugota.
+„Logify“ pašalina išsaugotus duomenis, kad atlaisvintų vietos jūsų treniruotei. Jei treniruotės telefone vis tiek išlaikyti nepavyksta, su ryšiu ji iškart išsiunčiama kaip įprastai, ir matote *Treniruotė išsaugota*. Tik be ryšio forma parašo *Šio telefono atmintis pilna, todėl treniruotės čia išsaugoti nepavyko. Atlaisvinkite vietos arba išsaugokite, kai bus ryšys.* ir nesako, kad treniruotė išsaugota.
 
 ### Senesnė duomenų bazė
 
