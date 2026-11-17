@@ -9,6 +9,15 @@ const nextKey = () => `draft-${(lastKey += 1)}`
 const newSet = (copyOf) => ({ key: nextKey(), reps: copyOf?.reps ?? '', weight: copyOf?.weight ?? '' })
 const newExercise = () => ({ key: nextKey(), name: '', lookup: '', sets: [newSet()] })
 
+// Exercises read back from the saved draft, each with new keys (next to the key helpers above).
+// oxlint-disable-next-line react/only-export-components
+export const withFreshKeys = (exercises) =>
+  exercises.map((exercise) => ({
+    ...exercise,
+    key: nextKey(),
+    sets: exercise.sets.map((set) => ({ ...set, key: nextKey() })),
+  }))
+
 /**
  * Exercises and sets of a strength workout. The draft lives in the parent:
  * [{ key, name, lookup, sets: [{ key, reps, weight }] }].

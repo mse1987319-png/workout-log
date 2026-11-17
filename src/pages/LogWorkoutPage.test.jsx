@@ -1,11 +1,15 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { friendlyError } from '../lib/errors'
+import { supabase } from '../lib/supabase'
 import { setCurrentUser } from '../offline/currentUser'
+import { getOutbox } from '../offline/outbox'
 import { saveData } from '../offline/savedData'
+import { syncOutbox } from '../offline/sync'
 import { backend } from '../test/fakeBackend'
-import { ATHLETE } from '../test/fakeSupabase'
+import { ATHLETE, createFakeAuth, sessionFor } from '../test/fakeSupabase'
 import LogWorkoutPage from './LogWorkoutPage'
 
 vi.mock('../lib/supabase', async () => {
@@ -51,12 +55,25 @@ async function fillWorkout(user, { plan, title, type, duration }) {
   if (duration !== undefined) await user.type(screen.getByLabelText('Duration (minutes)'), duration)
 }
 
+// The outbox and the session belong to the same signed-in user.
+function signIn() {
+  supabase.auth = createFakeAuth({ session: sessionFor(ATHLETE) })
+  setCurrentUser(ATHLETE.id)
+}
+
+const goOffline = () => vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
+
 const posts = (path) =>
   backend.requests.filter((request) => request.method === 'POST' && request.path === path)
 
 describe('LogWorkoutPage', () => {
   beforeEach(() => {
     backend.reset()
+    signIn()
   })
 
   describe('plan list', () => {
@@ -127,6 +144,8 @@ describe('LogWorkoutPage', () => {
       expect(status).toHaveTextContent('Workout saved: Leg day.')
       expect(screen.getByRole('link', { name: 'See it in My plans' })).toHaveAttribute('href', '/')
       expect(posts('/rest/v1/rpc/log_workout')[0].body).toEqual({
+        p_id: expect.any(String),
+        p_logged_at: expect.any(String),
         p_plan_id: 'plan-2',
         p_title: 'Leg day',
         p_type: 'strength',
@@ -196,7 +215,7 @@ describe('LogWorkoutPage', () => {
       expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled()
     })
 
-    it('explains a failed save, keeps the form and retries', async () => {
+    it('keeps the workout on the phone when the network fails, and later sends the same workout', async () => {
       backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
       backend.networkDown('POST', '/rest/v1/rpc/log_workout')
       backend.reply('POST', '/rest/v1/rpc/log_workout', 200, savedWorkout())
@@ -206,14 +225,159 @@ describe('LogWorkoutPage', () => {
       await fillWorkout(user, { title: 'Leg day', type: 'Strength', duration: '60' })
       await user.click(screen.getByRole('button', { name: 'Save workout' }))
 
-      expect(await screen.findByRole('alert')).toHaveTextContent("Can't reach the server")
-      expect(screen.getByLabelText('Title')).toHaveValue('Leg day')
+      expect(await screen.findByRole('status')).toHaveTextContent(
+        "Saved on this phone. It will be sent as soon as there's a connection, and your instructor gets the email then.",
+      )
+      expect(screen.getByRole('link', { name: 'See it in My plans' })).toHaveAttribute('href', '/')
+      expect(screen.getByLabelText('Title')).toHaveValue('')
 
-      await user.click(screen.getByRole('button', { name: 'Try again' }))
-      expect(await screen.findByRole('status')).toHaveTextContent('Workout saved: Leg day.')
+      await syncOutbox()
       const sent = posts('/rest/v1/rpc/log_workout')
       expect(sent).toHaveLength(2)
       expect(sent[1].body).toEqual(sent[0].body)
+      expect(getOutbox()).toEqual([])
+    })
+
+    it('explains a refused save, keeps the form and retries', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+      backend.reply('POST', '/rest/v1/rpc/log_workout', 403, {
+        code: '42501',
+        message: 'new row violates row-level security policy for table "workouts"',
+        details: null,
+        hint: null,
+      })
+      backend.reply('POST', '/rest/v1/rpc/log_workout', 200, savedWorkout())
+      const user = renderLog()
+      await screen.findByLabelText('Plan')
+
+      await fillWorkout(user, { title: 'Leg day', type: 'Strength', duration: '60' })
+      await user.click(screen.getByRole('button', { name: 'Save workout' }))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent("You don't have permission to do that.")
+      expect(screen.getByLabelText('Title')).toHaveValue('Leg day')
+      expect(getOutbox()).toEqual([])
+
+      await user.click(screen.getByRole('button', { name: 'Try again' }))
+      expect(await screen.findByRole('status')).toHaveTextContent('Workout saved: Leg day.')
+      expect(posts('/rest/v1/rpc/log_workout')).toHaveLength(2)
+    })
+
+    it('keeps the workout on the phone when offline and says so', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+      const user = renderLog()
+      await screen.findByLabelText('Plan')
+      goOffline()
+
+      await fillWorkout(user, { plan: '5K plan', title: 'Leg day', type: 'Strength', duration: '60' })
+      await user.click(screen.getByRole('button', { name: 'Save workout' }))
+
+      expect(await screen.findByRole('status')).toHaveTextContent('Saved on this phone.')
+      expect(posts('/rest/v1/rpc/log_workout')).toHaveLength(0)
+      expect(getOutbox()).toEqual([expect.objectContaining({ planName: '5K plan', status: 'waiting' })])
+      expect(screen.getByLabelText('Title')).toHaveValue('')
+    })
+
+    it('says the workout could not be kept when the phone is full and offline', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+      const user = renderLog()
+      await screen.findByLabelText('Plan')
+      await fillWorkout(user, { title: 'Leg day', type: 'Strength', duration: '60' })
+      goOffline()
+      const setItem = Storage.prototype.setItem
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (key, value) {
+        if (key.startsWith('logify.outbox.v1.')) {
+          throw new DOMException('The quota has been exceeded.', 'QuotaExceededError')
+        }
+        return setItem.call(this, key, value)
+      })
+
+      await user.click(screen.getByRole('button', { name: 'Save workout' }))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(friendlyError({ code: 'storage_full' }))
+      expect(screen.queryByText(/Saved on this phone/)).not.toBeInTheDocument()
+      expect(screen.getByLabelText('Title')).toHaveValue('Leg day')
+      expect(getOutbox()).toEqual([])
+    })
+  })
+
+  describe('the unsaved workout', () => {
+    it('restores an unsaved workout when the page is opened again', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+      backend.reply('GET', '/rest/v1/workout_sets', 200, [])
+      const user = renderLog()
+      await screen.findByLabelText('Plan')
+      await fillWorkout(user, { title: 'Leg day', type: 'Strength', duration: '60' })
+      await user.click(screen.getByRole('button', { name: 'Add exercise' }))
+      await user.type(screen.getByLabelText('Exercise 1 name'), 'Squat')
+      await user.type(screen.getByLabelText('Exercise 1, set 1 reps'), '5')
+      expect(screen.queryByText('Unsaved workout restored.')).not.toBeInTheDocument()
+      cleanup()
+
+      renderLog()
+      await screen.findByLabelText('Plan')
+
+      expect(screen.getByLabelText('Title')).toHaveValue('Leg day')
+      expect(screen.getByRole('radio', { name: 'Strength' })).toBeChecked()
+      expect(screen.getByLabelText('Duration (minutes)')).toHaveValue(60)
+      expect(screen.getByLabelText('Exercise 1 name')).toHaveValue('Squat')
+      expect(screen.getByLabelText('Exercise 1, set 1 reps')).toHaveValue(5)
+      expect(screen.getByRole('status')).toHaveTextContent('Unsaved workout restored.')
+    })
+
+    it('does not restore a workout that was saved', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+      backend.reply('POST', '/rest/v1/rpc/log_workout', 200, savedWorkout())
+      const user = renderLog()
+      await screen.findByLabelText('Plan')
+      await fillWorkout(user, { title: 'Leg day', type: 'Strength', duration: '60' })
+      await user.click(screen.getByRole('button', { name: 'Save workout' }))
+      await screen.findByText(/Workout saved/)
+      cleanup()
+
+      renderLog()
+      await screen.findByLabelText('Plan')
+
+      expect(screen.getByLabelText('Title')).toHaveValue('')
+      expect(screen.queryByText('Unsaved workout restored.')).not.toBeInTheDocument()
+    })
+
+    it('Start over clears the restored workout', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+      const first = renderLog()
+      await screen.findByLabelText('Plan')
+      await fillWorkout(first, { title: 'Leg day', type: 'Strength', duration: '60' })
+      cleanup()
+
+      const user = renderLog()
+      await screen.findByText('Unsaved workout restored.')
+      await user.click(screen.getByRole('button', { name: 'Start over' }))
+
+      expect(screen.queryByText('Unsaved workout restored.')).not.toBeInTheDocument()
+      expect(screen.getByLabelText('Title')).toHaveValue('')
+      expect(screen.getByRole('radio', { name: 'Strength' })).not.toBeChecked()
+      expect(screen.getByLabelText('Duration (minutes)')).toHaveValue(null)
+      cleanup()
+
+      renderLog()
+      await screen.findByLabelText('Plan')
+      expect(screen.getByLabelText('Title')).toHaveValue('')
+      expect(screen.queryByText('Unsaved workout restored.')).not.toBeInTheDocument()
+    })
+
+    it("a plan picked from My plans wins over the draft's plan", async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+      const first = renderLog()
+      await screen.findByLabelText('Plan')
+      await fillWorkout(first, { plan: '5K plan', title: 'Leg day' })
+      cleanup()
+
+      renderLog()
+      expect(await screen.findByLabelText('Plan')).toHaveValue('plan-2')
+      cleanup()
+
+      renderLog('/log?plan=plan-1')
+      expect(await screen.findByLabelText('Plan')).toHaveValue('plan-1')
+      expect(screen.getByLabelText('Title')).toHaveValue('Leg day')
     })
   })
 })
@@ -221,6 +385,7 @@ describe('LogWorkoutPage', () => {
 describe('LogWorkoutPage: exercises and cardio details', () => {
   beforeEach(() => {
     backend.reset()
+    signIn()
     backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
     // Exercise names and history: none unless a test says otherwise.
     backend.reply('GET', '/rest/v1/workout_sets', 200, [])
@@ -427,7 +592,7 @@ describe('LogWorkoutPage: offline', () => {
 
   beforeEach(() => {
     backend.reset()
-    setCurrentUser(ATHLETE.id)
+    signIn()
     // The hints' own requests fail too: the phone is offline.
     backend.networkDown('GET', '/rest/v1/workout_sets')
   })

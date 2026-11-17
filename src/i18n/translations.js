@@ -153,6 +153,10 @@ export const translations = {
     'workout.saved': 'Workout saved: {title}.',
     'workout.openIt': 'Open it',
     'workout.seeInPlans': 'See it in My plans',
+    'workout.kept':
+      "Saved on this phone. It will be sent as soon as there's a connection, and your instructor gets the email then.",
+    'workout.draftRestored': 'Unsaved workout restored.',
+    'workout.startOver': 'Start over',
     'workout.submit': 'Save workout',
     'workout.titleLabelHidden': 'Workout title',
     'workout.editTitleLabel': 'Edit title of {title}',
@@ -494,6 +498,10 @@ export const translations = {
     'workout.saved': 'Treniruotė išsaugota: {title}.',
     'workout.openIt': 'Atidaryti',
     'workout.seeInPlans': 'Žiūrėti skiltyje „Mano planai“',
+    'workout.kept':
+      'Išsaugota šiame telefone. Treniruotė bus išsiųsta, kai tik atsiras ryšys; tada treneris gaus ir laišką.',
+    'workout.draftRestored': 'Atkurta neišsaugota treniruotė.',
+    'workout.startOver': 'Pradėti iš naujo',
     'workout.submit': 'Išsaugoti treniruotę',
     'workout.titleLabelHidden': 'Treniruotės pavadinimas',
     'workout.editTitleLabel': 'Redaguoti treniruotės „{title}“ pavadinimą',

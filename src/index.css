@@ -362,6 +362,11 @@ textarea:focus {
   border: 1px solid currentcolor;
 }
 
+.state-restored {
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+}
+
 .state-success {
   color: var(--success);
   background: var(--success-soft);

@@ -1,16 +1,30 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { createWorkout } from '../api/workouts'
 import { t } from '../i18n/i18n'
 import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
 import { ACTIVITY_VALUES, activityLabel, typeLabel } from '../lib/format'
 import { toSetsPayload, validateExercises } from '../lib/sets'
-import ExercisesEditor from './ExercisesEditor'
+import { clearDraft, readDraft, saveDraft } from '../offline/draft'
+import { saveWorkout } from '../offline/sync'
+import ExercisesEditor, { withFreshKeys } from './ExercisesEditor'
 import { ErrorState, SuccessMessage } from './States'
 
 const MAX_MINUTES = 1440
 const MAX_KM = 1000
+
+const EMPTY_FIELDS = { title: '', type: '', duration: '', exercises: [], activity: '', distance: '', notes: '' }
+
+// The unsaved workout kept on the phone, as the form's fields, or null.
+function restoredFields() {
+  const draft = readDraft()
+  if (!draft) return null
+  const { title, type, duration, exercises, activity, distance, notes } = { ...EMPTY_FIELDS, ...draft }
+  return { title, type, duration, exercises: withFreshKeys(exercises), activity, distance, notes }
+}
+
+const isBlank = ({ planId, exercises, ...text }) =>
+  !planId && exercises.length === 0 && Object.values(text).every((value) => value === '')
 
 function validate({ title, type, minutes, distance, exercises }) {
   if (!title) return t('workout.enterTitle')
@@ -28,49 +42,59 @@ function validate({ title, type, minutes, distance, exercises }) {
 // Logs a workout (table B) with its sets or cardio details. Saving it is the
 // "new record" that triggers the Supabase webhook → Zapier → the instructor's email.
 export default function WorkoutForm({ plans, planId, onPlanChange }) {
-  const [title, setTitle] = useState('')
-  const [type, setType] = useState('')
-  const [duration, setDuration] = useState('')
-  const [exercises, setExercises] = useState([])
-  const [activity, setActivity] = useState('')
-  const [distance, setDistance] = useState('')
-  const [notes, setNotes] = useState('')
+  const [restoredDraft] = useState(restoredFields)
+  const [fields, setFields] = useState(restoredDraft ?? EMPTY_FIELDS)
+  const [restored, setRestored] = useState(restoredDraft !== null)
+  const { title, type, duration, exercises, activity, distance, notes } = fields
   const [problem, setProblem] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(null)
-  const [saved, setSaved] = useState(null)
+  const [outcome, setOutcome] = useState(null)
   useLanguage() // re-render when the language changes
+
+  // Every change is kept on the phone as the draft (an empty form keeps none).
+  function change(patch, plan = planId) {
+    const next = { ...fields, ...patch }
+    setFields(next)
+    if (isBlank({ planId: plan, ...next })) clearDraft()
+    else saveDraft({ planId: plan, ...next })
+  }
+
+  function startOver() {
+    setFields(EMPTY_FIELDS)
+    setRestored(false)
+    clearDraft()
+  }
 
   async function save() {
     // Number('') is 0, so an empty duration fails the 1–1440 check too.
-    const draft = { title: title.trim(), type, minutes: Number(duration), distance, exercises }
-    const issue = validate(draft)
+    const entered = { title: title.trim(), type, minutes: Number(duration), distance, exercises }
+    const issue = validate(entered)
     setSaveError(null)
-    setSaved(null)
+    setOutcome(null)
     setProblem(issue)
     if (issue) return
 
     const cardio = type === 'other'
     setSaving(true)
     try {
-      const row = await createWorkout({
-        planId,
-        title: draft.title,
-        type,
-        durationMin: draft.minutes,
-        activity: cardio && activity ? activity : null,
-        distanceKm: cardio && distance !== '' ? Number(distance) : null,
-        notes: notes.trim() || null,
-        sets: type === 'strength' ? toSetsPayload(exercises) : [],
+      const result = await saveWorkout({
+        workout: {
+          planId,
+          title: entered.title,
+          type,
+          durationMin: entered.minutes,
+          activity: cardio && activity ? activity : null,
+          distanceKm: cardio && distance !== '' ? Number(distance) : null,
+          notes: notes.trim() || null,
+          sets: type === 'strength' ? toSetsPayload(exercises) : [],
+        },
+        planName: plans.find((plan) => plan.id === planId)?.name,
       })
-      setTitle('')
-      setType('')
-      setDuration('')
-      setExercises([])
-      setActivity('')
-      setDistance('')
-      setNotes('')
-      setSaved(row)
+      setFields(EMPTY_FIELDS)
+      setRestored(false)
+      clearDraft()
+      setOutcome(result)
     } catch (error) {
       setSaveError(error)
     } finally {
@@ -85,9 +109,22 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
 
   return (
     <form className="form" onSubmit={handleSubmit} noValidate>
+      {restored && (
+        <p className="state state-restored" role="status">
+          {t('workout.draftRestored')}{' '}
+          <button type="button" className="link-button" onClick={startOver}>
+            {t('workout.startOver')}
+          </button>
+        </p>
+      )}
+
       <div className="field">
         <label htmlFor="workout-plan">{t('workout.plan')}</label>
-        <select id="workout-plan" value={planId} onChange={(event) => onPlanChange(event.target.value)}>
+        <select id="workout-plan" value={planId} onChange={(event) => {
+            onPlanChange(event.target.value)
+            change({}, event.target.value)
+          }}
+        >
           {plans.map((plan) => (
             <option key={plan.id} value={plan.id}>
               {plan.name}
@@ -103,7 +140,7 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
           value={title}
           maxLength={100}
           placeholder={t('workout.titlePlaceholder')}
-          onChange={(event) => setTitle(event.target.value)}
+          onChange={(event) => change({ title: event.target.value })}
         />
       </div>
 
@@ -116,7 +153,7 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
               name="workout-type"
               value="strength"
               checked={type === 'strength'}
-              onChange={() => setType('strength')}
+              onChange={() => change({ type: 'strength' })}
             />
             {typeLabel('strength')}
           </label>
@@ -126,7 +163,7 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
               name="workout-type"
               value="other"
               checked={type === 'other'}
-              onChange={() => setType('other')}
+              onChange={() => change({ type: 'other' })}
             />
             {t('workout.typeOtherLong')}
           </label>
@@ -144,17 +181,17 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
           max={MAX_MINUTES}
           step="1"
           value={duration}
-          onChange={(event) => setDuration(event.target.value)}
+          onChange={(event) => change({ duration: event.target.value })}
         />
       </div>
 
-      {type === 'strength' && <ExercisesEditor exercises={exercises} onChange={setExercises} />}
+      {type === 'strength' && <ExercisesEditor exercises={exercises} onChange={(next) => change({ exercises: next })} />}
 
       {type === 'other' && (
         <div className="field-row">
           <div className="field">
             <label htmlFor="workout-activity">{t('workout.activity')}</label>
-            <select id="workout-activity" value={activity} onChange={(event) => setActivity(event.target.value)}>
+            <select id="workout-activity" value={activity} onChange={(event) => change({ activity: event.target.value })}>
               <option value="">—</option>
               {ACTIVITY_VALUES.map((value) => (
                 <option key={value} value={value}>
@@ -173,7 +210,7 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
               max={MAX_KM}
               step="any"
               value={distance}
-              onChange={(event) => setDistance(event.target.value)}
+              onChange={(event) => change({ distance: event.target.value })}
             />
           </div>
         </div>
@@ -186,7 +223,7 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
           rows={2}
           maxLength={500}
           value={notes}
-          onChange={(event) => setNotes(event.target.value)}
+          onChange={(event) => change({ notes: event.target.value })}
         />
       </div>
 
@@ -196,10 +233,16 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
         </p>
       )}
       {saveError && <ErrorState message={friendlyError(saveError)} onRetry={save} />}
-      {saved && (
+      {outcome?.saved && (
         <SuccessMessage>
-          {t('workout.saved', { title: saved.title })} <Link to={`/workouts/${saved.id}`}>{t('workout.openIt')}</Link> ·{' '}
+          {t('workout.saved', { title: outcome.saved.title })}{' '}
+          <Link to={`/workouts/${outcome.saved.id}`}>{t('workout.openIt')}</Link> ·{' '}
           <Link to="/">{t('workout.seeInPlans')}</Link>
+        </SuccessMessage>
+      )}
+      {outcome?.kept && (
+        <SuccessMessage>
+          {t('workout.kept')} <Link to="/">{t('workout.seeInPlans')}</Link>
         </SuccessMessage>
       )}
 
