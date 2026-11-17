@@ -54,10 +54,14 @@ export default function WorkoutForm({ plans, planId, onPlanChange }) {
   const [outcome, setOutcome] = useState(null)
   useLanguage() // re-render when the language changes
 
-  // Every change is kept on the phone as the draft (an empty form keeps none).
+  // Every change is kept on the phone as the draft (an empty form keeps none),
+  // except while saving: saveWorkout drops the draft once the outbox has the
+  // workout, and a change then (a field blurred as the form locks) must not
+  // bring it back. A refused save writes it again itself.
   function change(patch, plan = planId) {
     const next = { ...fields, ...patch }
     setFields(next)
+    if (saving) return
     if (isBlank(next)) clearDraft()
     else saveDraft({ planId: plan, ...next })
   }

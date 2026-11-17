@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -78,15 +78,19 @@ afterEach(() => {
 const posts = (path) =>
   backend.requests.filter((request) => request.method === 'POST' && request.path === path)
 
-// The next request reaches the backend now, but its reply waits for release().
-function holdNextReply() {
+// The next request (to `path`, when given) reaches the backend now, but its
+// reply waits for release().
+function holdNextReply(path = null) {
   let release
   const released = new Promise((resolve) => {
     release = resolve
   })
   const answer = backend.fetch
-  vi.spyOn(backend, 'fetch').mockImplementationOnce((input, init) => {
+  let holding = true
+  vi.spyOn(backend, 'fetch').mockImplementation((input, init) => {
     const reply = answer(input, init)
+    if (!holding || (path && new URL(String(input)).pathname !== path)) return reply
+    holding = false
     return released.then(() => reply)
   })
   return release
@@ -442,6 +446,31 @@ describe('LogWorkoutPage', () => {
 
       release()
       await waitFor(() => expect(getOutbox()).toEqual([]))
+    })
+
+    it('does not bring the draft back when a field loses focus as the form locks for saving', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLAN_OPTIONS)
+      backend.reply('GET', '/rest/v1/workout_sets', 200, [])
+      backend.reply('POST', '/rest/v1/rpc/log_workout', 200, savedWorkout())
+      const user = renderLog()
+      await screen.findByLabelText('Plan')
+      await fillWorkout(user, { title: 'Leg day', type: 'Strength', duration: '60' })
+      await user.click(screen.getByRole('button', { name: 'Add exercise' }))
+      await user.type(screen.getByLabelText('Exercise 1, set 1 reps'), '5')
+      await user.type(screen.getByLabelText('Exercise 1 name'), 'Squat')
+      const release = holdNextReply('/rest/v1/rpc/log_workout')
+
+      // Enter (the phone keyboard's Go) in the exercise name saves the workout,
+      // and the name keeps the focus...
+      await user.keyboard('{Enter}')
+      await waitFor(() => expect(posts('/rest/v1/rpc/log_workout')).toHaveLength(1))
+      expect(readDraft()).toBeNull()
+      // ...until the fields lock: a browser may then blur it, which sets its lookup.
+      fireEvent.blur(screen.getByLabelText('Exercise 1 name'))
+
+      expect(readDraft()).toBeNull()
+      release()
+      expect(await screen.findByRole('status')).toHaveTextContent('Workout saved: Leg day.')
     })
 
     it('Start over clears the restored workout', async () => {
