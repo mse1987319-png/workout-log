@@ -59,13 +59,20 @@ async function signOut() {
   }
 }
 
+// How long a start with a connection waits for Supabase to report the session
+// before it uses the one stored on the phone.
+const STORED_SESSION_AFTER_MS = 3000
+
 export default function AuthProvider({ children }) {
   const [auth, setAuth] = useState({ status: 'loading', session: null })
 
   useEffect(() => {
+    let timer
     // Supabase reports the restored session first (INITIAL_SESSION),
     // then every sign-in, sign-out and token refresh.
     const { data } = supabase.auth.onAuthStateChange((event, reported) => {
+      // What Supabase reports decides from now on.
+      clearTimeout(timer)
       // Offline with an expired access token, supabase-js reports no session
       // although it is still stored: the user stays signed in on this phone.
       // supabase-js deletes it, and signs out, if the server rejects it later.
@@ -77,7 +84,29 @@ export default function AuthProvider({ children }) {
       setCurrentUser(session?.user?.id ?? null)
       setAuth({ status: 'ready', session })
     })
-    return () => data.subscription.unsubscribe()
+
+    // With an expired access token, supabase-js reports INITIAL_SESSION only
+    // once its refresh retries give up: about 25 s with no signal. Meanwhile
+    // the session stored on the phone is used, at once when the phone is
+    // offline and after STORED_SESSION_AFTER_MS on a slow connection, so the
+    // app doesn't sit on "Checking your session…". Screens render only once
+    // the status is 'ready', so they still learn the user first. With nothing
+    // stored there is no one to be signed in as: that waits for Supabase.
+    function signInWithStoredSession() {
+      const stored = readStoredSession(supabase.auth.storageKey)
+      if (!stored) return
+      setCurrentUser(stored.user.id)
+      setAuth({ status: 'ready', session: stored })
+    }
+    if (readStoredSession(supabase.auth.storageKey)) {
+      if (isOnline()) timer = setTimeout(signInWithStoredSession, STORED_SESSION_AFTER_MS)
+      else signInWithStoredSession()
+    }
+
+    return () => {
+      clearTimeout(timer)
+      data.subscription.unsubscribe()
+    }
   }, [])
 
   const value = useMemo(

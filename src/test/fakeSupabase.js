@@ -42,8 +42,11 @@ export function authError(code, status, message) {
 /**
  * Stand-in for `supabase.auth`. `confirmEmail: true` behaves like a
  * project with "Confirm email" turned on: sign-up returns no session.
+ * `initialSessionAfterMs` holds INITIAL_SESSION back that long (a timer),
+ * like supabase-js retrying a token refresh on a slow connection, or with no
+ * signal (about 25 s); it then reports the session as it is at that time.
  */
-export function createFakeAuth({ session = null, confirmEmail = false } = {}) {
+export function createFakeAuth({ session = null, confirmEmail = false, initialSessionAfterMs = null } = {}) {
   let current = session
   let nextId = 1
   const listeners = new Map()
@@ -62,7 +65,9 @@ export function createFakeAuth({ session = null, confirmEmail = false } = {}) {
       const id = `subscription-${nextId++}`
       listeners.set(id, callback)
       // Like supabase-js: INITIAL_SESSION arrives asynchronously.
-      Promise.resolve().then(() => listeners.get(id)?.('INITIAL_SESSION', current))
+      const initialSession = () => listeners.get(id)?.('INITIAL_SESSION', current)
+      if (initialSessionAfterMs === null) Promise.resolve().then(initialSession)
+      else setTimeout(initialSession, initialSessionAfterMs)
       const unsubscribe = vi.fn(() => listeners.delete(id))
       return { data: { subscription: { id, callback, unsubscribe } } }
     }),

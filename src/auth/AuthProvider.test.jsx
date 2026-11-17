@@ -143,7 +143,9 @@ describe('AuthProvider', () => {
     )
 
     expect(await screen.findByText(`screen for ${ATHLETE.id}`)).toBeInTheDocument()
-    expect(firstLoads).toEqual([ATHLETE.id])
+    // The text can be found before React runs the screen's effect; a first
+    // load that ran without the user would leave [null] here for good.
+    await waitFor(() => expect(firstLoads).toEqual([ATHLETE.id]))
   })
 
   it('logs out on this phone only when offline', async () => {
@@ -288,5 +290,124 @@ describe('AuthProvider', () => {
     unmount()
 
     expect(supabase.auth.activeListeners()).toBe(0)
+  })
+})
+
+// With an expired access token and no (or a slow) connection, supabase-js
+// reports the session only once its refresh retries give up: about 25 s offline.
+describe('AuthProvider when Supabase is slow to report the session', () => {
+  const REFRESHED = { ...sessionFor(ATHLETE), access_token: 'refreshed-access-token' }
+  const storeSession = () => localStorage.setItem('sb-test-auth-token', JSON.stringify(sessionFor(ATHLETE)))
+  const goOffline = () => vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+  const wait = (ms) => act(() => vi.advanceTimersByTimeAsync(ms))
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  it('uses the session stored on the phone at once when the phone is offline', async () => {
+    storeSession()
+    goOffline()
+    supabase.auth = createFakeAuth({ session: null, initialSessionAfterMs: 25000 })
+    const { result } = renderAuth()
+
+    expect(result.current.status).toBe('ready')
+    expect(result.current.user).toEqual(ATHLETE)
+    expect(getCurrentUser()).toBe(ATHLETE.id)
+
+    // Supabase gives up refreshing and reports no session: still signed in here.
+    await wait(25000)
+    expect(result.current.user).toEqual(ATHLETE)
+    expect(getCurrentUser()).toBe(ATHLETE.id)
+  })
+
+  it('tells a screen who is signed in before its first load when the stored session is used', () => {
+    storeSession()
+    goOffline()
+    supabase.auth = createFakeAuth({ session: null, initialSessionAfterMs: 25000 })
+    const firstLoads = []
+    function Screen() {
+      useEffect(() => {
+        firstLoads.push(getCurrentUser())
+      }, [])
+      return <p>screen</p>
+    }
+    function SignedInOnly() {
+      return useAuth().session ? <Screen /> : null
+    }
+    render(
+      <AuthProvider>
+        <SignedInOnly />
+      </AuthProvider>,
+    )
+
+    expect(screen.getByText('screen')).toBeInTheDocument()
+    expect(firstLoads).toEqual([ATHLETE.id])
+  })
+
+  it('on a slow connection uses the stored session after 3 s, then what Supabase reports', async () => {
+    storeSession()
+    supabase.auth = createFakeAuth({ session: REFRESHED, initialSessionAfterMs: 5000 })
+    const { result } = renderAuth()
+
+    await wait(2999)
+    expect(result.current.status).toBe('loading')
+    expect(getCurrentUser()).toBeNull()
+
+    await wait(1)
+    expect(result.current.status).toBe('ready')
+    expect(result.current.session).toEqual(sessionFor(ATHLETE))
+    expect(getCurrentUser()).toBe(ATHLETE.id)
+
+    // The refreshed session arrives and takes over.
+    await wait(2000)
+    expect(result.current.session).toEqual(REFRESHED)
+    expect(getCurrentUser()).toBe(ATHLETE.id)
+  })
+
+  it('signs out when Supabase then reports no session and none is stored any more', async () => {
+    storeSession()
+    supabase.auth = createFakeAuth({ session: null, initialSessionAfterMs: 5000 })
+    const { result } = renderAuth()
+    await wait(3000)
+    expect(result.current.user).toEqual(ATHLETE)
+
+    // The server rejected the session: supabase-js deleted it, then reports none.
+    localStorage.removeItem('sb-test-auth-token')
+    await wait(2000)
+
+    expect(result.current).toMatchObject({ status: 'ready', session: null, user: null })
+    expect(getCurrentUser()).toBeNull()
+  })
+
+  it.each([
+    ['online', () => {}],
+    ['offline', goOffline],
+  ])('with no stored session waits for Supabase (%s)', async (_case, setUp) => {
+    setUp()
+    supabase.auth = createFakeAuth({ session: null, initialSessionAfterMs: 5000 })
+    const { result } = renderAuth()
+
+    await wait(4999)
+    expect(result.current.status).toBe('loading')
+
+    await wait(1)
+    expect(result.current).toMatchObject({ status: 'ready', session: null })
+  })
+
+  it('stops waiting when unmounted', async () => {
+    storeSession()
+    supabase.auth = createFakeAuth({ session: null, initialSessionAfterMs: 5000 })
+    const { unmount } = renderAuth()
+
+    unmount()
+    await wait(5000)
+
+    expect(getCurrentUser()).toBeNull()
   })
 })
