@@ -127,11 +127,11 @@ flowchart LR
 
   subgraph VERCEL["Vercel"]
     BUILD["Kūrimas: npm run build"]
-    CDN["Statinis talpinimas + CDN<br/>viešas adresas"]
+    CDN["Statinis talpinimas + CDN<br/>viešas adresas, HTTPS<br/>programos failai, sw.js, manifestas, piktogramos"]
     VENV["Aplinkos kintamieji (kūrimo metu)<br/>VITE_SUPABASE_URL<br/>VITE_SUPABASE_ANON_KEY"]
   end
 
-  USER(["Naudotojo naršyklė<br/>sportininkas arba treneris"])
+  USER(["Naudotojo naršyklė arba įdiegta telefono programėlė<br/>sportininkas arba treneris<br/>service worker + išsaugoti duomenys telefone"])
 
   subgraph SB["Supabase projektas, eu-west-1"]
     AUTH["Auth<br/>el. paštas + slaptažodis"]
@@ -154,7 +154,7 @@ flowchart LR
   MAIN -->|"produkcinis diegimas"| BUILD
   VENV --> BUILD
   BUILD --> CDN
-  USER -->|HTTPS| CDN
+  USER -->|"HTTPS: programos failai, service worker"| CDN
   USER -->|"supabase-js, anon key + user JWT"| AUTH
   USER --> API
   API --> DB
@@ -172,10 +172,12 @@ flowchart LR
 | Dalis | Kur veikia | Ką daro |
 |---|---|---|
 | React programa | Vercel (statiniai failai CDN tinkle) | Viskas, ką mato naudotojas. Su Supabase kalbasi tiesiogiai iš naršyklės |
+| Service worker ir manifestas | Sukuriami Vercel kūrimo metu (vite-plugin-pwa), Vercel pateikia kaip bet kurį statinį failą, o paskui jie laikomi telefone | Daro „Logify“ įdiegiamą ir leidžia jai atsidaryti be ryšio. Jiems reikia HTTPS, kurį Vercel suteikia produkcijai ir kiekvienai peržiūrai. Žr. [deployment.md](deployment.md#6-telefono-programėlė-pwa-per-vercel) |
+| Telefono programėlė (PWA) | Naudotojo telefonas | Įdiegta programėlė: programos failai service worker talpykloje, o išsaugoti duomenys, siuntimo eilė ir juodraštis – `localStorage`. Žr. [7 skyrių](#7-mobilioji-architektūra-pwa) |
 | Auth, API, duomenų bazė | Supabase, ES regionas | Paskyros, duomenys, prieigos taisyklės ir webhook |
 | Automatizacija | Zapier | Webhook paverčia el. laišku (Filter ir Paths pagal `workouts.type` parenka temą) |
 | El. paštas | Gmail | Pristato treneriui |
-| Šaltinis ir peržiūra | GitHub | Viena `feature/…` šaka ir vienas pull request kiekvienai funkcijai; push į `main` diegia produkciją, kiekvienas pull request gauna peržiūros versiją |
+| Šaltinis ir peržiūra | GitHub | Viena `feature/…` šaka ir vienas pull request kiekvienai funkcijai; push į `main` diegia produkciją, kiekvienas pull request gauna peržiūros versiją (taip pat per HTTPS, todėl tikrame telefone ją galima įdiegti ir išbandyti be ryšio) |
 | Dokumentacija | Notion ir ši saugykla | Užduočių lentelė, sprendimai, klaidos, testai |
 
 ### Kur laikomos paslaptys
@@ -229,7 +231,7 @@ Row Level Security yra prieigos kontrolė; naršyklė niekada nefiltruoja pagal 
 
 ## 6. Veikimo be ryšio sluoksnis
 
-Nuo v5 „Logify“ yra įdiegiama telefono programėlė (PWA), kuri atsidaro ir veikia be ryšio: matote savo planus, istoriją ir pažangą (treneriai – savo sportininkus) ir galite įrašyti treniruotę. Be ryšio įrašyta treniruotė lieka telefone ir, grįžus ryšiui, išsiunčiama kartu su trenerio laišku. Visa istorija su ribomis ir bandymo būdais yra [pwa.md](pwa.md).
+Nuo v5 „Logify“ yra įdiegiama telefono programėlė (PWA), kuri atsidaro ir veikia be ryšio: matote savo planus, istoriją ir pažangą (treneriai – savo sportininkus) ir galite įrašyti treniruotę. Be ryšio įrašyta treniruotė lieka telefone ir, grįžus ryšiui, išsiunčiama kartu su trenerio laišku. Visa istorija su ribomis ir bandymo būdais yra [pwa.md](pwa.md); dalys ir jų tinklo ryšiai nubraižyti [7 skyriuje](#7-mobilioji-architektūra-pwa).
 
 | Dalis | Kur | Ką daro |
 |---|---|---|
@@ -237,14 +239,14 @@ Nuo v5 „Logify“ yra įdiegiama telefono programėlė (PWA), kuri atsidaro ir
 | Išsaugoti duomenys | `src/offline/savedData.js`, `src/offline/plansCache.js`, `src/lib/useLoad.js` | `useLoad` pirmiausia klausia tinklo ir kiekvieną rezultatą išsaugo pagal naudotoją; išsaugota kopija rodoma, kai telefonas be ryšio, užklausa nepavyksta arba trunka ilgiau nei 4 s. Skilties „Mano planai“ kopija kartu atnaujina įrašymo ekrano planų sąrašą ir gauna kiekvieną išsiųstą treniruotę |
 | Pasiruošimas ir užuominos | `src/offline/warmUp.js`, `src/offline/hints.js` | Iškart po prisijungimo išsaugo planų parinktis ir Pažangą; be ryšio pratimų pavadinimai ir *Praėjusį kartą* imami iš išsaugotos Pažangos |
 | Siuntimo eilė | `src/offline/outbox.js`, `src/offline/sync.js` | Telefone įrašytos treniruotės, laikomos, kol jas gauna serveris; siunčiamos iš eilės, po vieną |
-| Juodraštis | `src/offline/draft.js` | Pusiau užpildyta treniruotės įrašymo forma, išsaugoma jums rašant |
+| Juodraštis | `src/offline/draft.js` | Pusiau užpildyta treniruotės įrašymo forma, išsaugoma jums rašant ir pašalinama, vos siuntimo eilė gauna treniruotę |
 | Duomenų bazės versija | `src/offline/dbVersion.js`, `src/api/schema.js` | Paklausia `schema_version()` ir įsimena atsakymą; senesnė duomenų bazė gauna įspėjimą ir senąjį siuntimo būdą |
-| Prisijungęs be ryšio | `src/auth/AuthProvider.jsx`, `src/auth/storedSession.js`, `src/lib/sessionGuard.js` | Naudoja išsaugotą sesiją, kai supabase-js jos negali atnaujinti; niekada neleidžia išeiti duomenų užklausai be prisijungusios sesijos |
-| Maketas | `src/components/Layout.jsx`, `src/components/StatusBar.jsx`, `src/index.css` | Apatinė kortelių juosta telefonuose (640 px ir siauriau) ir būsenos eilutė po antrašte |
+| Prisijungęs be ryšio | `src/auth/AuthProvider.jsx`, `src/auth/storedSession.js`, `src/lib/sessionGuard.js` | Naudoja išsaugotą sesiją iškart, kai telefonas be ryšio (esant lėtam ryšiui – po 3 s), ir kai supabase-js jos negali atnaujinti; niekada neleidžia išeiti duomenų užklausai be naudotojo rakto |
+| Maketas | `src/components/Layout.jsx`, `src/components/StatusBar.jsx`, `src/components/LanguageSwitcher.jsx`, `src/index.css` | Antraštė (logotipas, dvi kalbos vėliavėlės, Atsijungimo piktograma), apatinė kortelių juosta telefonuose (640 px ir siauriau) ir būsenos eilutė po antrašte |
 
 Viskas atskira kiekvienam naudotojui (`logify.cache.v1.<naudotojo id>.…`, `logify.outbox.v1.<naudotojo id>`, `logify.draft.v1.<naudotojo id>`), todėl du žmonės viename telefone niekada nemato vienas kito duomenų, o atsijungimas pašalina to naudotojo išsaugotus duomenis. Duomenų bazė lieka vienintelė vieta, kuri sprendžia, kas ką gali skaityti: išsaugota kopija yra tie patys duomenys, kuriuos naudotojas jau galėjo skaityti.
 
-**Treniruotės įrašymas be ryšio.** Išsaugojimas įrašo treniruotę į siuntimo eilę su telefone sukurtu id ir laiku, kada paspaustas Išsaugoti, tada ją siunčia. Duomenų bazės funkcija `log_workout()` abu priima kaip neprivalomus parametrus `p_id` ir `p_logged_at`. Jei treniruotė su tuo id jau yra, funkcija ją grąžina ir nieko neįterpia, todėl treniruotė išsaugoma, ir webhook paleidžiamas, lygiai vieną kartą, kad ir kiek kartų siuntimas būtų kartojamas.
+**Treniruotės įrašymas be ryšio.** Išsaugojimas įrašo treniruotę į siuntimo eilę su telefone sukurtu id ir laiku, kada paspaustas Išsaugoti, tada ją siunčia. Duomenų bazės funkcija `log_workout()` abu priima kaip neprivalomus parametrus `p_id` ir `p_logged_at`. Jei treniruotė su tuo id jau yra, funkcija ją grąžina ir nieko neįterpia, todėl treniruotė išsaugoma, ir webhook paleidžiamas, lygiai vieną kartą, kad ir kiek kartų siuntimas būtų kartojamas. Neišsaugota forma pašalinama, vos siuntimo eilė gauna treniruotę, todėl per tą laiką įvykęs paleidimas iš naujo niekada negrąžina formos, kurios treniruotė jau pakeliui.
 
 ```mermaid
 sequenceDiagram
@@ -272,6 +274,83 @@ Siuntimo eilė taip pat sprendžia, ką daryti su atmetimu: nėra atsakymo, vir�
 
 **Suderinama abiem kryptimis.** Gyva programa iš laikų prieš v5 toliau veikia su v5 duomenų baze, nes nauji parametrai neprivalomi, o kitos duomenų bazės dalys nepakeistos. V5 programa su senesne duomenų baze taip pat veikia, tik su įspėjimu: žr. [pwa.md](pwa.md#5-senesnės-duomenų-bazės-įspėjimas).
 
+## 7. Mobilioji architektūra (PWA)
+
+Telefono pusė viename paveikslėlyje: kas yra telefone, ką naudoja kiekviena dalis ir vienintelės vietos, kur jis kalbasi su tinklu. 6 skyriuje parodyta, kaip viena treniruotė keliauja per šias dalis; šis skyrius rodo pačias dalis.
+
+```mermaid
+flowchart TB
+  subgraph VERCEL["Vercel: statiniai failai per HTTPS"]
+    FILES["Programos failai, sw.js,<br/>manifest.webmanifest, piktogramos"]
+  end
+
+  subgraph PHONE["Telefonas: Logify, įdiegta iš pradžios ekrano"]
+    SW["Service worker (sw.js)<br/>programos karkaso išankstinė talpykla,<br/>atnaujinimo pasiūlymas"]
+
+    subgraph APP["Programa, atidaryta iš išankstinės talpyklos"]
+      FORM["Treniruotės įrašymo forma"]
+      LOAD["useLoad<br/>pirmiausia tinklas,<br/>išsaugota kopija kaip atsarginis variantas"]
+      SYNC["Siuntimo eilė + siuntimas<br/>iš eilės, po vieną"]
+      BG["Sinchronizavimas fone<br/>versijos patikra, pasiruošimas,<br/>siuntimo eilės siuntimas"]
+      AUTH["AuthProvider<br/>išsaugota sesija be ryšio"]
+      GUARD["Sesijos sargas<br/>jokios duomenų užklausos<br/>be naudotojo rakto"]
+    end
+
+    subgraph LS["localStorage, atskiras kiekvienam naudotojui"]
+      CACHE[("Išsaugoti duomenys")]
+      OUTBOX[("Siuntimo eilė")]
+      DRAFT[("Juodraštis")]
+      DBV[("Duomenų bazės versija")]
+    end
+  end
+
+  subgraph SB["Supabase"]
+    REST["REST API (PostgREST) + Auth"]
+    LOGW["log_workout(p_id, p_logged_at)<br/>išsaugo treniruotę vieną kartą"]
+    VER["schema_version()"]
+    HOOK["Database Webhook<br/>paleidžiamas per INSERT"]
+  end
+
+  ZAP["Zapier, tada Gmail<br/>trenerio laiškas"]
+
+  FILES -->|"HTTPS: įdiegimas ir atnaujinimų patikra"| SW
+  SW -->|"pateikia programą, taip pat be ryšio"| APP
+  FORM -->|"jums rašant"| DRAFT
+  FORM -->|"Išsaugoti"| SYNC
+  LOAD <-->|"išsaugo kiekvieną rezultatą, rodo jį be ryšio ar kai lėta"| CACHE
+  SYNC <-->|"laiko kiekvieną treniruotę, kol ją gauna serveris"| OUTBOX
+  BG -->|"pasiruošimas po prisijungimo"| CACHE
+  BG -->|"paklausia ir įsimena atsakymą"| DBV
+  BG -->|"paleidus, grįžus ryšiui, kai matoma, kas 30 s"| SYNC
+  LOAD --> GUARD
+  SYNC --> GUARD
+  AUTH --> GUARD
+  BG --> GUARD
+  GUARD -->|"HTTPS, su naudotojo raktu"| REST
+  REST --> LOGW
+  REST --> VER
+  LOGW -->|"INSERT"| HOOK
+  HOOK -->|"HTTPS POST, JSON"| ZAP
+```
+
+| Dalis | Kur | Ką daro |
+|---|---|---|
+| Programos karkasas | Cache Storage, kurią iš Vercel užpildo service worker | HTML, kiekviena „JavaScript“ dalis (taip pat ir kraunamos pagal poreikį), CSS ir piktogramos. Bet kuris adresas, pavyzdžiui, `/progress`, atidaromas iš jos, todėl programa atsidaro be tinklo |
+| `useLoad` | `src/lib/useLoad.js` | Kiekvienas ekranas, kuris skaito duomenis. Pirmiausia klausia tinklo ir išsaugo rezultatą; rodo išsaugotą kopiją, kai telefonas be ryšio, užklausa nepavyksta arba trunka ilgiau nei 4 s. Įkėlimas, prasidėjęs prieš vietinį pakeitimą, to pakeitimo niekada neperrašo: jo atsakymas atmetamas, o įkėlimas paleidžiamas iš naujo |
+| Siuntimo eilė ir siuntimas | `src/offline/outbox.js`, `src/offline/sync.js` | Treniruotė įrašoma į siuntimo eilę prieš ją siunčiant ir pašalinama tik tada, kai serveris ją grąžina |
+| Sinchronizavimas fone | `src/offline/useBackgroundSync.js` | Nepaisant pavadinimo, veikia tik kol programa atidaryta: tikrina duomenų bazės versiją, išsaugo tai, ko reikia įrašymui be ryšio, ir siunčia siuntimo eilę, kai programa paleidžiama, grįžta ryšys, programa vėl atsiduria ekrane ir kas 30 s, kol treniruotė laukia. Kol programa uždaryta, nesiunčiama nieko |
+| AuthProvider | `src/auth/AuthProvider.jsx` | Palaiko naudotoją prisijungusį šiame telefone su supabase-js išsaugota sesija, taip pat kai prieigos raktas pasibaigęs ir be ryšio jo atnaujinti negalima. Pasako veikimo be ryšio kodui, kieno tai duomenys |
+| Sesijos sargas | `src/lib/sessionGuard.js` | `fetch`, kurį naudoja supabase-js. Duomenų užklausa, kuri išeitų be naudotojo rakto (tik su projekto raktu), atmetama kaip nutrūkęs ryšys, todėl tuščias Row Level Security atsakymas niekada nepakeičia išsaugotų duomenų. Prisijungimo užklausos ir `schema_version()` praleidžiamos |
+| `localStorage` | `logify.cache.v1.…`, `logify.outbox.v1.…`, `logify.draft.v1.…`, `logify.dbVersion` | Visa išsaugota būsena. Pirmi trys atskiri kiekvienam naudotojui, o atsijungimas ištrina išsaugotus duomenis ir juodraštį; siuntimo eilė lieka, kad laukiančios treniruotės nedingtų |
+| `log_workout(p_id, p_logged_at)` | `supabase/schema.sql` | Išsaugo treniruotę, jos serijas ir vieną webhook, po vieną kartą kiekvienam id, su laiku, kada paspaustas Išsaugoti |
+| `schema_version()` | `supabase/schema.sql` | Grąžina `5`. Ją gali kviesti bet kas; senesnė duomenų bazė jos neturi, ir tada programa įspėja bei siunčia senuoju būdu |
+
+**Be ryšio** kiekvienas ryšys, kertantis telefono ribą (į Vercel ir per sesijos sargą į Supabase), tiesiog negauna atsakymo. Viskas, kas telefono viduje, toliau veikia: programa atsidaro iš išankstinės talpyklos, ekranai skaito savo išsaugotas kopijas, forma rašo juodraštį, o Išsaugoti įdeda treniruotę į siuntimo eilę. Grįžus ryšiui, sinchronizavimas fone siunčia siuntimo eilę per sargą, `log_workout()` kiekvieną treniruotę išsaugo vieną kartą, o webhook tada išsiunčia trenerio laišką.
+
+**Sauga lieka serveryje.** Niekas telefone neišplečia to, ką naudotojas gali skaityti: išsaugota kopija yra duomenys, kuriuos naudotojas jau galėjo skaityti, laikomi po jo paties id, o kiekviena užklausa vis tiek neša jo paties raktą ([5 skyrius](#5-kas-ką-gali-skaityti)).
+
+Daugiau: [pwa.md](pwa.md) (kas kur laikoma, ribos, kaip išbandyti), [deployment.md](deployment.md#6-telefono-programėlė-pwa-per-vercel) (HTTPS, kaip talpinamas `sw.js`) ir [projektavimo įrašas](../superpowers/specs/2026-11-16-pwa-offline-design.md) (angliškai).
+
 ## Susiję
 
-[supabase.md](supabase.md) (lentelės, politikos, dalijimasis, v5) · [pwa.md](pwa.md) (telefono programėlė ir darbas be ryšio) · [deployment.md](deployment.md) (Vercel) · [zapier.md](zapier.md) (abu Zap) · [setup.md](setup.md) (vietinis paruošimas)
+[supabase.md](supabase.md) (lentelės, politikos, dalijimasis, v5) · [pwa.md](pwa.md) (telefono programėlė ir darbas be ryšio) · [deployment.md](deployment.md) (Vercel, PWA per Vercel, v5 išleidimas) · [zapier.md](zapier.md) (abu Zap) · [setup.md](setup.md) (vietinis paruošimas, PWA bandymas) · [implementation-plan.md](implementation-plan.md) (apimtis ir v5 skyrius) · v5 [projektas](../superpowers/specs/2026-11-16-pwa-offline-design.md) ir [planas](../superpowers/plans/2026-11-16-pwa-offline.md) (angliškai)
