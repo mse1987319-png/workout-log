@@ -56,7 +56,7 @@ Athletes connect to you with a personal **code**. It is shown at the top of **My
 
 1. Open **My athletes** and read your code (six letters and digits).
 2. Give it to your athlete.
-3. The athlete opens **Sharing**, types the code under **Instructor's code** and presses **Share**.
+3. The athlete opens **Sharing**, types the code under **Instructor's code** and presses **Share** (see the [athlete manual](athlete.md#7-share-with-your-instructor)).
 4. They now appear in the list **Athletes who share with you**.
 
 The athlete can stop sharing at any time; then they disappear from your list. If you do not see an athlete, ask them to check the code and that the screen said *You now share with …*.
@@ -95,7 +95,7 @@ You can **Edit** or **Delete** your own plans. A plan that athletes have logged 
 
 ![Plan assigned](../images/en/103-assigned.png)
 
-The same plan can be assigned to many athletes; each logs their own workouts under it, and it shows on their **My plans** screen with the label **Assigned by your instructor**. The athlete cannot edit or delete it.
+The same plan can be assigned to many athletes; each logs their own workouts under it, and it shows on their **My plans** screen with the label **Assigned by your instructor** (see [how athletes see their plans](athlete.md#3-plans)). The athlete cannot edit or delete it.
 
 To take a plan away, press **Unassign** next to it. The plan disappears from the athlete's **My plans**. Workouts they already logged are not deleted and still count in their progress, but they are no longer listed under that plan. If every plan you have is already assigned to this athlete, the card says so; if you have no plans yet, it links to **Create a plan**.
 
@@ -140,7 +140,13 @@ You only receive emails about athletes who **share with you** (they typed your c
 
 ## 8. On a phone, and without signal
 
-**The bottom bar.** On a phone (a screen up to 640 px wide) the menu becomes a bar at the bottom of the screen: an icon and a label for **My plans**, **Log**, **Progress** and **My athletes**, with the tab you are on in the accent color. The header shrinks to one row (logo, **LT / EN**, **Log out**). Under the header a status line appears when you are offline, workouts are waiting to be sent, or a new version is ready.
+**The bottom bar.** On a phone (a screen up to 640 px wide) the menu becomes a bar at the bottom of the screen: an icon and a label for **My plans**, **Log**, **Progress** and **My athletes**, with the tab you are on in the accent color. The header shrinks to one row: the logo, the two language flags next to it, and your account with the **Log out** icon (pointing at it shows *Log out* and your email; if there is not enough room, the email is cut short with …). Under the header a status line appears when you are offline, workouts are waiting to be sent, or a new version is ready.
+
+![My athletes on a phone, with the bottom tab bar](../images/en/111-phone-athletes.png)
+
+*My athletes on a phone: your code and the list of athletes, with the bottom tab bar.*
+
+How it works under the hood, and its limits: [How it works (technical)](../../pwa.md).
 
 **Install it.** Logify can be put on your home screen and opens full-screen like an app. The card on **My plans** shows how on Android and iPhone; the steps are the same as for athletes: see [Install on your phone](athlete.md#9-install-on-your-phone). On iPhone the installed app keeps its own storage, so you log in once more inside it.
 
@@ -156,9 +162,11 @@ You only receive emails about athletes who **share with you** (they typed your c
 
 **Your own workouts.** If you log workouts yourself, logging works without signal too: it is kept on the phone as **Waiting to send** under its plan, and sent when the signal returns. The details are in [Using Logify without signal](athlete.md#10-using-logify-without-signal).
 
-**Emails about athletes' workouts.** When an athlete logs a workout without signal, you get the email when their phone sends it, not when they pressed Save; you get exactly one email per workout, however many times the send is retried. The email and the athlete's page carry the time the athlete pressed Save (as long as that was in the last 30 days and the database is up to date).
+**Emails about athletes' workouts.** When an athlete logs a workout without signal, you get the email when their phone sends it, not when they pressed Save; you get exactly one email per workout, however many times the send is retried. The email and the athlete's page carry the time the athlete pressed Save (as long as that was in the last 30 days and the database is up to date). What the athlete sees on their side is in the [athlete manual](athlete.md#10-using-logify-without-signal).
 
-**A new version.** The status line says *A new version of Logify is ready.* with **Update**; Logify never reloads by itself.
+**A new version.** The status line says *A new version of Logify is ready.* with **Update**; Logify never reloads by itself, and the line waits while one of your own workouts is being sent.
+
+**Logging out.** If you logged workouts of your own without signal, Log out asks first when some are still waiting or being sent: they stay on this phone and are sent the next time you log in here.
 
 ## 9. Messages and what to do
 
