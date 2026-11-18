@@ -9,7 +9,6 @@ TREE = REPO + "/tree/main/"
 # v5 (the phone app) was merged into main on 2026-11-18; TREE5 keeps pointing at the release/v5 snapshot branch.
 BLOB5 = BLOB
 TREE5 = REPO + "/tree/release/v5/"
-PREVIEW = "https://workout-f3whexba1-mse1987319-9300.vercel.app/"
 PRS = REPO + "/pulls?q=is%3Apr+is%3Amerged"
 N = "https://app.notion.com/p/"
 NOTION_EN = {
@@ -84,7 +83,6 @@ Say: Logify is a web workout log. Athletes follow workout plans, log their worko
 Sources:
 - README: {BLOB}README.md
 - Live app: {APP}
-- v5 preview (the phone app): {PREVIEW}
 - Notion project page: {NOTION_EN['root']}
 """,
 }
@@ -244,7 +242,7 @@ Sources:
 - PWA guide: {BLOB5}docs/pwa.md
 - Architecture, "Mobile architecture (PWA)": {BLOB5}docs/architecture.md
 - Design record: {BLOB5}docs/superpowers/specs/2026-11-16-pwa-offline-design.md
-- Preview of v5: {PREVIEW}
+- Live app (v5): {APP}
 """,
 }
 
@@ -481,7 +479,7 @@ EN["reqs"] = {
         ["Automation", "Webhook → Filter → Paths → Gmail",
          "**Zap 1** with Paths + **Zap 2** for reports; 3 error handlers"],
         ["Documentation", "Notion page, logs, README",
-         "Notion (EN + LT): task table, 38 decisions, 17 errors, tests; README, docs/, user manuals"],
+         "Notion (EN + LT): task table, 39 decisions, 17 errors, tests; README, docs/, user manuals"],
         ["Bonus", "A chart from history; an AI feature",
          "**2 charts**, goals, rule-based suggestions (explainable; no AI key in the app)"],
         ["Out of scope", "Payments, realtime, uploads, own server, TypeScript, mobile app",
@@ -664,7 +662,7 @@ EN["script"] = {
         "Open Gmail `mse1987319@gmail.com` (switch account at the top right) and search "
         "`to:mse1987319+logify@gmail.com`.",
         "Zapier: both Zaps **On**. One report per 5 min: wait if one was just sent.",
-        f"Phone part (optional): open [the live site]({APP}) on a phone (v5 is live since 2026-11-18; the [v5 preview]({PREVIEW}) is the same build); screenshots are in Appendix C.",
+        f"Phone part (optional): open [the live site]({APP}) on a phone (v5 is live since 2026-11-18); screenshots are in Appendix C.",
     ],
     "head": ["#", "Do", "Say", "Time"],
     "steps": [
@@ -775,7 +773,7 @@ EN["appC"] = {
         "Install it, use it in the gym, lose the signal, and see the workout arrive once.",
         "About 3 minutes  ·  v5, live since 2026-11-18  ·  the real app on a 390 × 780 px phone, demo data",
     ],
-    "notes": f"Run this after Appendix A if the audience asks about phones. Live: open {APP} on a phone (v5 is live since 2026-11-18; {PREVIEW} is the same build). The screens here were taken from the real app with a mocked API, so nothing was saved or emailed.",
+    "notes": f"Run this after Appendix A if the audience asks about phones. Live: open {APP} on a phone (v5 is live since 2026-11-18). The screens here were taken from the real app with a mocked API, so nothing was saved or emailed.",
 }
 
 EN["phone"] = [
@@ -823,13 +821,12 @@ EN["links"] = [
     {"title": "Project links",
      "cols": [
          ("Product", [
-             f"Live app: [workout-log-murex-three.vercel.app]({APP})",
+             f"Live app (v5, installable on a phone): [workout-log-murex-three.vercel.app]({APP})",
              f"Repository: [github.com/mse1987319-png/workout-log]({REPO})",
              f"[Merged pull requests]({PRS})",
              f"[supabase/schema.sql]({BLOB}supabase/schema.sql)",
              f"[supabase/seed.sql]({BLOB}supabase/seed.sql) (demo data)",
              f"[supabase/tests/]({TREE}supabase/tests)",
-             f"v5 preview (phone app): [workout-f3whexba1-mse1987319-9300.vercel.app]({PREVIEW})",
              f"[release/v5 branch]({TREE5})",
          ]),
          ("Docs in the repository", [
@@ -895,7 +892,6 @@ Sakykite: Logify – internetinis treniruočių žurnalas. Sportininkai vykdo tr
 Šaltiniai:
 - README (LT): {BLOB}README.lt.md
 - Veikianti svetainė: {APP}
-- v5 peržiūra (telefono programėlė): {PREVIEW}
 - Notion projekto puslapis: {NOTION_LT['root']}
 """,
 }
@@ -1058,7 +1054,7 @@ Sakykite: Tai v5: ta pati React programėlė, dabar PWA, t. y. progresinė žini
 - PWA vadovas: {BLOB5}docs/lt/pwa.md
 - Architektūra, „Mobilioji architektūra (PWA)“: {BLOB5}docs/lt/architecture.md
 - Projektavimo įrašas: {BLOB5}docs/superpowers/specs/2026-11-16-pwa-offline-design.md
-- v5 peržiūra: {PREVIEW}
+- Veikianti svetainė (v5): {APP}
 """,
 }
 
@@ -1303,7 +1299,7 @@ LT["reqs"] = {
         ["Automatizacija", "Webhook → Filter → Paths → Gmail",
          "**Zap 1** su Paths + **Zap 2** ataskaitoms; 3 klaidų tvarkyklės"],
         ["Dokumentacija", "Notion puslapis, žurnalai, README",
-         "Notion (EN + LT): užduotys, 38 sprendimai, 17 klaidų, testai; README, docs/, naudotojo vadovai"],
+         "Notion (EN + LT): užduotys, 39 sprendimai, 17 klaidų, testai; README, docs/, naudotojo vadovai"],
         ["Papildomi taškai", "Grafikas iš istorijos; DI funkcija",
          "**2 diagramos**, tikslai, taisyklėmis pagrįsti pasiūlymai (paaiškinami; programoje nėra DI rakto)"],
         ["Ko nedarome", "Mokėjimų, realaus laiko, failų įkėlimo, savo serverio, TypeScript, mobiliosios programos",
@@ -1489,7 +1485,7 @@ LT["script"] = {
         "Atidarykite Gmail `mse1987319@gmail.com` (paskyrą perjunkite viršuje dešinėje) ir ieškokite "
         "`to:mse1987319+logify@gmail.com`.",
         "Zapier: abu Zap'ai **On**. Tik viena ataskaita per 5 min.: jei ką tik siųsta, palaukite.",
-        f"Telefono dalis (neprivaloma): telefone atidarykite [svetainę]({APP}) (v5 veikia nuo 2026-11-18; [v5 peržiūra]({PREVIEW}) yra ta pati versija); ekrano nuotraukos – C priede.",
+        f"Telefono dalis (neprivaloma): telefone atidarykite [svetainę]({APP}) (v5 veikia nuo 2026-11-18); ekrano nuotraukos – C priede.",
     ],
     "head": ["#", "Darykite", "Sakykite", "Laikas"],
     "steps": [
@@ -1600,7 +1596,7 @@ LT["appC"] = {
         "Įdiekite, naudokite salėje, prarandate ryšį ir matote, kaip treniruotė atkeliauja vieną kartą.",
         "Apie 3 minutes  ·  v5, veikia nuo 2026-11-18  ·  tikra programėlė 390 × 780 px telefone, demonstraciniai duomenys",
     ],
-    "notes": f"Rodykite po A priedo, jei klausytojai klausia apie telefonus. Gyvai: telefone atidarykite {APP} (v5 veikia nuo 2026-11-18; {PREVIEW} yra ta pati versija). Čia pateikti ekranai nufotografuoti tikroje programėlėje su imituotu API, todėl nieko neišsaugota ir nesiųsta.",
+    "notes": f"Rodykite po A priedo, jei klausytojai klausia apie telefonus. Gyvai: telefone atidarykite {APP} (v5 veikia nuo 2026-11-18). Čia pateikti ekranai nufotografuoti tikroje programėlėje su imituotu API, todėl nieko neišsaugota ir nesiųsta.",
 }
 
 LT["phone"] = [
@@ -1648,13 +1644,12 @@ LT["links"] = [
     {"title": "Projekto nuorodos",
      "cols": [
          ("Produktas", [
-             f"Veikianti svetainė: [workout-log-murex-three.vercel.app]({APP})",
+             f"Veikianti svetainė (v5, įdiegiama telefone): [workout-log-murex-three.vercel.app]({APP})",
              f"Saugykla: [github.com/mse1987319-png/workout-log]({REPO})",
              f"[Sulieti pull request]({PRS})",
              f"[supabase/schema.sql]({BLOB}supabase/schema.sql)",
              f"[supabase/seed.sql]({BLOB}supabase/seed.sql) (demo duomenys)",
              f"[supabase/tests/]({TREE}supabase/tests)",
-             f"v5 peržiūra (telefono programėlė): [workout-f3whexba1-mse1987319-9300.vercel.app]({PREVIEW})",
              f"[release/v5 šaka]({TREE5})",
          ]),
          ("Dokumentai saugykloje", [

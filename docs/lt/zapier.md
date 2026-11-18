@@ -214,7 +214,7 @@ Kodėl Fallback siunčia laišką: kurso 16 skaidrė fallback šakoje laiško ne
 | Gavėjas 1 | Įrašykite treniruotę kaip sportininkas, susietas su treneriu X | Laiškas ateina X ir niekam kitam |
 | Gavėjas 2 | Susiekite sportininką su antru treneriu Y ir įrašykite treniruotę | Vienas laiškas, adresuotas X ir Y |
 | Gavėjas 3 | **Sharing → Stop sharing** su visais, tada įrašykite treniruotę | Zap istorijoje matyti, kad vykdymą **sustabdė Filter**; laiško ir užduoties nėra |
-| Be ryšio (v5) | Peržiūroje arba su `npm run preview` DevTools → Network nustatykite **Offline**, įrašykite treniruotę, palaukite minutę, tada tinklą grąžinkite į **No throttling** | Kol nėra ryšio, Zap nepaleidžiamas. Kai treniruotė išsiunčiama – **vienas** paleidimas ir vienas laiškas; *Logged at* rodo laiką, kada paspaustas Išsaugoti ([pwa.md](pwa.md#7-bandymas-be-ryšio)) |
+| Be ryšio (v5) | Veikiančioje svetainėje arba su `npm run preview` DevTools → Network nustatykite **Offline**, įrašykite treniruotę, palaukite minutę, tada tinklą grąžinkite į **No throttling** | Kol nėra ryšio, Zap nepaleidžiamas. Kai treniruotė išsiunčiama – **vienas** paleidimas ir vienas laiškas; *Logged at* rodo laiką, kada paspaustas Išsaugoti ([pwa.md](pwa.md#7-bandymas-be-ryšio)) |
 
 Pateikimo ekrano nuotraukos (kontrolinio sąrašo 4 punktas): Zap redaktorius, rodantis Paths, ir Zap istorija 2 ir 3 testams.
 

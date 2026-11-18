@@ -210,7 +210,7 @@ Why the Fallback sends an email: deck slide 16 shows no email on the fallback br
 | Recipient 1 | Log a workout as an athlete linked to instructor X | The email goes to X and to nobody else |
 | Recipient 2 | Link the athlete to a second instructor Y, then log a workout | One email, addressed to X and Y |
 | Recipient 3 | **Sharing → Stop sharing** with everyone, then log a workout | Zap history shows the run **stopped by the Filter**; no email, no task |
-| Offline (v5) | On the preview or `npm run preview`, set DevTools → Network to **Offline**, log a workout, wait a minute, then set the network back to **No throttling** | No Zap run while offline. Once the workout is sent, **one** run and one email; *Logged at* shows the time Save was pressed ([pwa.md](pwa.md#7-testing-it-offline)) |
+| Offline (v5) | On the live site or `npm run preview`, set DevTools → Network to **Offline**, log a workout, wait a minute, then set the network back to **No throttling** | No Zap run while offline. Once the workout is sent, **one** run and one email; *Logged at* shows the time Save was pressed ([pwa.md](pwa.md#7-testing-it-offline)) |
 
 Screenshots for the submission (checklist item 4): the Zap editor showing the Paths, and Zap history for tests 2 and 3.
 
