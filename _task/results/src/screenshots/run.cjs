@@ -43,7 +43,7 @@ async function main() {
 
   const translations = await loadTranslations()
   const ref = supabaseRef()
-  const browser = await launchBrowser()
+  const browser = await launchBrowser({ scrollbars: set.scrollbars })
   const failures = []
   const dirty = []
   let images = 0

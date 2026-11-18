@@ -40,9 +40,13 @@ function pgTimestamp(date) {
   return new Date(date).toISOString().replace(/\.\d{3}Z$/, '+00:00')
 }
 
-/** "2026-11-10 18:05" (local) → PostgREST timestamp. */
+/**
+ * "2026-11-10 18:05" (local) → PostgREST timestamp. A text that ends in Z
+ * ("2026-11-10T16:05:00Z") is already UTC: the database stores workouts
+ * logged "at 18:00" by its own clock that way.
+ */
 function at(text, zone = ZONE) {
-  return pgTimestamp(local(text, zone))
+  return pgTimestamp(text.endsWith('Z') ? new Date(text) : local(text, zone))
 }
 
 /** The UTC calendar date ('YYYY-MM-DD') of an instant: what the database's current_date is. */

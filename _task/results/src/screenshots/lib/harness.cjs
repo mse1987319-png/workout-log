@@ -11,7 +11,7 @@ const path = require('path')
 const { pathToFileURL } = require('url')
 const { createMock } = require('./mock.cjs')
 const { imageSize } = require('./imageSize.cjs')
-const { ZONE } = require('./time.cjs')
+const { ZONE, local } = require('./time.cjs')
 
 const REPO = path.resolve(__dirname, '../../../../..')
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5173'
@@ -73,15 +73,21 @@ function findCachedChromium() {
   return null
 }
 
-async function launchBrowser() {
+/**
+ * Chromium, headless. A headless browser hides the scrollbars; a set whose
+ * pictures were taken with a visible one (the deck's desktop screenshots) asks
+ * for `scrollbars: true` in its definition.
+ */
+async function launchBrowser({ scrollbars = false } = {}) {
   const { chromium } = loadPlaywright()
-  if (process.env.PLAYWRIGHT_CHROMIUM) return chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM })
+  const options = scrollbars ? { ignoreDefaultArgs: ['--hide-scrollbars'] } : {}
+  if (process.env.PLAYWRIGHT_CHROMIUM) return chromium.launch({ ...options, executablePath: process.env.PLAYWRIGHT_CHROMIUM })
   try {
-    return await chromium.launch()
+    return await chromium.launch(options)
   } catch (error) {
     const found = findCachedChromium()
     if (!found) throw error
-    return chromium.launch({ executablePath: found })
+    return chromium.launch({ ...options, executablePath: found })
   }
 }
 
@@ -146,9 +152,13 @@ async function openScene({ browser, set, scene, lang, translations, ref }) {
   const defaults = set.defaults ?? {}
   const viewport = scene.viewport ?? defaults.viewport ?? { width: 1100, height: 800 }
   const scale = scene.scale ?? defaults.scale ?? 1.5
-  const now = new Date(scene.now ?? defaults.now)
-  const built = require('../worlds/index.cjs')[scene.world ?? set.world].build()
-  const mock = createMock({ world: built.world, now: () => now })
+  // The scene's time can move on (s.setNow): the database stamps new rows with it.
+  const clock = { now: new Date(scene.now ?? defaults.now) }
+  const now = clock.now
+  // A world may differ by language or by options (worlds/demo.cjs): build({ lang, ...options }).
+  const worldOptions = { lang, ...set.worldOptions, ...scene.worldOptions }
+  const built = require('../worlds/index.cjs')[scene.world ?? set.world].build(worldOptions)
+  const mock = createMock({ world: built.world, now: () => clock.now })
   if (scene.schemaVersion) mock.state.schemaVersion = scene.schemaVersion // 'missing': a database from before v5
   const user = scene.persona ? built.personas[scene.persona] : null
   if (scene.persona && !user) throw new Error(`scene "${scene.name}": no persona "${scene.persona}" in its world`)
@@ -188,12 +198,12 @@ async function openScene({ browser, set, scene, lang, translations, ref }) {
     if (message.type() === 'error' && !message.text().includes('ERR_INTERNET_DISCONNECTED')) problems.push(`console error: ${message.text()}`)
   })
   page.on('pageerror', (error) => problems.push(`page error: ${error.message}`))
-  return { context, page, mock, user, viewport, scale, t: makeT(translations, lang), external, problems, built }
+  return { context, page, mock, user, viewport, scale, t: makeT(translations, lang), external, problems, built, clock }
 }
 
 /** What a scene's `run(s)` gets. */
 function makeApi({ session, set, lang, outRoot, written, failures }) {
-  const { page, context, mock, viewport } = session
+  const { page, context, mock, viewport, clock } = session
   const format = set.format ?? 'png'
   const referenceDir = set.outDir(lang)
   // --out=<folder> keeps the repo's folder layout under that folder, so a trial run replaces nothing.
@@ -220,10 +230,33 @@ function makeApi({ session, set, lang, outRoot, written, failures }) {
       await page.waitForTimeout(ms)
     },
 
+    /**
+     * Moves the clock on ("2026-11-12 18:55", Vilnius): the page's Date and the
+     * time the database stamps new rows with. For a demo that took minutes.
+     */
+    async setNow(text) {
+      clock.now = local(text)
+      await context.clock.setFixedTime(clock.now)
+    },
+
+    /** Scrolls so that the element's top edge is `y` CSS px below the top of the window. */
+    async scrollTo(target, y = 0) {
+      const locator = typeof target === 'string' ? page.locator(target).first() : target
+      await locator.evaluate((element, offset) => window.scrollBy(0, element.getBoundingClientRect().top - offset), y)
+      await page.waitForTimeout(150)
+    },
+
+    /** Scrolls to the very bottom of the page. */
+    async scrollToBottom() {
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+      await page.waitForTimeout(150)
+    },
+
     /** Takes the mouse and the keyboard focus out of the way (no hover or focus ring in the image). */
     async calm() {
       await page.mouse.move(1, 400)
       await page.evaluate(() => document.activeElement?.blur?.())
+      await page.waitForTimeout(250) // the field's focus ring fades out: a picture taken mid-fade would differ from run to run
     },
 
     /** The browser loses its connection; the mock stops answering as well. */
