@@ -42,7 +42,7 @@ The vision is bigger than the graded minimum, and the course has four lectures. 
 | Automatic reports by email | No own server, no Edge Functions | Reports are rows in a `reports` table; an INSERT fires a second Database Webhook → Zapier → Gmail. Same pattern as the core flow, no server code. |
 | Personalized recommendations | No Edge Functions (so no secret AI key in the app) | Rule-based, computed in the browser from history. The optional AI part runs as a Zapier step, where the key never touches React or Vercel. |
 | Visualization | Bonus: "a chart from history" | Recharts on the Progress screen. |
-| Use on the phone at the gym | No mobile version | Responsive CSS only; no native app, no PWA work. |
+| Use on the phone at the gym | No mobile version | Responsive CSS only; no native app, no PWA work. *(Later, in v5, a PWA was added after all: see [§15](#15-v5-a-phone-app-that-works-without-signal).)* |
 | — | No TypeScript, payments, real-time, file uploads | JavaScript only; no Supabase Realtime; no progress photos or file import. CSV *export* is a browser download, not an upload. |
 
 ---
@@ -341,7 +341,7 @@ The pattern: the market is split into **personal loggers** (athlete-only) and **
 ### What makes this platform stand out
 
 1. **The instructor is told, not asked to look.** An email within a minute of each workout and a periodic progress report. Coach platforms expect the coach to open a dashboard. This is also exactly the automation the course grades.
-2. **One free web app for both sides.** Athlete and instructor use the same product, with no per-client pricing and nothing to install.
+2. **One free web app for both sides.** Athlete and instructor use the same product, with no per-client pricing and nothing to install (since v5 it can optionally be put on the phone's home screen: [§15](#15-v5-a-phone-app-that-works-without-signal)).
 3. **Plans flow both ways.** Instructors assign a plan to many athletes; athletes can also write their own plan and share it with the instructor for feedback. Coach platforms are top-down.
 4. **Strength and cardio in one log**, with a single progress view across both.
 5. **Explainable recommendations.** Every suggestion states its rule, unlike generated-workout apps.
@@ -363,3 +363,28 @@ The pattern: the market is split into **personal loggers** (athlete-only) and **
 - [Compare TrueCoach vs TrainHeroic (Capterra)](https://www.capterra.com/compare/155784-202308/truecoach-vs-TrainHeroic)
 - [Coaching platform comparison (FitBudd)](https://www.fitbudd.com/compare)
 - [What clients say about coaching apps (Coachway)](https://coachway.io/articles/what-clients-say-about-coaching-apps/)
+
+---
+
+## 15. v5: a phone app that works without signal
+
+*Added after the four-lecture plan. The tiers and decisions above are history and are left as they were.*
+
+**What.** Logify became an installable phone app (a PWA) that opens and works without signal. You can see your plans, history and progress (instructors: their athletes) and log a workout. The workout waits on the phone and is sent, with the instructor's email, when the signal returns. On phones the menu is a bottom tab bar and the header is one row.
+
+**Why.** Logify is used at the gym, and gyms often have weak or no signal. Before v5 the app didn't open without a connection, sat on *Loading…* with a weak one, sent a phone to Login once the sign-in token had expired offline, and lost a workout typed in with no signal. The scope row in section 2 (*Use on the phone at the gym*: responsive CSS only) was right for the graded tiers; v5 revisits it now that they are done.
+
+**How, in one line each.**
+
+- A service worker (vite-plugin-pwa, Workbox) keeps the app's files on the phone, so every screen opens offline.
+- Every screen shows its last saved data when the network is down or slow, with the time it was saved; the signed-in user stays signed in offline.
+- A workout logged offline waits in an outbox on the phone and is sent, in order, while the app is open.
+- The database saves it exactly once: `log_workout()` takes an optional id and logged time from the phone, so a repeated send inserts nothing and the Zap runs once. `schema_version()` lets the app work, with a warning, against an older database.
+
+**What stays as before.** The stack and the rules of the course: no server code or Edge Functions, no new runtime dependency, Row Level Security unchanged, both Zaps unchanged (a workout logged offline is emailed when it is sent: [zapier.md](zapier.md)). The live app from before v5 keeps working against the v5 database.
+
+**Records.** The approved design is [superpowers/specs/2026-11-16-pwa-offline-design.md](superpowers/specs/2026-11-16-pwa-offline-design.md) (with an *As built* section for what changed during the build) and the task-by-task plan is [superpowers/plans/2026-11-16-pwa-offline.md](superpowers/plans/2026-11-16-pwa-offline.md). How it works and its limits: [pwa.md](pwa.md); the parts in one picture: [architecture.md](architecture.md#7-mobile-architecture-pwa); how it was released: [deployment.md](deployment.md#7-releasing-v5).
+
+## Related
+
+[architecture.md](architecture.md) (as built) · [pwa.md](pwa.md) (the phone app) · [supabase.md](supabase.md) (the database) · [deployment.md](deployment.md) (Vercel and releasing v5) · [zapier.md](zapier.md) (both Zaps) · [setup.md](setup.md) (local setup)
