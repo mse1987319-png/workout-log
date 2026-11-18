@@ -115,15 +115,19 @@ a {
 
 /* Full width: the logo is leftmost, the account (name + Log out) rightmost. */
 .app-header-inner {
+  --header-gap: 1.5rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem 1.5rem;
+  gap: 0.5rem var(--header-gap);
   padding: 0.5rem 1.5rem;
 }
 
+/* The logo and the flags never shrink: on a narrow screen the account
+   email gives way (it is cut short with …) instead of running into them. */
 .brand {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   text-decoration: none;
 }
@@ -139,43 +143,51 @@ a {
   height: 4.5rem;
 }
 
-/* Language switcher: two radio buttons, LT and EN. In the header it is set
-   apart from the logo and the menu by a line on each side. */
+/* Language switcher: two small flags (radio buttons underneath, hidden). The
+   chosen one is in full color with an accent ring; the other is faded. */
 .lang-switch {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
-  gap: 0.25rem;
   margin: 0;
   padding: 0;
   border: 0;
-  min-width: 0;
 }
 
 .lang-option {
   display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.4rem 0.5rem;
-  border-radius: 999px;
-  color: var(--muted);
-  font-size: 0.9rem;
-  font-weight: 600;
+  padding: 0.5rem 0.25rem;
+  border-radius: 6px;
   cursor: pointer;
 }
 
-.lang-option:has(input:checked) {
-  color: var(--accent);
+.flag {
+  display: block;
+  width: 1.5rem;
+  height: 1rem;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--border);
+  opacity: 0.45;
 }
 
-.lang-option input {
-  margin: 0;
-  accent-color: var(--accent);
+.lang-option:hover .flag {
+  opacity: 0.8;
 }
 
+.lang-option:has(input:checked) .flag {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* The radio itself is hidden, so the keyboard focus ring goes on the flag. */
+.lang-option:has(input:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* In the header the flags sit close to the logo, whatever the header's gap. */
 .app-header .lang-switch {
-  align-self: stretch;
-  padding: 0 1rem;
-  border-inline: 1px solid var(--border);
+  margin-inline-start: calc(0.5rem - var(--header-gap));
 }
 
 .login-lang {
@@ -216,7 +228,10 @@ a {
   background: var(--accent-soft);
 }
 
+/* Takes what room is left at the right; the email shrinks first. */
 .account {
+  flex: 1 1 auto;
+  justify-content: flex-end;
   margin-left: auto;
   display: flex;
   align-items: center;
@@ -224,11 +239,26 @@ a {
   min-width: 0;
 }
 
+/* Log out as an icon: a square, comfortable touch target. Two classes, so
+   .button's padding (defined further down) can't squeeze the icon. */
+.button.button-icon {
+  flex-shrink: 0;
+  width: 44px;
+  padding: 0;
+}
+
+.button-icon-svg {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+}
+
 .app-header > .confirm-delete {
   margin: 0 1.5rem 0.75rem;
 }
 
 .account-email {
+  min-width: 0;
   max-width: 14rem;
   overflow: hidden;
   color: var(--muted);
@@ -1249,6 +1279,7 @@ textarea {
 @media (max-width: 640px) {
   /* One row: logo, language, account. The menu is the tab bar below. */
   .app-header-inner {
+    --header-gap: 0.75rem;
     flex-wrap: nowrap;
     padding: 0.5rem 1rem;
   }
@@ -1259,11 +1290,6 @@ textarea {
 
   .status-bar {
     padding: 0.5rem 1rem;
-  }
-
-  .app-header .lang-switch {
-    align-self: auto;
-    padding: 0 0.5rem;
   }
 
   /* The same <nav>, fixed to the bottom of the screen: an icon over a label
@@ -1326,31 +1352,11 @@ textarea {
 
 @media (max-width: 480px) {
   .app-header-inner {
-    gap: 0.4rem 0.5rem;
+    --header-gap: 0.5rem;
   }
 
   .account {
     gap: 0.5rem;
-  }
-
-  /* One row: the email goes, so the logo, language and Log out fit. */
-  .account-email {
-    display: none;
-  }
-
-  .account .button {
-    padding: 0.4rem 0.6rem;
-    white-space: nowrap;
-  }
-
-  /* Lithuanian's Atsijungti is the widest: keep the row inside the screen. */
-  .app-header .lang-switch {
-    padding: 0 0.25rem;
-  }
-
-  .lang-option {
-    gap: 0.25rem;
-    padding: 0.4rem 0.35rem;
   }
 }
 

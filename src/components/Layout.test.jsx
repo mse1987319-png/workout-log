@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { AuthContext } from '../auth/AuthContext'
+import { setLanguage } from '../i18n/i18n'
 import { setCurrentUser } from '../offline/currentUser'
 import { addToOutbox, removeItem, updateItem } from '../offline/outbox'
 import Layout from './Layout'
@@ -46,6 +47,32 @@ describe('Layout', () => {
     renderLayout('instructor')
 
     expect(tabs()).toEqual(['My plans', 'Log', 'My athletes', 'Progress'])
+  })
+
+  it('shows Log out as an icon, with Log out and the signed-in email in its tooltip', () => {
+    renderLayout('athlete')
+
+    const button = screen.getByRole('button', { name: 'Log out' })
+    expect(button.textContent.trim()).toBe('')
+    expect(button.querySelector('svg')).not.toBeNull()
+    expect(button).toHaveAttribute('title', 'Log out (me@example.com)')
+  })
+
+  it('keeps the signed-in email in the header next to the Log out icon', () => {
+    renderLayout('athlete')
+
+    const account = screen.getByRole('button', { name: 'Log out' }).parentElement
+    expect(within(account).getByText('me@example.com')).toBeInTheDocument()
+  })
+
+  it('words the Log out tooltip in Lithuanian too', () => {
+    setLanguage('lt')
+    renderLayout('athlete')
+
+    expect(screen.getByRole('button', { name: 'Atsijungti' })).toHaveAttribute(
+      'title',
+      'Atsijungti (me@example.com)',
+    )
   })
 
   it('warns before logging out when workouts are waiting', async () => {

@@ -46,6 +46,7 @@ export const translations = {
     'nav.sharing': 'Sharing',
     'nav.log': 'Log',
     'account.logOut': 'Log out',
+    'account.logOutAs': 'Log out ({email})',
     'account.unsent.one':
       "{count} workout hasn't been sent yet. It stays on this phone and is sent the next time you log in here.",
     'account.unsent.other':
@@ -421,6 +422,7 @@ export const translations = {
     'nav.sharing': 'Dalijimasis',
     'nav.log': 'Įrašyti',
     'account.logOut': 'Atsijungti',
+    'account.logOutAs': 'Atsijungti ({email})',
     'account.unsent.one':
       '{count} treniruotė dar neišsiųsta. Ji liks šiame telefone ir bus išsiųsta, kai kitą kartą čia prisijungsite.',
     'account.unsent.few':

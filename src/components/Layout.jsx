@@ -11,9 +11,31 @@ import { AthletesIcon, LogIcon, PlansIcon, ProgressIcon, SharingIcon } from './N
 import StatusBar from './StatusBar'
 import { ErrorState } from './States'
 
+// Log out: a door with an arrow leaving it. The button's name and tooltip
+// carry the words.
+function LogOutIcon() {
+  return (
+    <svg
+      className="button-icon-svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="M16 17l5-5-5-5" />
+      <path d="M21 12H9" />
+    </svg>
+  )
+}
+
 // Frame for the signed-in screens: logo, language switcher, navigation, and
-// the account (name and logout) at the far right. On phones the navigation is
-// the tab bar at the bottom of the screen (index.css).
+// the account (email and the Log out icon) at the far right. On phones the
+// navigation is the tab bar at the bottom of the screen (index.css).
 export default function Layout() {
   const { user, role, signOut } = useAuth()
   const [logoutError, setLogoutError] = useState('')
@@ -78,10 +100,12 @@ export default function Layout() {
             <span className="account-email">{user?.email}</span>
             <button
               type="button"
-              className="button button-secondary"
+              className="button button-secondary button-icon"
+              aria-label={t('account.logOut')}
+              title={t('account.logOutAs', { email: user?.email ?? '' })}
               onClick={unsent > 0 ? () => setConfirmingLogout(true) : handleLogout}
             >
-              {t('account.logOut')}
+              <LogOutIcon />
             </button>
           </div>
         </div>
