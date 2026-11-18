@@ -1,5 +1,7 @@
 # Logify v5: PWA and Offline Implementation Plan
 
+> **Status:** Implemented on `release/v5`; see the design spec's *As built* section for what changed during the build ([design spec](../specs/2026-11-16-pwa-offline-design.md#as-built-after-approval)).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make Logify an installable phone app (PWA) that opens and works without signal. Saved data covers reading, workouts logged offline are sent exactly once when back online, phones get a bottom tab bar, and the app works with the database in both directions: the live app on the new database, and the new app on an older database with a warning.

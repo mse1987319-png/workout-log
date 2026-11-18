@@ -200,3 +200,35 @@ supabase-js keeps the session in localStorage. It deletes the session only when 
 - CSS details and the tab-bar icon drawings (inline SVG, no icon library).
 - Exact wording of the new texts, in the existing tone.
 - Exact timeouts and intervals, within the ranges above.
+
+## As built (after approval)
+
+What changed or was added while building and in the whole-branch review, compared with the text above. The sections above are left as approved. Short commit ids are on `release/v5`. How it all works now is in [docs/pwa.md](../../pwa.md) and [docs/architecture.md](../../architecture.md#7-mobile-architecture-pwa).
+
+**Changed from the design**
+
+- **The unsaved Log workout form is dropped the moment the outbox holds the workout** (section 4 said: when it is saved or kept). Reason: if the app closed during the up-to-15 s send, the next start would send the outbox copy and also restore the form, and a second Save would make a second workout and email (f3e50a7). If the server then refuses the workout, the form keeps its fields and saves them as the draft again.
+- **Nothing is written to the draft while the form is saving.** Reason: pressing Enter in an exercise name, or a late blur as the fields lock, could write the draft again and bring the workout back after a reload (dfd3230).
+- **The form's fields are locked while saving.** Reason: the form clears once the workout is saved or kept, so anything typed during *Saving…* was lost without a word (ae87305).
+- **A cold start offline uses the stored session at once** (after 3 s when online but slow); section 2 only said the stored session is used when Supabase reports none. Reason: with an expired access token supabase-js reports the session only after its retries give up, about 25 s with no signal, and the app sat on *Checking your session…* (10770c8).
+- **The log-out question counts only workouts that will be sent by themselves** (waiting or sending); section 4 said "waiting". Reason: one that *Couldn't send* is never sent automatically, so it no longer makes Log out ask, and the question closes by itself if the count drops to 0 (ae87305).
+- **The *A new version is ready* line is hidden while a workout is being sent.** Reason: **Update** reloads the page and would cut the send off (on an older database that can mean a second copy) (ec5b239).
+- **When the phone says it is offline, *Last time* and the exercise-name suggestions come from the saved Progress at once**, without a request. Reason: asking the server would only fail after supabase-js's retries, about 7 s (ec5b239).
+- **The language switch is two flags** (Lithuanian, British) right next to the logo, with the names *Lietuvių* and *English* as accessible names; **Log out is an icon** whose tooltip reads *Log out (email)*; the email is cut with … instead of being hidden on the smallest screens (section 6 said logo, LT/EN and Log out). Reason: a tighter phone header that never overlaps (checked at 320–1024 px) (234c413).
+- **If the phone can't keep a workout in the outbox** because its storage is full, online it is sent directly (with no phone id, so not protected against a second copy) and offline the form says it couldn't be kept; the design only said saved data goes first. Reason: never lose a workout, and never say a workout was saved when it wasn't.
+
+**Added to the design**
+
+- **A load that started before a local change never overwrites it:** its answer (data or error) is dropped and the load runs again, with the current data kept on screen. Reason: reconnecting reloads My plans while the outbox sends a workout, and the stale list wiped the row just added (291e217).
+- **A local change always reaches the saved copy, without making its *saved on* time newer** (the design wrote the copy only while fresh data was shown). Reason: on a slow reconnect the saved copy came back without the change (465d4f6).
+- **A workout sent while My plans is closed is added to the saved My plans copy** (`src/offline/plansCache.js`). Reason: only My plans' own listener added it, so a workout sent from the Log workout screen, or by the outbox, was missing offline (fe9956d).
+- **My plans' saved copy also keeps the Log workout plan list (`planOptions`) in step**, unless that list is newer. Reason: offline, the Log screen could miss a plan created on My plans since the warm-up, or offer a deleted one (fe9956d).
+- **A session guard** (`src/lib/sessionGuard.js`) refuses a data request that would go out without the user's token, as if the connection had dropped. Reason: with an expired token supabase-js sends only the project key, Row Level Security answers with empty lists, and a screen would save them over good data. **`schema_version()` passes through it**: anyone may call it and it returns a constant, so the version is learned as soon as the phone is back online (ec5b239).
+- **Each send checks that Supabase holds this user's own session**, not just a usable one. Reason: a workout must never go out under someone else's token on a shared phone.
+- **Workbox `clientsClaim` is on** (`skipWaiting` stays off). Reason: the very first session after installing then works offline; updates still wait for **Update** (ec5b239).
+- **The hourly update check swallows its failure.** Reason: offline it rejected every hour as an unhandled rejection; the next hour simply checks again (ae87305).
+- **Outbox ids work outside a secure context** (a version 4 UUID from `getRandomValues` when `crypto.randomUUID` is missing). Reason: the dev server opened by LAN IP over http has no `randomUUID` (159356d).
+- **An outbox workout left *sending* by a page that closed becomes *waiting* again at the next sign-in.** Reason: a send can't outlive the page that started it.
+- **`schema.sql` of `main` must not be run on a v5 database** (it re-creates the eight-parameter `log_workout()` next to the v5 one, and calls fail with `PGRST203`); a troubleshooting row in [supabase.md](../../supabase.md#troubleshooting) says how to fix it, and the v5 SQL test detects it (88140bb).
+
+**Numbers at the end of the build:** 524 unit tests in 49 files, 7 SQL test files, and the live database is v5 (`schema_version()` returns 5). The Vercel preview of `release/v5` serves `sw.js` and the manifest with `Cache-Control: public, max-age=0, must-revalidate`; production (`main`) is the pre-v5 app until `release/v5` is merged.

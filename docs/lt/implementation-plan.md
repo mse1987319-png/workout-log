@@ -42,7 +42,7 @@ Vizija didesnė nei vertinamas minimumas, o kurse yra keturios paskaitos. Kurkit
 | Automatinės ataskaitos el. paštu | Jokio savo serverio, jokių Edge Functions | Ataskaitos yra eilutės lentelėje `reports`; INSERT paleidžia antrą Database Webhook → Zapier → Gmail. Tas pats šablonas kaip pagrindiniame sraute, jokio serverio kodo. |
 | Suasmenintos rekomendacijos | Jokių Edge Functions (todėl programoje nėra slapto DI rakto) | Taisyklėmis pagrįstos, skaičiuojamos naršyklėje iš istorijos. Neprivaloma DI dalis veikia kaip Zapier žingsnis, kur raktas niekada nepatenka į React ar Vercel. |
 | Vizualizacija | Papildomai: „diagrama iš istorijos“ | Recharts Pažangos ekrane. |
-| Naudojimas telefone sporto salėje | Jokios mobiliosios versijos | Tik prisitaikantis CSS; jokios natyvios programos, jokių PWA darbų. |
+| Naudojimas telefone sporto salėje | Jokios mobiliosios versijos | Tik prisitaikantis CSS; jokios natyvios programos, jokių PWA darbų. *(Vėliau, v5, PWA vis dėlto pridėta: žr. [15 skyrių](#15-v5-telefono-programėlė-veikianti-be-ryšio).)* |
 | — | Jokio TypeScript, mokėjimų, realaus laiko, failų įkėlimo | Tik JavaScript; jokio Supabase Realtime; jokių pažangos nuotraukų ar failų importo. CSV *eksportas* yra atsisiuntimas naršyklėje, o ne įkėlimas. |
 
 ---
@@ -341,7 +341,7 @@ Dėsningumas: rinka padalyta į **asmeninius žurnalus** (tik sportininkui) ir *
 ### Kuo ši platforma išsiskiria
 
 1. **Treneris informuojamas, o ne prašomas pažiūrėti.** El. laiškas per minutę po kiekvienos treniruotės ir periodinė pažangos ataskaita. Trenerių platformos tikisi, kad treneris pats atidarys skydelį. Tai taip pat tiksliai ta automatizacija, kurią vertina kursas.
-2. **Viena nemokama internetinė programa abiem pusėms.** Sportininkas ir treneris naudoja tą patį produktą, be kainos už klientą ir be nieko diegiamo.
+2. **Viena nemokama internetinė programa abiem pusėms.** Sportininkas ir treneris naudoja tą patį produktą, be kainos už klientą ir be nieko diegiamo (nuo v5 ją galima, neprivaloma, įdėti į telefono pradžios ekraną: [15 skyrius](#15-v5-telefono-programėlė-veikianti-be-ryšio)).
 3. **Planai teka abiem kryptimis.** Treneriai priskiria planą daugeliui sportininkų; sportininkai taip pat gali parašyti savo planą ir pasidalyti juo su treneriu atsiliepimui. Trenerių platformos veikia iš viršaus į apačią.
 4. **Jėga ir kardio viename žurnale**, su vienu pažangos vaizdu abiem.
 5. **Paaiškinamos rekomendacijos.** Kiekvienas pasiūlymas nurodo savo taisyklę, skirtingai nei generuojamų treniruočių programėlėse.
@@ -363,3 +363,28 @@ Dėsningumas: rinka padalyta į **asmeninius žurnalus** (tik sportininkui) ir *
 - [Compare TrueCoach vs TrainHeroic (Capterra)](https://www.capterra.com/compare/155784-202308/truecoach-vs-TrainHeroic)
 - [Coaching platform comparison (FitBudd)](https://www.fitbudd.com/compare)
 - [What clients say about coaching apps (Coachway)](https://coachway.io/articles/what-clients-say-about-coaching-apps/)
+
+---
+
+## 15. v5: telefono programėlė, veikianti be ryšio
+
+*Pridėta po keturių paskaitų plano. Aukščiau aprašyti lygiai ir sprendimai yra istorija ir palikti tokie, kokie buvo.*
+
+**Kas.** „Logify“ tapo įdiegiama telefono programėle (PWA), kuri atsidaro ir veikia be ryšio. Matote savo planus, istoriją ir pažangą (treneriai – savo sportininkus) ir galite įrašyti treniruotę. Treniruotė lieka telefone ir, grįžus ryšiui, išsiunčiama kartu su trenerio laišku. Telefonuose meniu yra apatinė kortelių juosta, o antraštė – viena eilutė.
+
+**Kodėl.** „Logify“ naudojama sporto salėje, o salėse ryšys dažnai silpnas arba jo nėra. Iki v5 programa be ryšio neatsidarydavo, esant silpnam ryšiui įstrigdavo ties *Kraunama…*, telefoną nukreipdavo į prisijungimą, kai be ryšio pasibaigdavo prisijungimo raktas, o be ryšio surinkta treniruotė dingdavo. Apimties eilutė 2 skyriuje (*Naudojimas telefone sporto salėje*: tik prisitaikantis CSS) tiko vertinamiems lygiams; v5 ją peržiūri, kai jie jau baigti.
+
+**Kaip, po vieną eilutę.**
+
+- Service worker (vite-plugin-pwa, Workbox) telefone laiko programos failus, todėl kiekvienas ekranas atsidaro be ryšio.
+- Kiekvienas ekranas, kai tinklo nėra arba jis lėtas, rodo paskutinius išsaugotus duomenis su jų išsaugojimo laiku; prisijungęs naudotojas be ryšio lieka prisijungęs.
+- Be ryšio įrašyta treniruotė laukia siuntimo eilėje telefone ir siunčiama iš eilės, kol programa atidaryta.
+- Duomenų bazė ją išsaugo lygiai vieną kartą: `log_workout()` priima neprivalomą id ir įrašymo laiką iš telefono, todėl pakartotinis siuntimas nieko neįterpia, o Zap paleidžiamas vieną kartą. `schema_version()` leidžia programai veikti, su įspėjimu, ir su senesne duomenų baze.
+
+**Kas lieka kaip buvo.** Technologijų rinkinys ir kurso taisyklės: jokio serverio kodo ar Edge Functions, jokios naujos vykdymo priklausomybės, Row Level Security nepakeistas, abu Zap nepakeisti (be ryšio įrašyta treniruotė siunčiama laišku, kai išsiunčiama: [zapier.md](zapier.md)). Gyva programa iš laikų prieš v5 toliau veikia su v5 duomenų baze.
+
+**Įrašai.** Patvirtintas projektas yra [superpowers/specs/2026-11-16-pwa-offline-design.md](../superpowers/specs/2026-11-16-pwa-offline-design.md) (su skyriumi *As built* apie tai, kas keitėsi kūrimo metu), o planas pagal užduotis – [superpowers/plans/2026-11-16-pwa-offline.md](../superpowers/plans/2026-11-16-pwa-offline.md) (abu angliškai). Kaip tai veikia ir kokios ribos: [pwa.md](pwa.md); dalys viename paveikslėlyje: [architecture.md](architecture.md#7-mobilioji-architektūra-pwa); kaip išleista: [deployment.md](deployment.md#7-v5-išleidimas).
+
+## Susiję
+
+[architecture.md](architecture.md) (kaip sukurta) · [pwa.md](pwa.md) (telefono programėlė) · [supabase.md](supabase.md) (duomenų bazė) · [deployment.md](deployment.md) (Vercel ir v5 išleidimas) · [zapier.md](zapier.md) (abu Zap) · [setup.md](setup.md) (vietinis paruošimas)

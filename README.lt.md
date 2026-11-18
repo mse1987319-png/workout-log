@@ -6,9 +6,9 @@
 
 Baigiamasis kurso *„Pilnas ciklas nuo idėjos iki produkto“* projektas: viena programa, kuri veikia internete, saugo duomenis, atskiria naudotojus ir el. paštu praneša apie kiekvieną svarbų įvykį.
 
-> **Būsena: pagrindinis ir išplėstinis lygiai sukurti.** Kode yra registracija ir prisijungimas, planai, treniruotės su serijomis, pažangos diagramos, tikslai ir pasiūlymai, ataskaitos ir dalijimasis su treneriu. Supabase Database Webhooks siunčia kiekvieną naują ar redaguotą treniruotę (Zap 1) ir kiekvieną ataskaitą (Zap 2) į Zapier. Dar reikia: patikimumo patikrų (klaidų tvarkyklė, kaina) ir demonstracijos.
+> **Būsena: pagrindinis ir išplėstinis lygiai sukurti.** Kode yra registracija ir prisijungimas, planai, treniruotės su serijomis, pažangos diagramos, tikslai ir pasiūlymai, ataskaitos ir dalijimasis su treneriu. Supabase Database Webhooks siunčia kiekvieną naują ar redaguotą treniruotę (Zap 1) ir kiekvieną ataskaitą (Zap 2) į Zapier. Patikimumo patikros (klaidų tvarkyklės, kaina) ir gyva demonstracija atliktos ir aprašytos pristatyme `_task/results/Logify_LT.pptx` (EN: `Logify_EN.pptx`).
 >
-> **v5: telefono programėlė, veikianti be ryšio.** „Logify“ galima įdiegti telefono pradžios ekrane, ji atsidaro be ryšio, rodo paskutinius gautus duomenis ir leidžia įrašyti treniruotę be ryšio; grįžus ryšiui treniruotė išsiunčiama, o treneris gauna laišką lygiai vieną kartą. Žr. [docs/lt/pwa.md](docs/lt/pwa.md).
+> **v5: telefono programėlė, veikianti be ryšio.** „Logify“ galima įdiegti telefono pradžios ekrane, ji atsidaro be ryšio, rodo paskutinius gautus duomenis ir leidžia įrašyti treniruotę be ryšio; grįžus ryšiui treniruotė išsiunčiama, o treneris gauna laišką lygiai vieną kartą. Žr. [docs/lt/pwa.md](docs/lt/pwa.md); projektas ir planas (angliškai) yra [docs/superpowers/](docs/superpowers/specs/2026-11-16-pwa-offline-design.md).
 >
 > **Veikianti svetainė:** https://workout-log-murex-three.vercel.app/
 >
@@ -44,7 +44,7 @@ flowchart LR
   S -->|webhook: INSERT į reports| Z2[Zap 2] --> G3[Gmail<br/>pažangos ataskaita]
 ```
 
-Visas vaizdas pateiktas [docs/lt/architecture.md](docs/lt/architecture.md): visų aštuonių lentelių **ERD** (dvi pradinės užduoties lentelės, `plans` ir `workouts`, paryškintos), **diegimo ir infrastruktūros diagrama** ir kas ką gali skaityti.
+Visas vaizdas pateiktas [docs/lt/architecture.md](docs/lt/architecture.md): visų aštuonių lentelių **ERD** (dvi pradinės užduoties lentelės, `plans` ir `workouts`, paryškintos), **diegimo ir infrastruktūros diagrama**, kas ką gali skaityti ir telefono pusė skyriuje **[Mobilioji architektūra (PWA)](docs/lt/architecture.md#7-mobilioji-architektūra-pwa)**: įdiegta programėlė, ką ji laiko telefone ir kur kreipiasi į tinklą.
 
 - **Duomenys**: A lentelė `plans` → B lentelė `workouts` (`plan_id → plans.id`), plius `workout_sets` – jėgos treniruotės serijoms, `reports` – treneriui išsiųstoms ataskaitoms, `goals`, o dalijimuisi – `profiles` (vaidmuo), `instructor_links` ir `plan_assignments`; visa tai aprašyta [`supabase/schema.sql`](supabase/schema.sql).
 - **Įvykiai**: įrašyta treniruotė yra vienas `INSERT` į `workouts` (Zap 1); išsiųsta ataskaita – vienas `INSERT` į `reports` (Zap 2).
@@ -61,7 +61,7 @@ Visas vaizdas pateiktas [docs/lt/architecture.md](docs/lt/architecture.md): vis�
 | Diegimas | [Vercel](https://vercel.com) |
 | Automatizacija | [Zapier](https://zapier.com) (2 Zap: Webhook → Filter → Paths → Gmail; ataskaitos webhook → Gmail) |
 | El. paštas | [Gmail](https://www.google.com/gmail/about/) |
-| Testai | [Vitest](https://vitest.dev) + [Testing Library](https://testing-library.com) |
+| Testai | [Vitest](https://vitest.dev) + [Testing Library](https://testing-library.com): 524 vienetų testai 49 failuose, su netikru serveriu be tinklo; taip pat 7 SQL testų failai `supabase/tests/`, kurių kiekvienas pats save atšaukia |
 | Linteris | [oxlint](https://oxc.rs/docs/guide/usage/linter.html) |
 | Dokumentacija | [Notion](https://www.notion.so) ([projekto puslapis](https://app.notion.com/p/Logify-Projekto-dokumentacija-4160ecfaf1178121a9a7ded3cfc6e929)) + šis README; diagramos [Mermaid](https://mermaid.js.org) |
 | DI įrankiai | [Claude](https://claude.ai) per [Claude Code](https://claude.com/claude-code): Claude Opus 5.5, Claude Sonnet 5.5; [Google Gemini](https://gemini.google.com) |
@@ -117,7 +117,9 @@ cp .env.example .env.local     # tada įrašykite dvi reikšmes
 npm run dev                    # http://localhost:5173
 ```
 
-Supabase projektą reikia vieną kartą paruošti: paleiskite `supabase/schema.sql`, tada `supabase/seed.sql` demonstraciniams duomenims ir išjunkite *Confirm email* ([docs/lt/supabase.md](docs/lt/supabase.md)). Prieš v5 paruoštam projektui pakanka dar kartą paleisti `supabase/schema.sql` ([kaip](docs/lt/supabase.md#v5-pritaikymas-esamam-projektui)).
+Supabase projektą reikia vieną kartą paruošti: paleiskite `supabase/schema.sql`, tada `supabase/seed.sql` demonstraciniams duomenims ir išjunkite *Confirm email* ([docs/lt/supabase.md](docs/lt/supabase.md)). Prieš v5 paruoštam projektui pakanka dar kartą paleisti `supabase/schema.sql` ([kaip](docs/lt/supabase.md#v5-pritaikymas-esamam-projektui)); niekada nepaleiskite senesnio (ankstesnio nei v5) `schema.sql` v5 duomenų bazėje ([kodėl](docs/lt/supabase.md#trikčių-šalinimas)).
+
+`npm run dev` neturi service worker, todėl įdiegiamą programėlę, veikiančią be ryšio, savo kompiuteryje išbandykite su `npm run build` ir `npm run preview`, tada DevTools → Application ([žingsniai](docs/lt/setup.md#išbandykite-telefono-programėlę-vietoje)). Tikram telefonui reikia HTTPS: naudokite Vercel peržiūrą arba veikiančią svetainę.
 
 ## Demonstracinės paskyros
 
@@ -155,14 +157,15 @@ Telefono programėlei nauji kintamieji nereikalingi. Supabase `service_role` rak
 | Failas | Turinys |
 |---|---|
 | [Notion: projekto dokumentacija](https://app.notion.com/p/Logify-Projekto-dokumentacija-4160ecfaf1178121a9a7ded3cfc6e929) | Apimties kortelė, užduočių lentelė, sprendimų žurnalas, klaidų žurnalas, testų lentelė, architektūros ir ERD diagramos, demonstracinės paskyros |
-| [docs/user-manual/](docs/user-manual/README.md) | **Naudotojo vadovai** su ekrano nuotraukomis sportininkams ir treneriams: [sportininko](docs/user-manual/lt/athlete.md), [trenerio](docs/user-manual/lt/instructor.md) |
-| [docs/lt/architecture.md](docs/lt/architecture.md) | **ERD**, **diegimo ir infrastruktūros diagrama**, kodo sluoksniai, duomenų srautai, veikimo be ryšio sluoksnis su sekos diagrama, prieigos modelis (kaip sukurta) |
-| [docs/lt/pwa.md](docs/lt/pwa.md) | **Telefono programėlė**: įdiegimas, kas veikia be ryšio, išsaugoti duomenys, siuntimo eilė ir „lygiai vieną kartą“, senesnės duomenų bazės įspėjimas, bandymas be ryšio, piktogramų atkūrimas, ribos |
-| [docs/lt/implementation-plan.md](docs/lt/implementation-plan.md) | Apimties lygiai, duomenų modelis, Zapier dizainas, testų lentelė, paskaitų planas |
-| [docs/lt/setup.md](docs/lt/setup.md) | Įrankiai, paketai ir aplinkos paruošimas |
+| [docs/user-manual/](docs/user-manual/README.md) | **Naudotojo vadovai** su ekrano nuotraukomis sportininkams ir treneriams: [sportininko](docs/user-manual/lt/athlete.md), [trenerio](docs/user-manual/lt/instructor.md), įskaitant įdiegimą telefone ir „Logify“ naudojimą be ryšio |
+| [docs/lt/architecture.md](docs/lt/architecture.md) | **ERD**, **diegimo ir infrastruktūros diagrama**, kodo sluoksniai, duomenų srautai, veikimo be ryšio sluoksnis su sekos diagrama, prieigos modelis (kaip sukurta) ir **[Mobilioji architektūra (PWA)](docs/lt/architecture.md#7-mobilioji-architektūra-pwa)** komponentų diagrama |
+| [docs/lt/pwa.md](docs/lt/pwa.md) | **Telefono programėlė**: įdiegimas, kas veikia be ryšio, išsaugoti duomenys, siuntimo eilė ir „lygiai vieną kartą“, senesnės duomenų bazės įspėjimas, bandymas be ryšio, piktogramų atkūrimas, ribos ir kuris modulis ką daro |
+| Projektavimo įrašai (angliškai): [v5 projektas](docs/superpowers/specs/2026-11-16-pwa-offline-design.md) · [v5 planas](docs/superpowers/plans/2026-11-16-pwa-offline.md) | Kodėl v5 sukurta taip: patvirtintas projektas (su skyriumi *As built* apie tai, kas keitėsi kūrimo metu) ir planas pagal užduotis |
+| [docs/lt/implementation-plan.md](docs/lt/implementation-plan.md) | Apimties lygiai, duomenų modelis, Zapier dizainas, testų lentelė, paskaitų planas ir trumpas v5 skyrius |
+| [docs/lt/setup.md](docs/lt/setup.md) | Įrankiai, paketai ir aplinkos paruošimas; telefono programėlės bandymas vietoje; ekrano nuotraukų įrankis |
 | [docs/lt/supabase.md](docs/lt/supabase.md) | Lentelės, Row Level Security, registracijos ir URL nustatymai, v5 duomenų bazės pakeitimas; 1 ir 4 testai |
-| [docs/lt/deployment.md](docs/lt/deployment.md) | Vercel: aplinkos kintamieji, Supabase adresai, inkognito testas |
-| [docs/lt/zapier.md](docs/lt/zapier.md) | Webhook → Zap → Gmail, klaidų tvarkyklė, kaina, sutvarkymas; 2, 3 ir 5 testai |
+| [docs/lt/deployment.md](docs/lt/deployment.md) | Vercel: aplinkos kintamieji, Supabase adresai, inkognito testas, PWA per Vercel (HTTPS, `sw.js` talpinimas), v5 išleidimas |
+| [docs/lt/zapier.md](docs/lt/zapier.md) | Webhook → Zap → Gmail, klaidų tvarkyklė, kaina, sutvarkymas; 2, 3 ir 5 testai; kada ateina laiškas apie be ryšio įrašytą treniruotę |
 
 ## Saugyklos struktūra
 
@@ -183,10 +186,10 @@ vite.config.js        Vite, testai ir PWA manifestas bei service worker
 supabase/schema.sql   lentelės + Row Level Security + funkcijos (v5: log_workout su p_id ir p_logged_at, schema_version())
 supabase/seed.sql     demonstracinės paskyros ir duomenys naujam, tuščiam projektui
 supabase/tests/       SQL testai (kiekvienas pats save atšaukia)
-docs/                 vadovai (žr. Dokumentacija); lietuviški – docs/lt/
+docs/                 vadovai (žr. Dokumentacija); lietuviški – docs/lt/; docs/superpowers/ – v5 projektas (specs/) ir planas (plans/)
 scripts/setup.ps1     automatinis paruošimas „Windows“ sistemai (saugu paleisti iš naujo)
 vercel.json           leidžia kliento pusės maršrutams išlikti perkrovus puslapį
-_task/                kurso užduočių skaidrės (LT / EN) ir užklausos, naudotos idėjai apibrėžti
+_task/                kurso užduočių skaidrės (LT / EN), užklausos, naudotos idėjai apibrėžti, ir baigiamojo darbo pristatymas (results/)
 ```
 
 ## Veiksmų planas

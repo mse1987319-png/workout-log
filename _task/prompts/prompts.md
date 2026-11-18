@@ -40,3 +40,18 @@ presendation (apart from appendix with live demo) should take 5-10min. Apply
 sport-inspided theme.
 Stop and ask if you have any questions or alternate paths.
 
+___
+
+### Phone app (PWA) with offline capabilities (v5)
+
+create a new branch v5 from main. Create a PWA from it. Add offline capabilities.
+
+___
+
+### Update the docs and the presentation for v5
+
+Update all new docs MD, user manuals, add cross-linking to new MDs where
+appropriate. Do not touch Notion yet, but update result pptx, add mobile architectre
+PWA, add mobile screenshots to the appendex (use existing or create new appendix).
+Upate all related screenshots in results as well. Create a separate branch from v5,
+when done, open PR to merge docs to the v5.

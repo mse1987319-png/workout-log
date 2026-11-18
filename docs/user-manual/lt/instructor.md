@@ -56,7 +56,7 @@ Sportininkai prisijungia prie jūsų naudodami asmeninį **kodą**. Jis rodomas 
 
 1. Atidarykite **Mano sportininkai** ir perskaitykite savo kodą (šešios raidės ir skaitmenys).
 2. Perduokite jį sportininkui.
-3. Sportininkas atidaro **Dalijimasis**, įveda kodą lauke **Trenerio kodas** ir paspaudžia **Dalytis**.
+3. Sportininkas atidaro **Dalijimasis**, įveda kodą lauke **Trenerio kodas** ir paspaudžia **Dalytis** (žr. [sportininko vadovą](athlete.md#7-dalijimasis-su-treneriu)).
 4. Jis atsiranda sąraše **Sportininkai, besidalijantys su jumis**.
 
 Sportininkas bet kada gali nustoti dalytis, tada jis dingsta iš jūsų sąrašo. Jei sportininko nematote, paprašykite jo patikrinti kodą ir ar ekrane buvo parašyta *Dabar dalijatės su …*.
@@ -95,7 +95,7 @@ Savo planus galite **Redaguoti** arba **Ištrinti**. Plano, pagal kurį sportini
 
 ![Planas priskirtas](../images/lt/103-assigned.png)
 
-Tą patį planą galima priskirti daugeliui sportininkų; kiekvienas pagal jį įrašo savo treniruotes, o jų ekrane **Mano planai** jis rodomas su užrašu **Priskyrė jūsų treneris**. Sportininkas jo negali redaguoti ar ištrinti.
+Tą patį planą galima priskirti daugeliui sportininkų; kiekvienas pagal jį įrašo savo treniruotes, o jų ekrane **Mano planai** jis rodomas su užrašu **Priskyrė jūsų treneris** (žr. [kaip sportininkai mato savo planus](athlete.md#3-planai)). Sportininkas jo negali redaguoti ar ištrinti.
 
 Norėdami planą atimti, šalia jo paspauskite **Atšaukti priskyrimą**. Planas išnyksta iš sportininko skilties **Mano planai**. Jau įrašytos treniruotės neištrinamos ir lieka sportininko pažangos skaičiuose, bet po tuo planu jos nebesirodo. Jei visi jūsų planai jau priskirti šiam sportininkui, kortelė tai parašo; jei planų dar neturite, ji nukreipia į **Sukurkite planą**.
 
@@ -140,7 +140,13 @@ Laiškus gaunate tik apie sportininkus, kurie **dalijasi su jumis** (jie skiltyj
 
 ## 8. Telefone ir be ryšio
 
-**Apatinė juosta.** Telefone (ekrane iki 640 px pločio) meniu tampa juosta ekrano apačioje: piktograma ir užrašas skiltims **Mano planai**, **Įrašyti**, **Pažanga** ir **Mano sportininkai**, o skiltis, kurioje esate, paryškinta akcento spalva. Antraštė susitraukia į vieną eilutę (logotipas, **LT / EN**, **Atsijungti**). Po antrašte atsiranda būsenos eilutė, kai nėra ryšio, treniruotės laukia išsiuntimo arba paruošta nauja versija.
+**Apatinė juosta.** Telefone (ekrane iki 640 px pločio) meniu tampa juosta ekrano apačioje: piktograma ir užrašas skiltims **Mano planai**, **Įrašyti**, **Pažanga** ir **Mano sportininkai**, o skiltis, kurioje esate, paryškinta akcento spalva. Antraštė susitraukia į vieną eilutę: logotipas, dvi kalbos vėliavėlės šalia jo ir jūsų paskyra su **Atsijungti** piktograma (užvedus ant jos žymeklį, rodoma *Atsijungti* ir jūsų el. paštas; jei vietos neužtenka, el. paštas sutrumpinamas „…“). Po antrašte atsiranda būsenos eilutė, kai nėra ryšio, treniruotės laukia išsiuntimo arba paruošta nauja versija.
+
+![Mano sportininkai telefone su apatine kortelių juosta](../images/lt/111-phone-athletes.png)
+
+*Mano sportininkai telefone: jūsų kodas ir sportininkų sąrašas su apatine kortelių juosta.*
+
+Kaip tai veikia iš vidaus ir kokios ribos: [Kaip tai veikia (techniškai)](../../lt/pwa.md).
 
 **Įdiekite.** „Logify“ galima įdėti į pradžios ekraną, ir ji atsidaro per visą ekraną kaip programėlė. Kortelė skiltyje **Mano planai** parodo, kaip tai padaryti „Android“ ir iPhone; žingsniai tokie patys kaip sportininkams: žr. [Įdiegimas telefone](athlete.md#9-įdiegimas-telefone). iPhone įdiegta programėlė turi savo atmintį, todėl joje prisijunkite dar kartą.
 
@@ -156,9 +162,11 @@ Laiškus gaunate tik apie sportininkus, kurie **dalijasi su jumis** (jie skiltyj
 
 **Jūsų pačių treniruotės.** Jei patys registruojate treniruotes, įrašymas veikia ir be ryšio: ji laikoma telefone kaip **Laukia išsiuntimo** po savo planu ir išsiunčiama, kai grįžta ryšys. Smulkiau: [„Logify“ naudojimas be ryšio](athlete.md#10-logify-naudojimas-be-ryšio).
 
-**Laiškai apie sportininkų treniruotes.** Kai sportininkas įrašo treniruotę be ryšio, laišką gaunate, kai jo telefonas ją išsiunčia, o ne tada, kai jis paspaudė Išsaugoti; gaunate lygiai vieną laišką apie kiekvieną treniruotę, kad ir kiek kartų siuntimas būtų kartojamas. Laiške ir sportininko puslapyje rodomas laikas, kada sportininkas paspaudė Išsaugoti (jei tai buvo per pastarąsias 30 dienų ir duomenų bazė atnaujinta).
+**Laiškai apie sportininkų treniruotes.** Kai sportininkas įrašo treniruotę be ryšio, laišką gaunate, kai jo telefonas ją išsiunčia, o ne tada, kai jis paspaudė Išsaugoti; gaunate lygiai vieną laišką apie kiekvieną treniruotę, kad ir kiek kartų siuntimas būtų kartojamas. Laiške ir sportininko puslapyje rodomas laikas, kada sportininkas paspaudė Išsaugoti (jei tai buvo per pastarąsias 30 dienų ir duomenų bazė atnaujinta). Ką mato pats sportininkas, aprašyta [sportininko vadove](athlete.md#10-logify-naudojimas-be-ryšio).
 
-**Nauja versija.** Būsenos eilutė parašo *Paruošta nauja Logify versija.* su **Atnaujinti**; „Logify“ niekada pati nesiperkrauna.
+**Nauja versija.** Būsenos eilutė parašo *Paruošta nauja Logify versija.* su **Atnaujinti**; „Logify“ niekada pati nesiperkrauna, o eilutė palaukia, kol siunčiama kuri nors jūsų pačių treniruotė.
+
+**Atsijungimas.** Jei patys be ryšio įrašėte treniruočių, Atsijungti pirmiausia paklausia, kai kai kurios dar laukia išsiuntimo arba siunčiamos: jos lieka šiame telefone ir išsiunčiamos, kai kitą kartą čia prisijungsite.
 
 ## 9. Pranešimai ir ką daryti
 

@@ -127,11 +127,11 @@ flowchart LR
 
   subgraph VERCEL["Vercel"]
     BUILD["Build: npm run build"]
-    CDN["Static hosting + CDN<br/>public URL"]
+    CDN["Static hosting + CDN<br/>public URL, HTTPS<br/>app files, sw.js, manifest, icons"]
     VENV["Env vars (build time)<br/>VITE_SUPABASE_URL<br/>VITE_SUPABASE_ANON_KEY"]
   end
 
-  USER(["User's browser<br/>athlete or instructor"])
+  USER(["User's browser or installed phone app<br/>athlete or instructor<br/>service worker + saved data on the phone"])
 
   subgraph SB["Supabase project, eu-west-1"]
     AUTH["Auth<br/>email + password"]
@@ -154,7 +154,7 @@ flowchart LR
   MAIN -->|"production deployment"| BUILD
   VENV --> BUILD
   BUILD --> CDN
-  USER -->|HTTPS| CDN
+  USER -->|"HTTPS: app files, service worker"| CDN
   USER -->|"supabase-js, anon key + user JWT"| AUTH
   USER --> API
   API --> DB
@@ -172,10 +172,12 @@ flowchart LR
 | Piece | Runs on | What it does |
 |---|---|---|
 | React app | Vercel (static files on a CDN) | Everything the user sees. It talks to Supabase directly from the browser |
+| Service worker and manifest | Built by Vercel's build (vite-plugin-pwa), served by Vercel like any static file, then kept on the phone | Make Logify installable and let it open without signal. They need HTTPS, which Vercel gives to production and to every preview. See [deployment.md](deployment.md#6-the-phone-app-pwa-on-vercel) |
+| Phone app (PWA) | The user's phone | The installed app: the app's files in the service worker's cache, and saved data, the outbox and the draft in `localStorage`. See [section 7](#7-mobile-architecture-pwa) |
 | Auth, API, database | Supabase, EU region | Accounts, data, access rules, and the webhooks |
 | Automation | Zapier | Turns a webhook into an email (the Filter and Paths pick the subject by `workouts.type`) |
 | Email | Gmail | Delivers to the instructor |
-| Source and review | GitHub | One `feature/…` branch and pull request per feature; a push to `main` deploys production, every pull request gets a preview |
+| Source and review | GitHub | One `feature/…` branch and pull request per feature; a push to `main` deploys production, every pull request gets a preview (also over HTTPS, so a real phone can install it and test it offline) |
 | Documentation | Notion and this repo | Task table, decisions, errors, tests |
 
 ### Where secrets live
@@ -229,7 +231,7 @@ Row Level Security is the access control; the browser never filters by user.
 
 ## 6. The offline layer
 
-Since v5 Logify is an installable phone app (a PWA) that opens and works without signal: you can see your plans, history and progress (instructors: their athletes) and log a workout. A workout logged offline waits on the phone and is sent, with the instructor's email, when the signal returns. The full story, with the limits and how to test it, is in [pwa.md](pwa.md).
+Since v5 Logify is an installable phone app (a PWA) that opens and works without signal: you can see your plans, history and progress (instructors: their athletes) and log a workout. A workout logged offline waits on the phone and is sent, with the instructor's email, when the signal returns. The full story, with the limits and how to test it, is in [pwa.md](pwa.md); the parts and their network edges are drawn in [section 7](#7-mobile-architecture-pwa).
 
 | Part | Where | What it does |
 |---|---|---|
@@ -237,14 +239,14 @@ Since v5 Logify is an installable phone app (a PWA) that opens and works without
 | Saved data | `src/offline/savedData.js`, `src/offline/plansCache.js`, `src/lib/useLoad.js` | `useLoad` asks the network first and saves each result per user; the saved copy is shown when the phone is offline, the request fails, or it takes over 4 s. My plans' copy keeps the Log workout plan list in step and gets every sent workout |
 | Warm-up and hints | `src/offline/warmUp.js`, `src/offline/hints.js` | Saves plan options and Progress right after sign-in; offline, exercise names and *Last time* come from the saved Progress |
 | Outbox | `src/offline/outbox.js`, `src/offline/sync.js` | Workouts logged on the phone, kept until the server has them; sent in order, one at a time |
-| Draft | `src/offline/draft.js` | The half-filled Log workout form, kept as you type |
+| Draft | `src/offline/draft.js` | The half-filled Log workout form, kept as you type and dropped as soon as the outbox holds the workout |
 | Database version | `src/offline/dbVersion.js`, `src/api/schema.js` | Asks `schema_version()` and remembers the answer; an older database gets a warning and the old way of sending |
-| Signed-in offline | `src/auth/AuthProvider.jsx`, `src/auth/storedSession.js`, `src/lib/sessionGuard.js` | Uses the stored session when supabase-js can't refresh it; never lets a data request go out without a signed-in session |
-| Layout | `src/components/Layout.jsx`, `src/components/StatusBar.jsx`, `src/index.css` | A bottom tab bar on phones (640 px and below), and the status line under the header |
+| Signed-in offline | `src/auth/AuthProvider.jsx`, `src/auth/storedSession.js`, `src/lib/sessionGuard.js` | Uses the stored session at once when the phone is offline (after 3 s on a slow connection) and whenever supabase-js can't refresh it; never lets a data request go out without the user's token |
+| Layout | `src/components/Layout.jsx`, `src/components/StatusBar.jsx`, `src/components/LanguageSwitcher.jsx`, `src/index.css` | The header (logo, the two language flags, the Log out icon), a bottom tab bar on phones (640 px and below), and the status line under the header |
 
 Everything is per user (`logify.cache.v1.<user id>.…`, `logify.outbox.v1.<user id>`, `logify.draft.v1.<user id>`), so two people on one phone never see each other's data, and log out removes that user's saved data. The database stays the only place that decides who may read what: the saved copy is the same data the user was already allowed to read.
 
-**Logging a workout offline.** Save writes the workout to the outbox with an id made on the phone and the time Save was pressed, then sends it. The database function `log_workout()` takes both as the optional parameters `p_id` and `p_logged_at`. If a workout with that id exists, the function returns it and inserts nothing, so the workout is saved, and the webhook fires, exactly once however many times a send is repeated.
+**Logging a workout offline.** Save writes the workout to the outbox with an id made on the phone and the time Save was pressed, then sends it. The database function `log_workout()` takes both as the optional parameters `p_id` and `p_logged_at`. If a workout with that id exists, the function returns it and inserts nothing, so the workout is saved, and the webhook fires, exactly once however many times a send is repeated. The unsaved form is dropped as soon as the outbox holds the workout, so a restart in between never brings back a form whose workout is already on its way.
 
 ```mermaid
 sequenceDiagram
@@ -272,6 +274,83 @@ The outbox also decides what to do with a refusal: a missing answer, a timeout, 
 
 **Both directions are compatible.** The live app from before v5 keeps working against the v5 database, because the new parameters are optional and the other parts of the database are unchanged. The v5 app against an older database works too, with a warning: see [pwa.md](pwa.md#5-the-older-database-warning).
 
+## 7. Mobile architecture (PWA)
+
+The phone side of Logify in one picture: what is on the phone, what each part uses, and the only places where it talks to the network. Section 6 follows one workout through these parts; this section shows the parts themselves.
+
+```mermaid
+flowchart TB
+  subgraph VERCEL["Vercel: static files over HTTPS"]
+    FILES["App files, sw.js,<br/>manifest.webmanifest, icons"]
+  end
+
+  subgraph PHONE["The phone: Logify installed from the home screen"]
+    SW["Service worker (sw.js)<br/>precache of the app shell,<br/>update prompt"]
+
+    subgraph APP["The app, opened from the precache"]
+      FORM["Log workout form"]
+      LOAD["useLoad<br/>network first,<br/>saved copy as the fallback"]
+      SYNC["Outbox + sync<br/>in order, one at a time"]
+      BG["Background sync<br/>version check, warm-up,<br/>send the outbox"]
+      AUTH["AuthProvider<br/>stored session when offline"]
+      GUARD["Session guard<br/>no data request without<br/>the user's token"]
+    end
+
+    subgraph LS["localStorage, one set per user"]
+      CACHE[("Saved data")]
+      OUTBOX[("Outbox")]
+      DRAFT[("Draft")]
+      DBV[("Database version")]
+    end
+  end
+
+  subgraph SB["Supabase"]
+    REST["REST API (PostgREST) + Auth"]
+    LOGW["log_workout(p_id, p_logged_at)<br/>saves a workout once"]
+    VER["schema_version()"]
+    HOOK["Database Webhook<br/>fires on the INSERT"]
+  end
+
+  ZAP["Zapier, then Gmail<br/>the instructor's email"]
+
+  FILES -->|"HTTPS: install and update checks"| SW
+  SW -->|"serves the app, also offline"| APP
+  FORM -->|"as you type"| DRAFT
+  FORM -->|"Save"| SYNC
+  LOAD <-->|"saves each result, shows it when offline or slow"| CACHE
+  SYNC <-->|"keeps each workout until the server has it"| OUTBOX
+  BG -->|"warm-up after sign-in"| CACHE
+  BG -->|"asks and remembers the answer"| DBV
+  BG -->|"on start, when back online, in view, every 30 s"| SYNC
+  LOAD --> GUARD
+  SYNC --> GUARD
+  AUTH --> GUARD
+  BG --> GUARD
+  GUARD -->|"HTTPS, with the user's token"| REST
+  REST --> LOGW
+  REST --> VER
+  LOGW -->|"INSERT"| HOOK
+  HOOK -->|"HTTPS POST, JSON"| ZAP
+```
+
+| Part | Where | What it does |
+|---|---|---|
+| App shell | Cache Storage, filled by the service worker from Vercel | The HTML, every JavaScript chunk (also the ones loaded on demand), the CSS and the icons. Opening any address, such as `/progress`, is answered from it, so the app opens with no network |
+| `useLoad` | `src/lib/useLoad.js` | Every screen that reads data. Asks the network first and saves the result; shows the saved copy when the phone is offline, the request fails or it takes over 4 s. A load that started before a local change never overwrites that change: its answer is dropped and the load runs again |
+| Outbox and sync | `src/offline/outbox.js`, `src/offline/sync.js` | A workout is written to the outbox before it is sent, and removed only when the server has returned it |
+| Background sync | `src/offline/useBackgroundSync.js` | Despite the name it runs only while the app is open: it checks the database version, saves what logging offline needs, and sends the outbox when the app starts, the connection returns, the app comes into view, and every 30 s while a workout waits. Nothing is sent while the app is closed |
+| AuthProvider | `src/auth/AuthProvider.jsx` | Keeps the user signed in on this phone with the session stored by supabase-js, also when the access token has expired and can't be refreshed offline. Tells the offline code whose data it is |
+| Session guard | `src/lib/sessionGuard.js` | The `fetch` that supabase-js uses. A data request that would go out without the user's token (only the project key) is refused like a dropped connection, so Row Level Security's empty answer never replaces saved data. Sign-in requests and `schema_version()` pass |
+| `localStorage` | `logify.cache.v1.…`, `logify.outbox.v1.…`, `logify.draft.v1.…`, `logify.dbVersion` | All saved state. The first three are per user, and log out wipes the saved data and the draft; the outbox stays, so waiting workouts aren't lost |
+| `log_workout(p_id, p_logged_at)` | `supabase/schema.sql` | Saves the workout, its sets and one webhook, once per id, with the time Save was pressed |
+| `schema_version()` | `supabase/schema.sql` | Returns `5`. Anyone may call it; an older database doesn't have it, and the app then warns and sends the old way |
+
+**Without signal,** every arrow that crosses the phone's border (to Vercel and, through the session guard, to Supabase) simply gets no answer. Everything inside the phone keeps working: the app opens from the precache, screens read their saved copies, the form writes the draft, and Save puts the workout in the outbox. When the connection returns, background sync sends the outbox through the guard, `log_workout()` saves each workout once, and the webhook sends the instructor's email then.
+
+**Security stays on the server.** Nothing on the phone widens what a user may read: a saved copy is data the user was already allowed to read, kept under their own id, and every request still carries their own token ([section 5](#5-who-may-read-what)).
+
+More: [pwa.md](pwa.md) (what is kept where, the limits, how to test), [deployment.md](deployment.md#6-the-phone-app-pwa-on-vercel) (HTTPS, how `sw.js` is cached) and the [design record](superpowers/specs/2026-11-16-pwa-offline-design.md).
+
 ## Related
 
-[supabase.md](supabase.md) (tables, policies, sharing, v5) · [pwa.md](pwa.md) (the phone app and offline use) · [deployment.md](deployment.md) (Vercel) · [zapier.md](zapier.md) (both Zaps) · [setup.md](setup.md) (local setup)
+[supabase.md](supabase.md) (tables, policies, sharing, v5) · [pwa.md](pwa.md) (the phone app and offline use) · [deployment.md](deployment.md) (Vercel, the PWA on Vercel, releasing v5) · [zapier.md](zapier.md) (both Zaps) · [setup.md](setup.md) (local setup, testing the PWA) · [implementation-plan.md](implementation-plan.md) (scope, and the v5 section) · the v5 [design](superpowers/specs/2026-11-16-pwa-offline-design.md) and [plan](superpowers/plans/2026-11-16-pwa-offline.md)

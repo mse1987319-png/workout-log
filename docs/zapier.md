@@ -15,6 +15,14 @@ Log workout in the app  →  INSERT into workouts
 
 **Who gets the email.** Not a fixed address in Zapier: the database decides. A trigger on `workouts` (and on `reports`, for Zap 2) writes the emails of every instructor the athlete shares with into the row's `instructor_emails` column, so the webhook carries them and Gmail's *To* is just that field. An athlete who shares with nobody has no recipient: the Filter stops the run, with no email and no task. Nobody can type a recipient, because only the trigger sets the column.
 
+**Workouts logged offline (v5).** A workout logged on a phone without signal reaches the database, and so Zapier, only when the phone sends it. The email therefore arrives when the workout is *sent* (when the phone has signal again and the app is open), which can be hours after the workout. Nothing in the Zaps changes: the `INSERT`, the webhook payload and every field the Zaps use are the same as before. Three things to know:
+
+- **`record__created_at` is the time Save was pressed on the phone** (shown as *Logged at* in the email body), as long as that was within the last 30 days and not in the future; otherwise it is the time of the send. It is the only field with a new meaning, and nothing in the Zaps depends on it: the Filter reads `type` and `record__instructor_emails`, Paths read `record__type`, and Gmail uses `record__instructor_emails`, `record__title` and the body fields.
+- **The recipients are those the athlete shares with when the workout is sent**, because the trigger fills `instructor_emails` on that INSERT.
+- **Exactly one email per workout**, however many times the phone retries: a repeated send finds the saved workout and inserts nothing, so there is no second INSERT, no second webhook and no second Zap run ([supabase.md](supabase.md#6-offline-logging-v5)).
+
+Reports (Zap 2) need a connection, so they are emailed at once; offline logging covers workouts only.
+
 ## Before you start
 
 - A Zapier account with the **Pro trial active**: Webhooks by Zapier and Paths do not work on the free plan (deck slide 8).
@@ -66,7 +74,7 @@ In the app, as the **linked athlete**, log a **Strength** workout (for example *
 | `record__instructor_emails` | `you+coach@gmail.com` | The athlete's instructors, comma-separated: **the Gmail *To***. Empty if the athlete shares with nobody |
 | `record__user_id` | `3f6c…` | Who logged it |
 | `record__plan_id` | `9a1e…` | |
-| `record__created_at` | `2026-11-11T18:00:00.123+00:00` | |
+| `record__created_at` | `2026-11-11T18:00:00.123+00:00` | When the workout was logged: for one logged offline, the time Save was pressed (within 30 days), not the time it was sent |
 | `old_record…` | (empty) | Filled only for UPDATE |
 
 The sets themselves live in their own table (`workout_sets`), which the webhook does not watch. So that the email can list them anyway, `log_workout()` also writes a one-line summary into the workout row it inserts: `record__sets_summary`. If your Zap was set up before this field existed, log a strength workout with sets and press **Test trigger** again so Zapier learns the new field. The same goes for `record__instructor_emails`: see [Upgrading Zaps that are already published](#upgrading-zaps-that-are-already-published).
@@ -202,6 +210,7 @@ Why the Fallback sends an email: deck slide 16 shows no email on the fallback br
 | Recipient 1 | Log a workout as an athlete linked to instructor X | The email goes to X and to nobody else |
 | Recipient 2 | Link the athlete to a second instructor Y, then log a workout | One email, addressed to X and Y |
 | Recipient 3 | **Sharing → Stop sharing** with everyone, then log a workout | Zap history shows the run **stopped by the Filter**; no email, no task |
+| Offline (v5) | On the preview or `npm run preview`, set DevTools → Network to **Offline**, log a workout, wait a minute, then set the network back to **No throttling** | No Zap run while offline. Once the workout is sent, **one** run and one email; *Logged at* shows the time Save was pressed ([pwa.md](pwa.md#7-testing-it-offline)) |
 
 Screenshots for the submission (checklist item 4): the Zap editor showing the Paths, and Zap history for tests 2 and 3.
 
@@ -279,7 +288,7 @@ Copilot can do the Zap 1 and Zap 2 changes from **Prompt 5** and the Zap 2 promp
 
 **Behaviour to know.**
 
-- A **new** webhook payload decides: the recipients are those the athlete shared with *when the workout was logged or the report was sent*. Linking later does not resend old workouts.
+- A **new** webhook payload decides: the recipients are those the athlete shared with *when the workout reached the database (for one logged offline, when it was sent) or the report was sent*. Linking later does not resend old workouts.
 - An athlete who shares with nobody gets **no** email any more (before: it went to the fixed address). That is intended: sharing is the athlete's choice.
 - With several instructors, one email goes to all of them (they see each other's addresses). One Gmail task, not one per instructor.
 - The two demo instructors' addresses end in `@example.com`, so mail to them bounces. To see real delivery, sign up an instructor with an address you can read and link a demo athlete to them under **Sharing**.
@@ -297,3 +306,8 @@ Copilot can do the Zap 1 and Zap 2 changes from **Prompt 5** and the Zap 2 promp
 | Strength workouts go to Fallback | Path A uses `Type` instead of `Record Type`, or compares with `Strength` (the app sends lowercase `strength`) | Step 5 |
 | Two emails for one workout | No Filter, so the edit (UPDATE) also emails | Step 4 |
 | The email doesn't arrive | The wrong Gmail account is connected, the email is in Spam, or the Zap is off | Check Zap history first, then the Gmail connection |
+| The email for a workout arrives hours after the workout | It was logged without signal and sent later | Expected: the email goes out when the phone sends the workout. *Logged at* shows when Save was pressed. A workout still marked *Waiting to send* in the app hasn't been sent yet |
+
+## Related
+
+[supabase.md](supabase.md) (the webhooks, `instructor_emails`, and exactly-once saving in [section 6](supabase.md#6-offline-logging-v5)) · [pwa.md](pwa.md) (logging offline and sending later) · [architecture.md](architecture.md#4-data-flows) (how a workout becomes an email) · [deployment.md](deployment.md) (Vercel) · [setup.md](setup.md) (local setup)

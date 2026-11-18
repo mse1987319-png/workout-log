@@ -4,7 +4,7 @@
 
 Logify is a Progressive Web App (PWA): it can be put on a phone's home screen, opens full-screen like an app, and works without signal. You can see your plans, history and progress (instructors: their athletes) and log a workout. The workout waits on the phone and is sent, with the instructor's email, when the signal returns.
 
-This page explains how the offline parts work, how to test them, and where the limits are. For the user's point of view see the [athlete manual](user-manual/en/athlete.md#10-using-logify-without-signal); for the layers of the code see [architecture.md](architecture.md#6-the-offline-layer).
+This page explains how the offline parts work, how to test them, and where the limits are. For the user's point of view see the [athlete manual](user-manual/en/athlete.md#10-using-logify-without-signal); for the layers of the code see [architecture.md](architecture.md#6-the-offline-layer), and for the parts and the network edges the component diagram in [Mobile architecture (PWA)](architecture.md#7-mobile-architecture-pwa). Which module does what is in [section 10](#10-where-this-lives-in-the-code). The design and the plan it was built from are in [the design](superpowers/specs/2026-11-16-pwa-offline-design.md) (see its *As built* section for what changed during the build) and [the plan](superpowers/plans/2026-11-16-pwa-offline.md).
 
 ## 1. The installable app
 
@@ -23,6 +23,16 @@ The service worker caches the built app only: the HTML, every JavaScript chunk (
 ### Updates
 
 A new version is downloaded in the background and then waits. A line under the header says *A new version of Logify is ready.* with **Update**; the app never reloads by itself, so a half-filled workout is never wiped. An open app asks for a new version every hour (`UPDATE_CHECK_MS` in `src/pwa/serviceWorker.js`); a check that fails (offline) is simply made again the next hour. Pressing **Update** reloads the page into the new version; the unsaved workout comes back from the draft (section 4). While a workout is being sent, the line waits, because the reload would cut the send off. The very first service worker takes over the open page at once (`clientsClaim`), so the first session after installing already works offline; later versions still wait for **Update**.
+
+### The header and the tab bar
+
+On phones the header is one row: the logo, the language switch and the account.
+
+- **The language switch is two small flags**, Lithuanian and British, right next to the logo. Underneath they are radio buttons, so the keyboard works and a screen reader reads each language's name in that language: *Lietuvių* and *English*.
+- **Log out is an icon** (a door with an arrow). Its name is *Log out* and its tooltip reads *Log out (the user's email)*. The email next to it is cut with … when there is no room, so it never runs into the flags (checked from 320 to 1024 px).
+- **At 640 px and below the menu is a bar fixed to the bottom of the screen**: **My plans**, **Log**, **Progress**, and **Sharing** (athletes) or **My athletes** (instructors). **Log** exists only on phones. The header and the bar keep clear of the notch and the home indicator.
+
+`src/components/Layout.jsx`, `src/components/LanguageSwitcher.jsx`, `src/components/NavIcons.jsx`, `src/index.css`.
 
 ## 2. What is kept on the phone, and where
 
@@ -59,11 +69,15 @@ Every screen that reads data (`useLoad` in `src/lib/useLoad.js`) tries the netwo
 | A real error (for example no permission) | The Error state, as always |
 | Offline and nothing saved yet | The Error state: *You're offline, and this hasn't been saved on this phone yet.* |
 
+**A load never undoes a local change.** A rename, a delete or a workout that has just been sent changes the data on screen. A load that started before such a change can't contain it, so when its answer (data or error) arrives it is dropped and the load runs again, with the current data kept on screen (no *Loading*, no *Error*). Only an answer from a load that started after the last change is shown and saved. (`Try again` still shows *Loading*.)
+
+**A local change always reaches the saved copy, without making it look newer.** The change is written to the saved copy even while saved data is shown, so a slow reconnect or a failed re-run can't bring back a copy without it. While saved data is shown, the copy keeps its own *saved on* time; fresh data is saved as of now.
+
 **Warm-up.** Right after sign-in, or on app start with a connection, the app quietly loads the plan options and Progress (instructors: My athletes too) and saves them, so offline works for screens you haven't opened yet. `src/offline/warmUp.js`.
 
 **My plans and the Log workout plan list stay in step.** Whenever My plans saves its plans (a fresh load, a rename, a delete), the Log workout screen's plan list is saved from them too, unless that list was saved more recently. Every workout the server takes is added under its plan to the saved copy of My plans, even when My plans isn't open. So offline the Log workout screen offers a plan created since the warm-up, and My plans lists a workout sent from the Log workout screen. `src/offline/plansCache.js`.
 
-**Hints while logging.** Offline, the exercise-name suggestions and *Last time* come from the saved Progress data (`src/offline/hints.js`).
+**Hints while logging.** When the phone says it is offline, the exercise-name suggestions and *Last time* come from the saved Progress data at once, without a request that would have to fail first (supabase-js would retry for about 7 seconds). They also fall back to it when a request fails for lack of network. `src/offline/hints.js`.
 
 **No data request without a sign-in.** After a long offline period the access token has expired. Until supabase-js has a usable session again (after reconnecting it can wait up to a minute before it refreshes), it would send database requests with only the project key, and Row Level Security would answer with empty lists, which a screen would save over good data. `src/lib/sessionGuard.js` makes such a request fail like a dropped connection instead, so screens keep their saved data and the outbox waits. The database version check (`schema_version()`) is the one exception: anyone may call it and it only returns a constant, so it goes out at once and the version is known as soon as the connection returns.
 
@@ -83,6 +97,8 @@ The outbox is `src/offline/outbox.js` (what is kept) and `src/offline/sync.js` (
 4. **Any other error** (for example the plan was deleted, or the instructor stopped assigning it): the workout is not kept, and the form shows the error so it can be fixed.
 5. **If the phone's storage is full:** saved data is dropped to make room. If the workout still can't be kept on the phone, then **online** it is sent directly, the way it was before the outbox (without the phone's id, so it isn't protected against a second copy after a dropped connection), and you see *Workout saved* as usual; only **offline** does the form say it couldn't be kept, and it never says it was saved.
 
+**While Save is working** (up to the 15 seconds), the form's fields are locked and the button says *Saving…*. The form clears when the workout is saved or kept, so anything typed meanwhile would be lost without a word.
+
 **Sending.** Waiting workouts are sent oldest first, one at a time, while the app is open: when the app starts, when the connection returns, when the app comes back into view, right after a successful save, every **30 seconds** while something waits, and on **Send now** in the status line. Before each send it checks that Supabase holds *this user's own* session; if not, it waits.
 
 | Outcome | What happens |
@@ -93,9 +109,13 @@ The outbox is `src/offline/outbox.js` (what is kept) and `src/offline/sync.js` (
 
 If the workout's plan is no longer in the list (deleted or unassigned), it shows in a **Workouts waiting to send** card at the top of My plans instead. A waiting row is not a link: it has no page until it is sent. Progress, suggestions and reports count only workouts the server has.
 
-**Log out with workouts waiting** asks first: they stay on this phone and are sent the next time that user logs in here. Another user who logs in on the same phone neither sees nor sends them.
+**Log out with workouts to send** asks first: they stay on this phone and are sent the next time that user logs in here. The question counts only the workouts that will be sent by themselves (*Waiting to send*, or being sent). One that *Couldn't send* is never sent automatically, so on its own it doesn't make Log out ask: it stays on **My plans** for **Try again** or **Delete**, after a log out too. If the last workout is sent while the question is open, the question closes by itself. Another user who logs in on the same phone neither sees nor sends the workouts.
 
-**The unsaved form.** The Log workout form is saved on the phone as you type, so an app restart, an update, or the phone closing the app in the background doesn't lose it. A restored form says *Unsaved workout restored.* with **Start over**. It is cleared when the workout is saved or kept, and on log out. If the form is opened from a plan's **+ Log workout**, that plan wins over the plan in the draft.
+**The unsaved form.** The Log workout form is saved on the phone as you type, so an app restart, an update, or the phone closing the app in the background doesn't lose it. A restored form says *Unsaved workout restored.* with **Start over**. If the form is opened from a plan's **+ Log workout**, that plan wins over the plan in the draft. It is cleared on log out, and in the cases below.
+
+- **The moment the outbox holds the workout**, not when the send settles up to 15 seconds later. Otherwise closing the app in between would send the workout from the outbox *and* restore the form, and a second Save would make a second workout and a second email. While the form is saving, nothing is written to the draft either, so a late blur in a field can't bring it back.
+- **Not cleared if the workout isn't kept after all:** if the server refuses it, or the phone can't keep it, the form keeps its fields and writes them as the draft again.
+- **Not cleared early when the phone is full** and the workout is sent directly (there is no copy in the outbox): the draft stays until the server answers.
 
 ### Exactly once
 
@@ -131,7 +151,7 @@ One line under the header, shown only when there is something to say (`src/compo
 
 | Line | When |
 |---|---|
-| *A new version of Logify is ready.* **Update** | A new version has downloaded |
+| *A new version of Logify is ready.* **Update** | A new version has downloaded, and no workout is being sent |
 | *You're offline. Workouts you log are kept on this phone.* | No connection |
 | *Sending…* | A workout is being sent |
 | *{n} workouts waiting to send* **Send now** | Workouts wait (the button only when online) |
@@ -180,3 +200,40 @@ The version is pinned and the generator is not a dependency of the project. `pwa
 | **Supabase's one-minute pause.** If the sign-in expired while offline, after a failed refresh supabase-js waits up to a minute before trying again, so things resume within about a minute of reconnecting | A supabase-js behaviour |
 | **Saved data is a copy.** It is as old as the last time that screen loaded; the line says when. Only the 30 most recently opened workouts and athletes are kept | Phone storage is small |
 | **Browser minimums:** Chrome 111, Safari 16.4, Firefox 121 | `crypto.randomUUID`, `AbortSignal.timeout` and service workers |
+
+## 10. Where this lives in the code
+
+| Module | Its job |
+|---|---|
+| `vite.config.js` | vite-plugin-pwa: the manifest and the Workbox service worker (`generateSW`): precache of the built app, `index.html` for every route, `clientsClaim` on, `skipWaiting` off, `registerType: 'prompt'` |
+| `pwa-assets.config.js`, `public/*.png` | How the icons are made from `public/favicon.svg`, and the committed icons |
+| `index.html` | Apple touch icon, the iPhone home-screen title, `viewport-fit=cover`, the manifest link with `crossorigin="use-credentials"` |
+| `src/pwa/serviceWorker.js` | Registers the service worker, publishes "a new version is ready" and **Update**, and asks for a new version every hour |
+| `src/pwa/installPrompt.js` | Holds the browser's install offer; tells iPhone and an already installed app apart |
+| `src/components/InstallCard.jsx` | The install card on My plans |
+| `src/lib/useLoad.js` | Network first, saved copy as the fallback (offline, failed or over 4 s); drops an answer that is older than a local change |
+| `src/offline/savedData.js` | The per-user saved data: the 30-entry caps, making room when storage is full, wiping a user's data on log out |
+| `src/offline/plansCache.js` | Keeps My plans' copy and the Log workout plan list in step, and adds every sent workout to My plans' copy |
+| `src/offline/warmUp.js` | After sign-in, saves the plan options, Progress and (instructors) the athletes |
+| `src/offline/hints.js` | Exercise-name suggestions and *Last time* from the saved Progress |
+| `src/offline/outbox.js` | The outbox: each user's workouts that the server doesn't have yet, with ids that work outside a secure context |
+| `src/offline/sync.js` | Save (`saveWorkout`), sending in order with the 15 s limit, the outcomes (sent, try later, couldn't send), **Try again** and **Delete**, the 30 s timer |
+| `src/offline/draft.js` | The unsaved Log workout form |
+| `src/offline/dbVersion.js`, `src/api/schema.js` | Asks `schema_version()` and remembers the answer; the older-database fallback |
+| `src/offline/useBackgroundSync.js` | Starts the version check, the warm-up and the outbox sync for a signed-in user (called from `Layout`) |
+| `src/offline/currentUser.js` | Who is signed in, outside React, so saved data and the outbox are always filed under the right person |
+| `src/offline/network.js` | Whether the phone says it is online |
+| `src/offline/storage.js` | Safe `localStorage` reads and writes (private mode, a full phone, broken text) |
+| `src/auth/AuthProvider.jsx`, `src/auth/storedSession.js` | Staying signed in offline (the stored session is used at once offline, after 3 s on a slow connection); log out offline |
+| `src/lib/sessionGuard.js`, `src/lib/supabase.js` | The `fetch` that refuses a data request without the user's token |
+| `src/components/Layout.jsx` | The header, the bottom tab bar, the log-out question, and starting the background sync |
+| `src/components/LanguageSwitcher.jsx` | The two language flags |
+| `src/components/StatusBar.jsx` | The line under the header (section 6) |
+| `src/components/OutboxItem.jsx` | A waiting or failed workout on My plans |
+| `src/components/SavedDataNotice.jsx` | The *Offline: showing data saved on …* line |
+| `src/components/WorkoutForm.jsx`, `src/pages/LogWorkoutPage.jsx` | The Log workout form: the draft, locked fields while saving, the outcome message |
+| `supabase/schema.sql`, `supabase/tests/log_workout_offline.test.sql` | `log_workout(p_id, p_logged_at)`, `schema_version()` and their test |
+
+## Related
+
+[architecture.md](architecture.md#7-mobile-architecture-pwa) (the component diagram) and [its offline layer](architecture.md#6-the-offline-layer) · [supabase.md](supabase.md#6-offline-logging-v5) (the database side) · [deployment.md](deployment.md#6-the-phone-app-pwa-on-vercel) (HTTPS, caching of `sw.js`, releasing v5) · [setup.md](setup.md#try-the-phone-app-locally) (testing the PWA locally) · [zapier.md](zapier.md) (when the email arrives for a workout logged offline) · the user manuals: [athlete](user-manual/en/athlete.md#10-using-logify-without-signal) and [instructor](user-manual/en/instructor.md#8-on-a-phone-and-without-signal) · the v5 [design](superpowers/specs/2026-11-16-pwa-offline-design.md) and [plan](superpowers/plans/2026-11-16-pwa-offline.md)

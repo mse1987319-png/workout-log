@@ -6,9 +6,9 @@
 
 Capstone project for the course *"The full cycle from idea to live product"*: one app that runs online, stores data, separates users, and reports every important event by email.
 
-> **Status: Core and Extended tiers built.** Sign-up/login, plans, workouts with sets, progress charts, goals and suggestions, reports, and instructor sharing are in the code. Supabase Database Webhooks send every new or edited workout (Zap 1) and every report (Zap 2) to Zapier. Still to do: the reliability checks (error handler, cost) and the demo.
+> **Status: Core and Extended tiers built.** Sign-up/login, plans, workouts with sets, progress charts, goals and suggestions, reports, and instructor sharing are in the code. Supabase Database Webhooks send every new or edited workout (Zap 1) and every report (Zap 2) to Zapier. The reliability checks (error handlers, cost) and the live demo are done and documented in the presentation, `_task/results/Logify_EN.pptx` (LT: `Logify_LT.pptx`).
 >
-> **v5: a phone app that works without signal.** Logify can be installed on a phone's home screen, opens without a connection, shows the last data it got, and lets you log a workout offline; the workout is sent, and the instructor emailed, exactly once when the signal returns. See [docs/pwa.md](docs/pwa.md).
+> **v5: a phone app that works without signal.** Logify can be installed on a phone's home screen, opens without a connection, shows the last data it got, and lets you log a workout offline; the workout is sent, and the instructor emailed, exactly once when the signal returns. See [docs/pwa.md](docs/pwa.md); the design and the plan are in [docs/superpowers/](docs/superpowers/specs/2026-11-16-pwa-offline-design.md).
 >
 > **Live:** https://workout-log-murex-three.vercel.app/
 >
@@ -44,7 +44,7 @@ flowchart LR
   S -->|webhook: INSERT into reports| Z2[Zap 2] --> G3[Gmail<br/>progress report]
 ```
 
-The full picture is in [docs/architecture.md](docs/architecture.md): the **ERD** of all eight tables (the two from the initial task, `plans` and `workouts`, are highlighted), the **deployment and infrastructure diagram**, and who may read what.
+The full picture is in [docs/architecture.md](docs/architecture.md): the **ERD** of all eight tables (the two from the initial task, `plans` and `workouts`, are highlighted), the **deployment and infrastructure diagram**, who may read what, and the phone side in **[Mobile architecture (PWA)](docs/architecture.md#7-mobile-architecture-pwa)**: the installed app, what it keeps on the phone and where it talks to the network.
 
 - **Data**: table A `plans` → table B `workouts` (`plan_id → plans.id`), plus `workout_sets` for the sets of a strength workout, `reports` for the reports sent to the instructor, `goals`, and for sharing `profiles` (role), `instructor_links` and `plan_assignments`, all defined in [`supabase/schema.sql`](supabase/schema.sql).
 - **Events**: a logged workout is one `INSERT` into `workouts` (Zap 1); a sent report is one `INSERT` into `reports` (Zap 2).
@@ -61,7 +61,7 @@ The full picture is in [docs/architecture.md](docs/architecture.md): the **ERD**
 | Deployment | [Vercel](https://vercel.com) |
 | Automation | [Zapier](https://zapier.com) (2 Zaps: Webhook → Filter → Paths → Gmail; report webhook → Gmail) |
 | Email | [Gmail](https://www.google.com/gmail/about/) |
-| Tests | [Vitest](https://vitest.dev) + [Testing Library](https://testing-library.com) |
+| Tests | [Vitest](https://vitest.dev) + [Testing Library](https://testing-library.com): 524 unit tests in 49 files, on a fake backend with no network; plus 7 SQL test files in `supabase/tests/`, each rolling itself back |
 | Lint | [oxlint](https://oxc.rs/docs/guide/usage/linter.html) |
 | Documentation | [Notion](https://www.notion.so) ([project page](https://app.notion.com/p/Workout-Log-Project-documentation-4150ecfaf117815bbf2dd6af5ee27323)) + this README; diagrams in [Mermaid](https://mermaid.js.org) |
 | AI tools | [Claude](https://claude.ai) through [Claude Code](https://claude.com/claude-code): Claude Opus 5.5, Claude Sonnet 5.5; [Google Gemini](https://gemini.google.com) |
@@ -117,7 +117,9 @@ cp .env.example .env.local     # then fill in the two values
 npm run dev                    # http://localhost:5173
 ```
 
-The Supabase project needs a one-time setup: run `supabase/schema.sql`, then `supabase/seed.sql` for demo data, and turn off *Confirm email* ([docs/supabase.md](docs/supabase.md)). A project set up before v5 only needs `supabase/schema.sql` run again ([how](docs/supabase.md#applying-v5-to-an-existing-project)).
+The Supabase project needs a one-time setup: run `supabase/schema.sql`, then `supabase/seed.sql` for demo data, and turn off *Confirm email* ([docs/supabase.md](docs/supabase.md)). A project set up before v5 only needs `supabase/schema.sql` run again ([how](docs/supabase.md#applying-v5-to-an-existing-project)); never run an older (pre-v5) `schema.sql` on a v5 database ([why](docs/supabase.md#troubleshooting)).
+
+`npm run dev` has no service worker, so to try the installable, offline app on your computer use `npm run build` and `npm run preview`, then DevTools → Application ([steps](docs/setup.md#try-the-phone-app-locally)). A real phone needs HTTPS: use a Vercel preview or the live site.
 
 ## Demo accounts
 
@@ -155,14 +157,15 @@ The phone app needs no new variables. The Supabase `service_role` key and the Za
 | File | Contents |
 |---|---|
 | [Notion: project documentation](https://app.notion.com/p/Workout-Log-Project-documentation-4150ecfaf117815bbf2dd6af5ee27323) | Scope card, task table, decision log, error log, test table, architecture and ERD diagrams, demo accounts |
-| [docs/user-manual/](docs/user-manual/README.md) | **User manuals** with screenshots, for athletes and for instructors, in English and Lithuanian |
-| [docs/architecture.md](docs/architecture.md) | **ERD**, **deployment and infrastructure diagram**, code layers, data flows, the offline layer with a sequence diagram, access model (as built) |
-| [docs/pwa.md](docs/pwa.md) | **The phone app**: install, what works offline, saved data, the outbox and exactly-once, the older-database warning, testing offline, regenerating the icons, limits |
-| [docs/implementation-plan.md](docs/implementation-plan.md) | Scope tiers, data model, Zapier design, test table, lecture plan |
-| [docs/setup.md](docs/setup.md) | Tools, packages and environment setup |
+| [docs/user-manual/](docs/user-manual/README.md) | **User manuals** with screenshots, for athletes and for instructors, in English and Lithuanian, including installing on a phone and using Logify without signal |
+| [docs/architecture.md](docs/architecture.md) | **ERD**, **deployment and infrastructure diagram**, code layers, data flows, the offline layer with a sequence diagram, access model (as built), and the **[Mobile architecture (PWA)](docs/architecture.md#7-mobile-architecture-pwa)** component diagram |
+| [docs/pwa.md](docs/pwa.md) | **The phone app**: install, what works offline, saved data, the outbox and exactly-once, the older-database warning, testing offline, regenerating the icons, limits, and which module does what |
+| Design records: [v5 design](docs/superpowers/specs/2026-11-16-pwa-offline-design.md) · [v5 plan](docs/superpowers/plans/2026-11-16-pwa-offline.md) | Why v5 is built the way it is: the approved design (with an *As built* section for what changed during the build) and the task-by-task plan |
+| [docs/implementation-plan.md](docs/implementation-plan.md) | Scope tiers, data model, Zapier design, test table, lecture plan, and a short section on v5 |
+| [docs/setup.md](docs/setup.md) | Tools, packages and environment setup; trying the phone app locally; the screenshot tool |
 | [docs/supabase.md](docs/supabase.md) | Tables, Row Level Security, sign-up and URL settings, the v5 database change; tests 1 and 4 |
-| [docs/deployment.md](docs/deployment.md) | Vercel: env vars, Supabase URLs, incognito test |
-| [docs/zapier.md](docs/zapier.md) | Webhook → Zap → Gmail, error handler, cost, cleanup; tests 2, 3 and 5 |
+| [docs/deployment.md](docs/deployment.md) | Vercel: env vars, Supabase URLs, incognito test, the PWA on Vercel (HTTPS, caching of `sw.js`), releasing v5 |
+| [docs/zapier.md](docs/zapier.md) | Webhook → Zap → Gmail, error handler, cost, cleanup; tests 2, 3 and 5; when the email arrives for a workout logged offline |
 
 ## Repository layout
 
@@ -183,10 +186,10 @@ vite.config.js        Vite, tests, and the PWA manifest and service worker
 supabase/schema.sql   tables + Row Level Security + functions (v5: log_workout with p_id and p_logged_at, schema_version())
 supabase/seed.sql     demo accounts and data for a new, empty project
 supabase/tests/       SQL tests (each one rolls itself back)
-docs/                 guides (see Documentation)
+docs/                 guides (see Documentation); docs/superpowers/ holds the v5 design (specs/) and plan (plans/)
 scripts/setup.ps1     automated setup for Windows (safe to re-run)
 vercel.json           lets client-side routes survive a page reload
-_task/                course task decks (LT / EN) and the prompts used to scope the idea
+_task/                course task decks (LT / EN), the prompts used to scope the idea, and the capstone presentation (results/)
 ```
 
 ## Roadmap
