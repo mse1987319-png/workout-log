@@ -6,7 +6,7 @@
 
 Capstone project for the course *"The full cycle from idea to live product"*: one app that runs online, stores data, separates users, and reports every important event by email.
 
-> **Status: Core and Extended tiers built.** Sign-up/login, plans, workouts with sets, progress charts, goals and suggestions, reports, and instructor sharing are in the code. Supabase Database Webhooks send every new or edited workout (Zap 1) and every report (Zap 2) to Zapier. Still to do: the reliability checks (error handler, cost) and the demo.
+> **Status: Core and Extended tiers built.** Sign-up/login, plans, workouts with sets, progress charts, goals and suggestions, reports, and instructor sharing are in the code. Supabase Database Webhooks send every new or edited workout (Zap 1) and every report (Zap 2) to Zapier. The reliability checks (error handlers, cost) and the live demo are done and documented in the presentation, `_task/results/Logify_EN.pptx` (LT: `Logify_LT.pptx`).
 >
 > **v5: a phone app that works without signal.** Logify can be installed on a phone's home screen, opens without a connection, shows the last data it got, and lets you log a workout offline; the workout is sent, and the instructor emailed, exactly once when the signal returns. See [docs/pwa.md](docs/pwa.md); the design and the plan are in [docs/superpowers/](docs/superpowers/specs/2026-11-16-pwa-offline-design.md).
 >

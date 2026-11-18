@@ -6,7 +6,7 @@
 
 Baigiamasis kurso *„Pilnas ciklas nuo idėjos iki produkto“* projektas: viena programa, kuri veikia internete, saugo duomenis, atskiria naudotojus ir el. paštu praneša apie kiekvieną svarbų įvykį.
 
-> **Būsena: pagrindinis ir išplėstinis lygiai sukurti.** Kode yra registracija ir prisijungimas, planai, treniruotės su serijomis, pažangos diagramos, tikslai ir pasiūlymai, ataskaitos ir dalijimasis su treneriu. Supabase Database Webhooks siunčia kiekvieną naują ar redaguotą treniruotę (Zap 1) ir kiekvieną ataskaitą (Zap 2) į Zapier. Dar reikia: patikimumo patikrų (klaidų tvarkyklė, kaina) ir demonstracijos.
+> **Būsena: pagrindinis ir išplėstinis lygiai sukurti.** Kode yra registracija ir prisijungimas, planai, treniruotės su serijomis, pažangos diagramos, tikslai ir pasiūlymai, ataskaitos ir dalijimasis su treneriu. Supabase Database Webhooks siunčia kiekvieną naują ar redaguotą treniruotę (Zap 1) ir kiekvieną ataskaitą (Zap 2) į Zapier. Patikimumo patikros (klaidų tvarkyklės, kaina) ir gyva demonstracija atliktos ir aprašytos pristatyme `_task/results/Logify_LT.pptx` (EN: `Logify_EN.pptx`).
 >
 > **v5: telefono programėlė, veikianti be ryšio.** „Logify“ galima įdiegti telefono pradžios ekrane, ji atsidaro be ryšio, rodo paskutinius gautus duomenis ir leidžia įrašyti treniruotę be ryšio; grįžus ryšiui treniruotė išsiunčiama, o treneris gauna laišką lygiai vieną kartą. Žr. [docs/lt/pwa.md](docs/lt/pwa.md); projektas ir planas (angliškai) yra [docs/superpowers/](docs/superpowers/specs/2026-11-16-pwa-offline-design.md).
 >
