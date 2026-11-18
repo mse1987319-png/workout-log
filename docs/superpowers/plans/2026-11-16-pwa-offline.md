@@ -1,6 +1,6 @@
 # Logify v5: PWA and Offline Implementation Plan
 
-> **Status:** Implemented on `release/v5`; see the design spec's *As built* section for what changed during the build ([design spec](../specs/2026-11-16-pwa-offline-design.md#as-built-after-approval)).
+> **Status:** Implemented on `release/v5` and merged into `main` on 2026-11-18 ([PR #28](https://github.com/mse1987319-png/workout-log/pull/28)); see the design spec's *As built* section for what changed during the build ([design spec](../specs/2026-11-16-pwa-offline-design.md#as-built-after-approval)).
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

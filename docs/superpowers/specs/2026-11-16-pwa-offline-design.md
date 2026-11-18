@@ -1,6 +1,6 @@
 # Logify v5: a phone app that works without signal (design)
 
-Date: 2026-11-16 · Branch: `release/v5`, cut from `main` at `8e30f1b`
+Date: 2026-11-16 · Branch: `release/v5`, cut from `main` at `8e30f1b` · Status: implemented and merged into `main` on 2026-11-18 ([PR #28](https://github.com/mse1987319-png/workout-log/pull/28))
 
 ## Why
 
@@ -231,4 +231,4 @@ What changed or was added while building and in the whole-branch review, compare
 - **An outbox workout left *sending* by a page that closed becomes *waiting* again at the next sign-in.** Reason: a send can't outlive the page that started it.
 - **`schema.sql` of `main` must not be run on a v5 database** (it re-creates the eight-parameter `log_workout()` next to the v5 one, and calls fail with `PGRST203`); a troubleshooting row in [supabase.md](../../supabase.md#troubleshooting) says how to fix it, and the v5 SQL test detects it (88140bb).
 
-**Numbers at the end of the build:** 524 unit tests in 49 files, 7 SQL test files, and the live database is v5 (`schema_version()` returns 5). The Vercel preview of `release/v5` serves `sw.js` and the manifest with `Cache-Control: public, max-age=0, must-revalidate`; production (`main`) is the pre-v5 app until `release/v5` is merged.
+**Numbers at the end of the build:** 524 unit tests in 49 files, 7 SQL test files, and the live database is v5 (`schema_version()` returns 5). The Vercel preview of `release/v5` serves `sw.js` and the manifest with `Cache-Control: public, max-age=0, must-revalidate`; production (`main`) was the pre-v5 app until `release/v5` was merged on 2026-11-18; since then production serves v5.
