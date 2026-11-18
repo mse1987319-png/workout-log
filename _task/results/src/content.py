@@ -6,6 +6,10 @@ APP = "https://workout-log-murex-three.vercel.app/"
 REPO = "https://github.com/mse1987319-png/workout-log"
 BLOB = REPO + "/blob/main/"
 TREE = REPO + "/tree/main/"
+# v5 (the phone app) is on the release/v5 branch until it is merged into main.
+BLOB5 = REPO + "/blob/release/v5/"
+TREE5 = REPO + "/tree/release/v5/"
+PREVIEW = "https://workout-f3whexba1-mse1987319-9300.vercel.app/"
 PRS = REPO + "/pulls?q=is%3Apr+is%3Amerged"
 N = "https://app.notion.com/p/"
 NOTION_EN = {
@@ -71,15 +75,16 @@ EN["title"] = {
     "sub": "Athletes log strength and cardio sessions. Their instructor gets an email within a minute.",
     "links": [f"Live: [workout-log-murex-three.vercel.app]({APP})",
               f"Code: [github.com/mse1987319-png/workout-log]({REPO})"],
-    "year": "2026  ·  React + Vite  ·  Supabase  ·  Vercel  ·  Zapier  ·  Gmail  ·  Notion",
+    "year": "2026  ·  React + Vite + PWA  ·  Supabase  ·  Vercel  ·  Zapier  ·  Gmail  ·  Notion",
     "notes": f"""
-Timing: ~20 s. The main part takes about 10 minutes; the live demo script is in Appendix A, links in Appendix B.
+Timing: ~20 s. The main part takes about 12 minutes (slides 6 and 7 are the v5 phone app); the live demo script is in Appendix A, links in Appendix B, the phone-app screenshots in Appendix C.
 
 Say: Logify is a web workout log. Athletes follow workout plans, log their workouts, and their instructor is emailed automatically about every new workout. Everything shown today runs in production at the link on the slide.
 
 Sources:
 - README: {BLOB}README.md
 - Live app: {APP}
+- v5 preview (the phone app): {PREVIEW}
 - Notion project page: {NOTION_EN['root']}
 """,
 }
@@ -99,7 +104,7 @@ EN["problem"] = {
         ("The instructor is told, not asked to look",
          "An email within ~1 minute after every workout, and a 7-day progress report on request."),
         ("One free web app for both sides",
-         "Athletes and instructors, Lithuanian and English, works on a phone in the gym."),
+         "Athletes and instructors, Lithuanian and English; installs on a phone and works without signal in the gym."),
         ("Progress you can explain",
          "Charts, goals and rule-based suggestions that show the numbers behind them."),
     ],
@@ -156,7 +161,7 @@ EN["flow"] = {
     "athlete": "ATHLETE",
     "instructor": "INSTRUCTOR",
     "steps": [
-        ("1", "Sign up, log in", "Pick a role. LT / EN switch on every screen."),
+        ("1", "Sign up, log in", "Pick a role. Language flags on every screen."),
         ("2", "Share", "Type the instructor's code under **Sharing**."),
         ("3", "Pick a plan", "Your own plan, or one the instructor assigned."),
         ("4", "Log workout", "Strength: exercises, sets × reps × kg. Cardio: activity, distance."),
@@ -184,14 +189,14 @@ Sources:
 EN["arch"] = {
     "title": "Architecture: what connects to what",
     "row": [
-        ("Browser", ["React 19 + Vite, JavaScript", "athlete or instructor", "LT / EN"]),
+        ("Browser", ["React 19 + Vite, JavaScript", "athlete or instructor", "installable PWA (v5)"]),
         ("Supabase (EU)", ["Auth: email + password", "Postgres: 8 tables, RLS", "SQL functions + triggers"]),
         ("Database Webhooks", ["`workouts_to_zapier`", "`reports_to_zapier`", "HTTP POST, JSON"]),
         ("Zapier", ["Zap 1: Filter → Paths", "Zap 2: Filter", "error handlers"]),
         ("Gmail", ["to the athlete's instructor(s)", "STRENGTH / New workout / report"]),
     ],
     "vercel": ("Vercel", "Build + `VITE_` env vars, static hosting, PR previews"),
-    "github": ("GitHub", "feature/… branches, 23 merged pull requests"),
+    "github": ("GitHub", "feature/… branches, 25 merged pull requests"),
     "serves": "serves the app",
     "legend": [
         "**1**  supabase-js with the anon key + the user's JWT; RLS decides what each user sees",
@@ -212,6 +217,70 @@ Say: Follow the numbers. The browser talks straight to Supabase, and Row Level S
 Sources:
 - Architecture, sections 2 and 4: {BLOB}docs/architecture.md
 - Task deck, slide 6 ("What connects to what")
+""",
+}
+
+EN["pwa"] = {
+    "title": "Mobile: an installable app that works offline",
+    "kicker": "v5  ·  a PWA (progressive web app): same code, no app store, still no own server",
+    "phone": "PHONE  ·  THE INSTALLED APP",
+    "boxes": [
+        ("Service worker", "Caches the whole app, every screen included, so it opens with no signal. A new version waits until you tap **Update**."),
+        ("Saved data", "The last result of each screen, per user. Shown with its date when the network is down or slow."),
+        ("Outbox", "Workouts logged offline, each with an **id made on the phone** and the time **Save** was pressed. Sent in order, once."),
+        ("Draft", "The half-filled Log workout form survives closing the app."),
+    ],
+    "guard": ("Session guard", "No data request leaves without the user's own token, so an empty answer can never replace saved data. The status line under the header says: offline · N waiting · new version · older database."),
+    "vercel": ("Vercel (HTTPS)", "Static files: the app, `manifest.webmanifest` and `sw.js`. The same deploy as the web app; every PR gets a preview."),
+    "supabase": ("Supabase (EU)", "`log_workout(p_id, p_logged_at)`: the same id returns the same row, so one row, one webhook, one email. `schema_version()` tells the app which database version it has."),
+    "arrows": ["install + updates", "online: network first", "back online: the outbox"],
+    "noserver": "Still no own server and no app store: **install from the browser**.",
+    "notes": f"""
+Timing: ~60 s.
+
+Say: This is v5: the same React app, now a PWA, a progressive web app. You install it from the browser to the home screen. A service worker keeps the whole app on the phone, so it opens with no signal. Online it still goes network first, straight to Supabase. Offline, every screen shows the last data it got, with the date. A workout logged offline waits in an outbox on the phone and is sent when the signal returns. On the server side only one database function changed, to make the send safe to repeat (next slide).
+
+Sources:
+- PWA guide: {BLOB5}docs/pwa.md
+- Architecture, "Mobile architecture (PWA)": {BLOB5}docs/architecture.md
+- Design record: {BLOB5}docs/superpowers/specs/2026-11-16-pwa-offline-design.md
+- Preview of v5: {PREVIEW}
+""",
+}
+
+EN["offline"] = {
+    "title": "Logging without signal: saved exactly once",
+    "kicker": "What happens to a workout logged in a basement gym  ·  v5",
+    "steps": [
+        ("1", "Save, no signal", "The workout gets an **id** and the time, and goes into the outbox on the phone."),
+        ("2", "Waits", "*Waiting to send* in My plans. Survives closing the app."),
+        ("3", "Back online", "Sent at once, in order; the app retries every 30 s."),
+        ("4", "log_workout", "`p_id` + `p_logged_at`. Was this id saved before?"),
+        ("5", "Saved once", "One row, one webhook. A resend returns the same row."),
+        ("6", "Email", "The instructor gets it then, with the time of the workout."),
+    ],
+    "what_h": "WHAT IF…",
+    "what_head": ["What if…", "Then…"],
+    "what": [
+        ["the connection drops during the send", "the same id is sent again: same row, no second email"],
+        ["the app is closed while sending", "the workout is *Waiting* again at the next start, and sent once"],
+        ["someone else logs in on the same phone", "outbox, saved data and draft are kept per user"],
+        ["the database is an older version", "a warning line; the workout is sent the old way, with the send time"],
+    ],
+    "live": ("Checked on the live database", [
+        "A test account (deleted afterwards): a resend returned the **same row**, and there is **1 row** for that id.",
+        "The **old app's** request still works, so production was never at risk.",
+        "On an older database the app shows a warning and keeps working.",
+    ]),
+    "notes": f"""
+Timing: ~75 s.
+
+Say: The danger of offline logging is a workout saved twice, and a double email to the coach. So the phone makes an id for every workout, and the database function log_workout checks it: if this id was saved before, it returns the saved row and does nothing else. That makes any retry harmless: a dropped connection, a closed app, a second tab. The workout also keeps the time Save was pressed, so charts and "last time" stay right. We checked this on the live database with a test account.
+
+Sources:
+- PWA guide, "The outbox": {BLOB5}docs/pwa.md
+- Supabase guide, offline logging (v5): {BLOB5}docs/supabase.md
+- SQL test: {BLOB5}supabase/tests/log_workout_offline.test.sql
 """,
 }
 
@@ -374,7 +443,7 @@ EN["deploy"] = {
     "pipe": [
         ("Developer machine", "npm test · npm run lint · npm run build; `.env.local` is git-ignored", MUTED),
         ("GitHub", "feature/… branch → pull request → merge to main", INK),
-        ("Vercel", "preview for every PR; production on every push to main; `VITE_` vars baked in at build", TEAL),
+        ("Vercel", "preview for every PR (v5 was tested on one); production on every push to main; `VITE_` vars baked in at build", TEAL),
         ("Supabase · Zapier · Gmail", "Supabase project in eu-west-1; Site URL = the Vercel URL; Zaps on", ORANGE),
     ],
     "sec_h": "Where secrets live",
@@ -404,9 +473,9 @@ EN["reqs"] = {
     "kicker": "Task slides 2, 4, 12, 17 and 21",
     "head": ["Part", "Minimum in the task", "Delivered"],
     "rows": [
-        ["Code", "GitHub repo, branches, ≥ 3 pull requests", "**23 merged PRs**, one `feature/…` branch per feature"],
+        ["Code", "GitHub repo, branches, ≥ 3 pull requests", "**25 merged PRs**, one `feature/…` branch per feature, plus the v5 release branch"],
         ["Interface", "React + Vite, JavaScript; 3 screens, 4 states",
-         "**8 screens**, each with Loading / Error / Empty / Success; LT / EN; phone friendly"],
+         "**8 screens**, each with Loading / Error / Empty / Success; LT / EN; **installable on a phone, works offline (v5)**"],
         ["Data", "Supabase Auth, 2 related tables, RLS", "**8 tables**, RLS on all, SQL functions and triggers"],
         ["Deployment", "Vercel, public URL, env vars", "Live URL, PR previews, `VITE_` env vars"],
         ["Automation", "Webhook → Filter → Paths → Gmail",
@@ -416,7 +485,7 @@ EN["reqs"] = {
         ["Bonus", "A chart from history; an AI feature",
          "**2 charts**, goals, rule-based suggestions (explainable; no AI key in the app)"],
         ["Out of scope", "Payments, realtime, uploads, own server, TypeScript, mobile app",
-         "Respected: no server or Edge Functions; responsive web only"],
+         "Respected: no server or Edge Functions, no native app: the phone app is a PWA, a web app installed from the browser"],
     ],
     "notes": f"""
 Timing: ~45 s.
@@ -433,18 +502,18 @@ Sources:
 EN["quality"] = {
     "title": "Testing and reliability",
     "tiles": [
-        ("273", "unit tests (Vitest), no network", ORANGE),
-        ("6", "SQL test suites, each rolls itself back", TEAL_B),
+        ("524", "unit tests (Vitest), no network", ORANGE),
+        ("7", "SQL test suites, each rolls itself back", TEAL_B),
         ("10", "scenarios in the test table", SKY),
         ("~1", "Zapier task per workout or report", ORANGE),
     ],
     "test_h": "Tests",
     "tests": [
         "Unit tests run the real supabase-js client against a fake `fetch`, so they check the exact requests.",
-        "SQL tests: RLS between users, sharing, goals, reports, instructor emails, sets summary.",
+        "SQL tests: RLS between users, sharing, goals, reports, instructor emails, sets summary, saving a workout exactly once.",
         "Test table (task slide 19 + extended): new user, strength / other emails, another user's data, "
         "editing, error state, reports, sharing.",
-        "Today's demo: path A and Zap 2 runs are **Successful** in Zap history.",
+        "Today's demo: path A and Zap 2 runs are **Successful** in Zap history. v5: offline logging checked live with a test account.",
     ],
     "rel_h": "Reliability",
     "rel": [
@@ -555,14 +624,14 @@ EN["summary"] = {
     "title": "Summary",
     "points": [
         "A live product: **sign up, log a workout, and the instructor gets an email in ~1 minute**.",
-        "The task minimum is met and extended: 8 tables, 2 Zaps, charts, goals, suggestions, reports, roles.",
-        "Built in four lectures through 23 pull requests; documented in Notion, README and docs (LT / EN).",
+        "The task minimum is met and extended: 8 tables, 2 Zaps, charts, goals, suggestions, reports, roles, and (v5) an installable phone app that works offline.",
+        "Built in four lectures through 25 pull requests, then v5; documented in Notion, README and docs (LT / EN).",
         "Next: weekly automatic reports (`pg_cron`), custom SMTP to turn email confirmation back on, "
         "an AI summary step in Zap 2.",
     ],
     "next": [
         "Live demo script  →  Appendix A",
-        "Links and sources  →  Appendix B",
+        "Links and sources  →  Appendix B   ·   Phone app  →  Appendix C",
         f"[workout-log-murex-three.vercel.app]({APP})",
     ],
     "notes": """
@@ -579,8 +648,9 @@ EN["appA"] = {
     "subtitle": ["Log a strength workout as an athlete, check progress, send a report, then open the "
                  "instructor's Gmail.",
                  "About 4 minutes  ·  live production site  ·  a screenshot of every step"],
-    "notes": "Run this after the main part. If the network fails, click through the screenshots in this appendix: "
-             "they were taken on the live site on 2026-11-12 (English UI run at 18:54–18:55).",
+    "notes": "Run this after the main part. If the network fails, click through the screenshots in this appendix. The app screens were retaken from the v5 app with the same "
+             "demo data (a mocked API: nothing is saved or emailed); the Gmail, Zapier and Supabase screens are from "
+             "the live run on 2026-11-12 (English UI run at 18:54–18:55).",
 }
 
 EN["script"] = {
@@ -588,12 +658,13 @@ EN["script"] = {
     "kicker": "Live site, English UI, about 4 minutes",
     "before_h": "Before you start",
     "before": [
-        f"Open [the live site]({APP}) and set the **LT / EN** switch to **EN**.",
+        f"Open [the live site]({APP}) and click the English flag (**EN**, next to the logo).",
         "Log in as `demo.athlete.a@example.com` (password: README → Demo accounts).",
         "Athlete A shares with the instructor `mse1987319+logify@gmail.com` (**Sharing**).",
         "Open Gmail `mse1987319@gmail.com` (switch account at the top right) and search "
         "`to:mse1987319+logify@gmail.com`.",
         "Zapier: both Zaps **On**. One report per 5 min: wait if one was just sent.",
+        f"Phone part (optional): open the [v5 preview]({PREVIEW}) on a phone; screenshots are in Appendix C.",
     ],
     "head": ["#", "Do", "Say", "Time"],
     "steps": [
@@ -621,7 +692,7 @@ EN["demo"] = {"do": "DO", "say": "SAY", "behind": "BEHIND THE SCENES"}
 
 EN["steps"] = [
     {"title": "Step 1 · Log in", "img": ["01-login.jpg"],
-     "do": "Open the live site, set **EN**, log in as `demo.athlete.a@example.com`.",
+     "do": "Open the live site, click the English flag, log in as `demo.athlete.a@example.com`.",
      "say": "Accounts are Supabase Auth. The language choice is kept in the browser.",
      "behind": "The session JWT goes with every request; RLS checks `user_id = auth.uid()`."},
     {"title": "Step 2 · My plans", "img": ["02-plans.jpg"],
@@ -698,6 +769,48 @@ EN["steps"] = [
      "say": "The hook URLs are secrets, so they are blanked in the screenshots."},
 ]
 
+EN["appC"] = {
+    "title": "Mobile app (PWA)",
+    "subtitle": [
+        "Install it, use it in the gym, lose the signal, and see the workout arrive once.",
+        "About 3 minutes  ·  v5 preview  ·  the real app on a 390 × 780 px phone, demo data",
+    ],
+    "notes": f"Run this after Appendix A if the audience asks about phones. Live: open {PREVIEW} on a phone (the v5 build against the live database). The screens here were taken from the real app with a mocked API, so nothing was saved or emailed.",
+}
+
+EN["phone"] = [
+    {"title": "Phone 1 · Install it",
+     "img": ["p01-install.jpg", "p02-ios-install.jpg"],
+     "caps": ["Android: the Install button", "iPhone: Share → Add to Home Screen"],
+     "do": "Open the site in the phone's browser. Android: tap **Install**. iPhone Safari: **Share**, then **Add to Home Screen**.",
+     "say": "No app store: the app is the website, with an icon on the home screen.",
+     "behind": "`manifest.webmanifest` + a service worker make it installable; the name and icon come from the manifest."},
+    {"title": "Phone 2 · The bottom tab bar",
+     "img": ["p03-plans.jpg", "p04-log.jpg", "p05-progress.jpg"],
+     "caps": ["My plans", "Log workout", "Progress"],
+     "do": "Use the bar at the bottom: My plans, Log, Progress, Sharing (instructors: My athletes).",
+     "say": "The same screens as on a computer, laid out for one hand in the gym.",
+     "behind": "The same menu becomes the bottom bar at 640 px and below; the layout respects the notch and the home bar."},
+    {"title": "Phone 3 · No signal: the last data is still there",
+     "img": ["p06-offline-saved.jpg", "p07-offline-log.jpg"],
+     "caps": ["Offline: saved data, with its date", "Offline: the form works as usual"],
+     "do": "Switch the phone to airplane mode and open the app.",
+     "say": "It opens at once. Every screen shows the last data it got, and you can still fill in a workout.",
+     "behind": "Service-worker cache + saved data per user in the browser; the session guard stops empty answers from replacing it."},
+    {"title": "Phone 4 · Logged offline, sent online",
+     "img": ["p08-kept.jpg", "p09-waiting.jpg", "p10-sent.jpg"],
+     "caps": ["Saved on this phone", "Waiting to send", "Back online: a normal row"],
+     "do": "Press **Save workout** without signal, then switch the connection back on.",
+     "say": "The workout waits, then goes out by itself, once. The instructor's email follows.",
+     "behind": "The request carries `p_id` + `p_logged_at`; a resend returns the same row: one webhook, one email."},
+    {"title": "Phone 5 · Older database, and the instructor",
+     "img": ["p11-old-db.jpg", "p12-instructor.jpg"],
+     "caps": ["Older database: a warning, the app works", "Instructor: My athletes on a phone"],
+     "do": "If the database is an older version, the app shows a warning line. Instructors get the same bottom bar.",
+     "say": "The new app can ship before the database change, and nothing breaks.",
+     "behind": "`schema_version()` is missing on an older database; the app then sends the old way, without the id."},
+]
+
 EN["appB"] = {
     "title": "Links and sources",
     "subtitle": ["Everything this deck is based on: the live product, the repository, the Notion documentation, "
@@ -716,10 +829,14 @@ EN["links"] = [
              f"[supabase/schema.sql]({BLOB}supabase/schema.sql)",
              f"[supabase/seed.sql]({BLOB}supabase/seed.sql) (demo data)",
              f"[supabase/tests/]({TREE}supabase/tests)",
+             f"v5 preview (phone app): [workout-f3whexba1-mse1987319-9300.vercel.app]({PREVIEW})",
+             f"[release/v5 branch]({TREE5})",
          ]),
          ("Docs in the repository", [
              f"[README]({BLOB}README.md) · [README (LT)]({BLOB}README.lt.md)",
-             f"[Architecture: ERD, deployment]({BLOB}docs/architecture.md)",
+             f"[Architecture: ERD, deployment, mobile]({BLOB}docs/architecture.md)",
+             f"[PWA guide: install, offline, outbox]({BLOB5}docs/pwa.md)",
+             f"[PWA design record]({BLOB5}docs/superpowers/specs/2026-11-16-pwa-offline-design.md)",
              f"[Implementation plan]({BLOB}docs/implementation-plan.md)",
              f"[Zapier guide]({BLOB}docs/zapier.md)",
              f"[Supabase guide]({BLOB}docs/supabase.md)",
@@ -769,15 +886,16 @@ LT["title"] = {
     "sub": "Sportininkai registruoja jėgos ir kardio treniruotes, o jų treneris per minutę gauna el. laišką.",
     "links": [f"Veikianti svetainė: [workout-log-murex-three.vercel.app]({APP})",
               f"Kodas: [github.com/mse1987319-png/workout-log]({REPO})"],
-    "year": "2026  ·  React + Vite  ·  Supabase  ·  Vercel  ·  Zapier  ·  Gmail  ·  Notion",
+    "year": "2026  ·  React + Vite + PWA  ·  Supabase  ·  Vercel  ·  Zapier  ·  Gmail  ·  Notion",
     "notes": f"""
-Laikas: ~20 s. Pagrindinė dalis trunka apie 10 minučių; gyvos demonstracijos scenarijus – A priede, nuorodos – B priede.
+Laikas: ~20 s. Pagrindinė dalis trunka apie 12 minučių (6 ir 7 skaidrės – v5 telefono programėlė); gyvos demonstracijos scenarijus – A priede, nuorodos – B priede, telefono programėlės ekrano nuotraukos – C priede.
 
 Sakykite: Logify – internetinis treniruočių žurnalas. Sportininkai vykdo treniruočių planus, registruoja treniruotes, o treneris automatiškai gauna el. laišką apie kiekvieną naują treniruotę. Viskas, ką šiandien matysite, veikia gamybinėje aplinkoje adresu, nurodytu skaidrėje.
 
 Šaltiniai:
 - README (LT): {BLOB}README.lt.md
 - Veikianti svetainė: {APP}
+- v5 peržiūra (telefono programėlė): {PREVIEW}
 - Notion projekto puslapis: {NOTION_LT['root']}
 """,
 }
@@ -797,7 +915,7 @@ LT["problem"] = {
         ("Treneriui pranešama, jam nereikia ieškoti",
          "El. laiškas per ~1 min. po kiekvienos treniruotės ir 7 dienų pažangos ataskaita paprašius."),
         ("Viena nemokama programa abiem pusėms",
-         "Sportininkams ir treneriams, lietuvių ir anglų kalbomis, patogi telefone sporto salėje."),
+         "Sportininkams ir treneriams, lietuvių ir anglų kalbomis; įdiegiama telefone ir veikia be ryšio sporto salėje."),
         ("Paaiškinama pažanga",
          "Diagramos, tikslai ir taisyklėmis pagrįsti pasiūlymai, rodantys savo skaičius."),
     ],
@@ -856,7 +974,7 @@ LT["flow"] = {
     "athlete": "SPORTININKAS",
     "instructor": "TRENERIS",
     "steps": [
-        ("1", "Registracija", "Pasirenkamas vaidmuo. LT / EN jungiklis kiekviename ekrane."),
+        ("1", "Registracija", "Pasirenkamas vaidmuo. Kalbos vėliavėlės kiekviename ekrane."),
         ("2", "Dalijimasis", "Skiltyje **Dalijimasis** įvedamas trenerio kodas."),
         ("3", "Planas", "Savo planas arba trenerio priskirtas."),
         ("4", "Įrašyti treniruotę", "Jėga: pratimai, serijos × pakartojimai × kg. Kardio: veikla, atstumas."),
@@ -884,14 +1002,14 @@ Sakykite: Yra du vaidmenys. Sportininkas užsiregistruoja, įvedęs kodą pasida
 LT["arch"] = {
     "title": "Architektūra: kas su kuo jungiasi",
     "row": [
-        ("Naršyklė", ["React 19 + Vite, JavaScript", "sportininkas arba treneris", "LT / EN"]),
+        ("Naršyklė", ["React 19 + Vite, JavaScript", "sportininkas arba treneris", "diegiama PWA (v5)"]),
         ("Supabase (ES)", ["Auth: el. paštas + slaptažodis", "Postgres: 8 lentelės, RLS", "SQL funkcijos ir trigeriai"]),
         ("Database Webhooks", ["`workouts_to_zapier`", "`reports_to_zapier`", "HTTP POST, JSON"]),
         ("Zapier", ["Zap 1: Filter → Paths", "Zap 2: Filter", "klaidų tvarkyklės"]),
         ("Gmail", ["sportininko treneriui (-iams)", "STRENGTH / New workout / ataskaita"]),
     ],
     "vercel": ("Vercel", "Build + `VITE_` aplinkos kintamieji, statinis talpinimas, PR peržiūros"),
-    "github": ("GitHub", "feature/… šakos, 23 sulieti pull request"),
+    "github": ("GitHub", "feature/… šakos, 25 sulieti pull request"),
     "serves": "pateikia programą",
     "legend": [
         "**1**  supabase-js su anon raktu ir naudotojo JWT; RLS nusprendžia, ką mato kiekvienas",
@@ -913,6 +1031,70 @@ Sakykite: Sekite numerius. Naršyklė tiesiogiai kalbasi su Supabase, o duomenų
 Šaltiniai:
 - Architektūra, 2 ir 4 skyriai: {BLOB}docs/lt/architecture.md
 - Užduoties 6 skaidrė („Kas su kuo jungiasi“)
+""",
+}
+
+LT["pwa"] = {
+    "title": "Mobilioji versija: diegiama programėlė be ryšio",
+    "kicker": "v5  ·  PWA (progresinė žiniatinklio programėlė): tas pats kodas, jokios programėlių parduotuvės, vis dar be savo serverio",
+    "phone": "TELEFONAS  ·  ĮDIEGTA PROGRAMĖLĖ",
+    "boxes": [
+        ("Service worker", "Išsaugo visą programėlę, įskaitant visus ekranus, todėl ji atsidaro be ryšio. Nauja versija laukia, kol bakstelėsite **Atnaujinti**."),
+        ("Išsaugoti duomenys", "Paskutinis kiekvieno ekrano rezultatas, kiekvienam naudotojui atskirai. Rodomas su data, kai tinklo nėra arba jis lėtas."),
+        ("Siuntimo eilė", "Be ryšio įrašytos treniruotės; kiekviena turi **telefone sukurtą id** ir laiką, kai paspaudėte **Išsaugoti**. Siunčiamos iš eilės, po vieną kartą."),
+        ("Juodraštis", "Pusiau užpildyta treniruotės forma išlieka uždarius programėlę."),
+    ],
+    "guard": ("Sesijos sargas", "Jokia duomenų užklausa neišeina be paties naudotojo rakto (token), todėl tuščias atsakymas niekada nepakeis išsaugotų duomenų. Būsenos eilutė po antraštės sako: nėra ryšio · N laukia · nauja versija · senesnė duomenų bazė."),
+    "vercel": ("Vercel (HTTPS)", "Statiniai failai: programėlė, `manifest.webmanifest` ir `sw.js`. Tas pats diegimas kaip svetainės; kiekvienas PR gauna peržiūrą."),
+    "supabase": ("Supabase (ES)", "`log_workout(p_id, p_logged_at)`: tas pats id grąžina tą pačią eilutę, todėl viena eilutė, vienas webhook, vienas laiškas. `schema_version()` pasako programėlei, kokios versijos duomenų bazė."),
+    "arrows": ["diegimas + atnaujinimai", "prisijungus: pirma tinklas", "grįžus ryšiui: siuntimo eilė"],
+    "noserver": "Vis dar be savo serverio ir be programėlių parduotuvės: **diegiama iš naršyklės**.",
+    "notes": f"""
+Trukmė: ~60 s.
+
+Sakykite: Tai v5: ta pati React programėlė, dabar PWA, t. y. progresinė žiniatinklio programėlė. Ją įdiegiate iš naršyklės į pradžios ekraną. Service worker laiko visą programėlę telefone, todėl ji atsidaro be ryšio. Prisijungus ji vis dar pirmiausia kreipiasi į tinklą, tiesiai į Supabase. Be ryšio kiekvienas ekranas rodo paskutinius gautus duomenis su data. Be ryšio įrašyta treniruotė laukia siuntimo eilėje telefone ir išsiunčiama, kai ryšys grįžta. Serverio pusėje pasikeitė tik viena duomenų bazės funkcija, kad siuntimą būtų saugu kartoti (kita skaidrė).
+
+Šaltiniai:
+- PWA vadovas: {BLOB5}docs/lt/pwa.md
+- Architektūra, „Mobilioji architektūra (PWA)“: {BLOB5}docs/lt/architecture.md
+- Projektavimo įrašas: {BLOB5}docs/superpowers/specs/2026-11-16-pwa-offline-design.md
+- v5 peržiūra: {PREVIEW}
+""",
+}
+
+LT["offline"] = {
+    "title": "Įrašymas be ryšio: išsaugoma lygiai vieną kartą",
+    "kicker": "Kas nutinka treniruotei, įrašytai rūsio salėje  ·  v5",
+    "steps": [
+        ("1", "Išsaugoti be ryšio", "Treniruotė gauna **id** ir laiką ir patenka į siuntimo eilę telefone."),
+        ("2", "Laukia", "„Laukia išsiuntimo“ skiltyje Mano planai. Išlieka uždarius programėlę."),
+        ("3", "Vėl yra ryšys", "Išsiunčiama iš karto, iš eilės; programėlė bando kas 30 s."),
+        ("4", "log_workout", "`p_id` + `p_logged_at`. Ar šis id jau išsaugotas?"),
+        ("5", "Išsaugota vieną kartą", "Viena eilutė, vienas webhook. Pakartotinis siuntimas grąžina tą pačią eilutę."),
+        ("6", "El. laiškas", "Treneris jį gauna tada, su treniruotės laiku."),
+    ],
+    "what_h": "O JEI…",
+    "what_head": ["O jei…", "Tada…"],
+    "what": [
+        ["ryšys nutrūksta siunčiant", "tas pats id siunčiamas dar kartą: ta pati eilutė, jokio antro laiško"],
+        ["programėlė uždaroma siunčiant", "kitą kartą paleidus treniruotė vėl „laukia“ ir išsiunčiama vieną kartą"],
+        ["tame pačiame telefone prisijungia kitas žmogus", "siuntimo eilė, išsaugoti duomenys ir juodraštis laikomi kiekvienam naudotojui atskirai"],
+        ["duomenų bazė senesnės versijos", "rodoma įspėjimo eilutė; treniruotė siunčiama senuoju būdu, su išsiuntimo laiku"],
+    ],
+    "live": ("Patikrinta gyvoje duomenų bazėje", [
+        "Bandomoji paskyra (vėliau ištrinta): pakartotinis siuntimas grąžino **tą pačią eilutę**, o tam id yra **1 eilutė**.",
+        "**Senosios programėlės** užklausa vis dar veikia, todėl gamybai pavojaus nebuvo.",
+        "Senesnėje duomenų bazėje programėlė rodo įspėjimą ir toliau veikia.",
+    ]),
+    "notes": f"""
+Trukmė: ~75 s.
+
+Sakykite: Įrašymo be ryšio pavojus – du kartus išsaugota treniruotė ir dvigubas laiškas treneriui. Todėl telefonas kiekvienai treniruotei sukuria id, o duomenų bazės funkcija log_workout jį tikrina: jei šis id jau išsaugotas, grąžina išsaugotą eilutę ir daugiau nieko nedaro. Todėl bet koks pakartojimas nekenksmingas: nutrūkęs ryšys, uždaryta programėlė, antras skirtukas. Treniruotė taip pat išlaiko laiką, kai paspaudėte Išsaugoti, todėl grafikai ir „praeitas kartas“ lieka teisingi. Tai patikrinome gyvoje duomenų bazėje su bandomąja paskyra.
+
+Šaltiniai:
+- PWA vadovas, „Siuntimo eilė“: {BLOB5}docs/lt/pwa.md
+- Supabase vadovas, įrašymas be ryšio (v5): {BLOB5}docs/lt/supabase.md
+- SQL testas: {BLOB5}supabase/tests/log_workout_offline.test.sql
 """,
 }
 
@@ -1080,7 +1262,7 @@ LT["deploy"] = {
     "pipe": [
         ("Kūrėjo kompiuteris", "npm test · npm run lint · npm run build; `.env.local` įtrauktas į .gitignore", MUTED),
         ("GitHub", "feature/… šaka → pull request → suliejimas į main", INK),
-        ("Vercel", "peržiūra kiekvienam PR; gamybinė versija po kiekvieno push į main; `VITE_` kintamieji – build "
+        ("Vercel", "peržiūra kiekvienam PR (v5 išbandyta vienoje); gamybinė versija po kiekvieno push į main; `VITE_` kintamieji – build "
                    "metu", TEAL),
         ("Supabase · Zapier · Gmail", "Supabase projektas eu-west-1; Site URL = Vercel adresas; Zap'ai įjungti",
          ORANGE),
@@ -1113,9 +1295,9 @@ LT["reqs"] = {
     "kicker": "Užduoties 2, 4, 12, 17 ir 21 skaidrės",
     "head": ["Dalis", "Užduoties minimumas", "Įgyvendinta"],
     "rows": [
-        ["Kodas", "GitHub saugykla, šakos, ≥ 3 pull request", "**23 sulieti PR**, kiekvienai funkcijai `feature/…` šaka"],
+        ["Kodas", "GitHub saugykla, šakos, ≥ 3 pull request", "**25 sulieti PR**, kiekvienai funkcijai `feature/…` šaka, plius v5 išleidimo šaka"],
         ["Sąsaja", "React + Vite, JavaScript; 3 ekranai, 4 būsenos",
-         "**8 ekranai**, kiekviename Kraunama / Klaida / Tuščia / Pavyko; LT / EN; patogu telefone"],
+         "**8 ekranai**, kiekviename Kraunama / Klaida / Tuščia / Pavyko; LT / EN; **įdiegiama telefone, veikia be ryšio (v5)**"],
         ["Duomenys", "Supabase Auth, 2 susijusios lentelės, RLS", "**8 lentelės**, RLS visose, SQL funkcijos ir trigeriai"],
         ["Diegimas", "Vercel, viešas URL, aplinkos kintamieji", "Veikianti svetainė, PR peržiūros, `VITE_` kintamieji"],
         ["Automatizacija", "Webhook → Filter → Paths → Gmail",
@@ -1125,7 +1307,7 @@ LT["reqs"] = {
         ["Papildomi taškai", "Grafikas iš istorijos; DI funkcija",
          "**2 diagramos**, tikslai, taisyklėmis pagrįsti pasiūlymai (paaiškinami; programoje nėra DI rakto)"],
         ["Ko nedarome", "Mokėjimų, realaus laiko, failų įkėlimo, savo serverio, TypeScript, mobiliosios programos",
-         "Laikomasi: nėra serverio ir Edge Functions; tik prisitaikantis web"],
+         "Laikomasi: nėra serverio ir Edge Functions, nėra savos mobiliosios programos: telefono programėlė yra PWA – žiniatinklio programa, įdiegiama iš naršyklės"],
     ],
     "notes": f"""
 Laikas: ~45 s.
@@ -1142,18 +1324,18 @@ Sakykite: Visi užduoties minimumai įvykdyti, o dauguma praplėsti ten, kur tai
 LT["quality"] = {
     "title": "Testavimas ir patikimumas",
     "tiles": [
-        ("273", "vienetų testai (Vitest), be tinklo", ORANGE),
-        ("6", "SQL testų rinkiniai, kiekvienas atšaukiamas", TEAL_B),
+        ("524", "vienetų testai (Vitest), be tinklo", ORANGE),
+        ("7", "SQL testų rinkiniai, kiekvienas atšaukiamas", TEAL_B),
         ("10", "scenarijų testų lentelėje", SKY),
         ("~1", "Zapier užduotis treniruotei ar ataskaitai", ORANGE),
     ],
     "test_h": "Testai",
     "tests": [
         "Vienetų testai naudoja tikrą supabase-js klientą su netikru `fetch`, todėl tikrina tikslias užklausas.",
-        "SQL testai: RLS tarp naudotojų, dalijimasis, tikslai, ataskaitos, trenerių el. paštai, serijų santrauka.",
+        "SQL testai: RLS tarp naudotojų, dalijimasis, tikslai, ataskaitos, trenerių el. paštai, serijų santrauka, treniruotės išsaugojimas lygiai vieną kartą.",
         "Testų lentelė (19 skaidrė + išplėstiniai): naujas naudotojas, strength / other laiškai, svetimi duomenys, "
         "redagavimas, klaidos būsena, ataskaitos, dalijimasis.",
-        "Šiandienos demo: kelio A ir Zap 2 paleidimai Zap history pažymėti **Successful**.",
+        "Šiandienos demo: kelio A ir Zap 2 paleidimai Zap history pažymėti **Successful**. v5: įrašymas be ryšio patikrintas gyvai su bandomąja paskyra.",
     ],
     "rel_h": "Patikimumas",
     "rel": [
@@ -1266,14 +1448,14 @@ LT["summary"] = {
     "points": [
         "Veikiantis produktas: **užsiregistruoji, įrašai treniruotę, o treneris per ~1 min. gauna laišką**.",
         "Užduoties minimumas įvykdytas ir praplėstas: 8 lentelės, 2 Zap'ai, diagramos, tikslai, pasiūlymai, "
-        "ataskaitos, vaidmenys.",
-        "Sukurta per keturias paskaitas, 23 pull request; dokumentuota Notion, README ir docs (LT / EN).",
+        "ataskaitos, vaidmenys ir (v5) diegiama telefono programėlė, veikianti be ryšio.",
+        "Sukurta per keturias paskaitas, 25 pull request, vėliau v5; dokumentuota Notion, README ir docs (LT / EN).",
         "Toliau: automatinės savaitinės ataskaitos (`pg_cron`), savas SMTP el. pašto patvirtinimui grąžinti, "
         "DI santraukos žingsnis Zap 2.",
     ],
     "next": [
         "Gyvos demonstracijos scenarijus  →  A priedas",
-        "Nuorodos ir šaltiniai  →  B priedas",
+        "Nuorodos ir šaltiniai  →  B priedas   ·   Telefono programėlė  →  C priedas",
         f"[workout-log-murex-three.vercel.app]({APP})",
     ],
     "notes": """
@@ -1290,8 +1472,10 @@ LT["appA"] = {
     "subtitle": ["Kaip sportininkas įrašome jėgos treniruotę, peržiūrime pažangą, siunčiame ataskaitą ir "
                  "atidarome trenerio Gmail.",
                  "Apie 4 minutes  ·  veikianti svetainė  ·  kiekvieno žingsnio ekrano nuotrauka"],
-    "notes": "Rodykite po pagrindinės dalies. Jei neveiktų internetas, rodykite šio priedo ekrano nuotraukas: jos "
-             "padarytos veikiančioje svetainėje 2026-11-12 (LT sąsajos demo 18:45–18:47).",
+    "notes": "Rodykite po pagrindinės dalies. Jei neveiktų internetas, rodykite šio priedo ekrano nuotraukas. Programėlės "
+             "ekranai pakartotinai nufotografuoti v5 versijoje su tais pačiais demonstraciniais duomenimis (imituotas API: "
+             "nieko neišsaugoma ir nesiunčiama); Gmail, Zapier ir Supabase ekranai – iš gyvo paleidimo 2026-11-12 "
+             "(LT sąsajos demo 18:45–18:47).",
 }
 
 LT["script"] = {
@@ -1299,12 +1483,13 @@ LT["script"] = {
     "kicker": "Veikianti svetainė, LT sąsaja, apie 4 minutes",
     "before_h": "Prieš pradedant",
     "before": [
-        f"Atidarykite [svetainę]({APP}) ir **LT / EN** jungiklį nustatykite į **LT**.",
+        f"Atidarykite [svetainę]({APP}) ir spustelėkite Lietuvos vėliavėlę (**LT**, šalia logotipo).",
         "Prisijunkite kaip `demo.athlete.a@example.com` (slaptažodis: README → Demonstracinės paskyros).",
         "Sportininkas A dalijasi su treneriu `mse1987319+logify@gmail.com` (**Dalijimasis**).",
         "Atidarykite Gmail `mse1987319@gmail.com` (paskyrą perjunkite viršuje dešinėje) ir ieškokite "
         "`to:mse1987319+logify@gmail.com`.",
         "Zapier: abu Zap'ai **On**. Tik viena ataskaita per 5 min.: jei ką tik siųsta, palaukite.",
+        f"Telefono dalis (neprivaloma): atidarykite [v5 peržiūrą]({PREVIEW}) telefone; ekrano nuotraukos – C priede.",
     ],
     "head": ["#", "Darykite", "Sakykite", "Laikas"],
     "steps": [
@@ -1332,7 +1517,7 @@ LT["demo"] = {"do": "DARYKITE", "say": "SAKYKITE", "behind": "UŽKULISIAI"}
 
 LT["steps"] = [
     {"title": "1 žingsnis · Prisijungimas", "img": ["01-login.jpg"],
-     "do": "Atidarykite svetainę, pasirinkite **LT**, prisijunkite kaip `demo.athlete.a@example.com`.",
+     "do": "Atidarykite svetainę, spustelėkite Lietuvos vėliavėlę, prisijunkite kaip `demo.athlete.a@example.com`.",
      "say": "Paskyros – Supabase Auth. Kalbos pasirinkimas įsimenamas naršyklėje.",
      "behind": "Sesijos JWT siunčiamas su kiekviena užklausa; RLS tikrina `user_id = auth.uid()`."},
     {"title": "2 žingsnis · Mano planai", "img": ["02-plans.jpg"],
@@ -1409,6 +1594,48 @@ LT["steps"] = [
      "say": "Hook URL – paslaptis, todėl ekrano nuotraukose jie paslėpti."},
 ]
 
+LT["appC"] = {
+    "title": "Mobilioji programėlė (PWA)",
+    "subtitle": [
+        "Įdiekite, naudokite salėje, prarandate ryšį ir matote, kaip treniruotė atkeliauja vieną kartą.",
+        "Apie 3 minutes  ·  v5 peržiūra  ·  tikra programėlė 390 × 780 px telefone, demonstraciniai duomenys",
+    ],
+    "notes": f"Rodykite po A priedo, jei klausytojai klausia apie telefonus. Gyvai: telefone atidarykite {PREVIEW} (v5 versija su gyva duomenų baze). Čia pateikti ekranai nufotografuoti tikroje programėlėje su imituotu API, todėl nieko neišsaugota ir nesiųsta.",
+}
+
+LT["phone"] = [
+    {"title": "Telefonas 1 · Įdiegimas",
+     "img": ["p01-install.jpg", "p02-ios-install.jpg"],
+     "caps": ["Android: mygtukas Įdiegti", "iPhone: Bendrinti → Pridėti prie pradžios ekrano"],
+     "do": "Atidarykite svetainę telefono naršyklėje. Android: bakstelėkite **Įdiegti**. iPhone Safari: **Bendrinti**, tada **Pridėti prie pradžios ekrano**.",
+     "say": "Jokios programėlių parduotuvės: programėlė yra svetainė su piktograma pradžios ekrane.",
+     "behind": "`manifest.webmanifest` ir service worker leidžia ją įdiegti; pavadinimas ir piktograma imami iš manifesto."},
+    {"title": "Telefonas 2 · Apatinė kortelių juosta",
+     "img": ["p03-plans.jpg", "p04-log.jpg", "p05-progress.jpg"],
+     "caps": ["Mano planai", "Įrašyti treniruotę", "Pažanga"],
+     "do": "Naudokite juostą apačioje: Mano planai, Įrašyti, Pažanga, Dalijimasis (treneriams: Mano sportininkai).",
+     "say": "Tie patys ekranai kaip kompiuteryje, išdėstyti vienai rankai salėje.",
+     "behind": "Tas pats meniu tampa apatine juosta, kai plotis ne didesnis nei 640 px; maketas atsižvelgia į iškarpą ir apatinę juostą."},
+    {"title": "Telefonas 3 · Be ryšio: paskutiniai duomenys išlieka",
+     "img": ["p06-offline-saved.jpg", "p07-offline-log.jpg"],
+     "caps": ["Be ryšio: išsaugoti duomenys su data", "Be ryšio: forma veikia kaip įprasta"],
+     "do": "Įjunkite telefono lėktuvo režimą ir atidarykite programėlę.",
+     "say": "Atsidaro iš karto. Kiekvienas ekranas rodo paskutinius gautus duomenis, o treniruotę vis tiek galima užpildyti.",
+     "behind": "Service worker talpykla + išsaugoti duomenys kiekvienam naudotojui naršyklėje; sesijos sargas neleidžia tuščiam atsakymui jų pakeisti."},
+    {"title": "Telefonas 4 · Įrašyta be ryšio, išsiųsta prisijungus",
+     "img": ["p08-kept.jpg", "p09-waiting.jpg", "p10-sent.jpg"],
+     "caps": ["Išsaugota šiame telefone", "Laukia išsiuntimo", "Vėl yra ryšys: įprasta eilutė"],
+     "do": "Be ryšio paspauskite **Išsaugoti treniruotę**, tada vėl įjunkite ryšį.",
+     "say": "Treniruotė palaukia, tada išeina pati, vieną kartą. Po to seka trenerio laiškas.",
+     "behind": "Užklausoje yra `p_id` + `p_logged_at`; pakartotinis siuntimas grąžina tą pačią eilutę: vienas webhook, vienas laiškas."},
+    {"title": "Telefonas 5 · Senesnė duomenų bazė ir treneris",
+     "img": ["p11-old-db.jpg", "p12-instructor.jpg"],
+     "caps": ["Senesnė duomenų bazė: įspėjimas, programėlė veikia", "Treneris: Mano sportininkai telefone"],
+     "do": "Jei duomenų bazė senesnės versijos, programėlė rodo įspėjimo eilutę. Treneriai gauna tą pačią apatinę juostą.",
+     "say": "Nauja programėlė gali pasirodyti prieš duomenų bazės pakeitimą ir niekas nesugenda.",
+     "behind": "Senesnėje duomenų bazėje nėra `schema_version()`; tada programėlė siunčia senuoju būdu, be id."},
+]
+
 LT["appB"] = {
     "title": "Nuorodos ir šaltiniai",
     "subtitle": ["Viskas, kuo remiasi šis pristatymas: veikiantis produktas, saugykla, Notion dokumentacija, kurso "
@@ -1427,10 +1654,14 @@ LT["links"] = [
              f"[supabase/schema.sql]({BLOB}supabase/schema.sql)",
              f"[supabase/seed.sql]({BLOB}supabase/seed.sql) (demo duomenys)",
              f"[supabase/tests/]({TREE}supabase/tests)",
+             f"v5 peržiūra (telefono programėlė): [workout-f3whexba1-mse1987319-9300.vercel.app]({PREVIEW})",
+             f"[release/v5 šaka]({TREE5})",
          ]),
          ("Dokumentai saugykloje", [
              f"[README (LT)]({BLOB}README.lt.md) · [README (EN)]({BLOB}README.md)",
-             f"[Architektūra: ERD, diegimas]({BLOB}docs/lt/architecture.md)",
+             f"[Architektūra: ERD, diegimas, mobilioji]({BLOB}docs/lt/architecture.md)",
+             f"[PWA vadovas: diegimas, be ryšio, siuntimo eilė]({BLOB5}docs/lt/pwa.md)",
+             f"[PWA projektavimo įrašas]({BLOB5}docs/superpowers/specs/2026-11-16-pwa-offline-design.md)",
              f"[Įgyvendinimo planas]({BLOB}docs/lt/implementation-plan.md)",
              f"[Zapier vadovas]({BLOB}docs/lt/zapier.md)",
              f"[Supabase vadovas]({BLOB}docs/lt/supabase.md)",
