@@ -45,11 +45,11 @@ If the email or password is wrong, you will see a red message and nothing else h
 
 ![Login with the message "Wrong email or password"](../images/en/04-login-error.png)
 
-To leave, press **Log out** at the top right.
+To leave, press the **Log out** icon (a door with an arrow) at the top right. Pointing at it shows *Log out* and the email you are logged in with.
 
 ## 2. Language and menu
 
-Logify speaks **Lithuanian (LT)** and **English (EN)**. The **LT / EN** switch sits at the top, next to the logo, on every screen including the login screen. Your choice is remembered in this browser.
+Logify speaks **Lithuanian** and **English**. The two small flags at the top, right next to the logo, switch the language: the Lithuanian flag for Lithuanian, the British one for English. They are on every screen, including the login screen, and the chosen one has a colored ring. Your choice is remembered in this browser.
 
 Names you type yourself (plans, exercises, notes) are never translated.
 

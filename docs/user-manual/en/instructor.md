@@ -31,11 +31,11 @@ The role is chosen once, when you sign up.
 
 ![Sign-up form with Instructor selected](../images/en/03-signup-instructor.png)
 
-To log in later, use your email and password and press **Log in**. A wrong email or password shows a red message; check the details and try again. Press **Log out** at the top right when you are done.
+To log in later, use your email and password and press **Log in**. A wrong email or password shows a red message; check the details and try again. Press the **Log out** icon (a door with an arrow) at the top right when you are done; pointing at it shows *Log out* and your email.
 
 ## 2. Language and menu
 
-The **LT / EN** switch at the top, next to the logo, changes the language of the whole app; it is remembered in this browser. Names typed by users (plans, exercises, notes) are not translated, and neither are the report summaries and set summaries the database writes (they are always in English, also in the emails).
+The two small flags at the top, next to the logo (Lithuanian and British), change the language of the whole app; it is remembered in this browser. Names typed by users (plans, exercises, notes) are not translated, and neither are the report summaries and set summaries the database writes (they are always in English, also in the emails).
 
 On a computer the menu is at the top; on a phone it is a bar at the bottom of the screen (see [On a phone, and without signal](#8-on-a-phone-and-without-signal)). Instructors have these entries:
 

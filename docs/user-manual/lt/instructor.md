@@ -31,11 +31,11 @@ Vaidmuo pasirenkamas vieną kartą – registruojantis.
 
 ![Registracijos forma su pasirinktu treneriu](../images/lt/03-signup-instructor.png)
 
-Vėliau prisijungiate su el. paštu ir slaptažodžiu, paspausdami **Prisijungti**. Neteisingas el. paštas ar slaptažodis parodo raudoną pranešimą; patikrinkite duomenis ir bandykite dar kartą. Baigę darbą viršuje dešinėje paspauskite **Atsijungti**.
+Vėliau prisijungiate su el. paštu ir slaptažodžiu, paspausdami **Prisijungti**. Neteisingas el. paštas ar slaptažodis parodo raudoną pranešimą; patikrinkite duomenis ir bandykite dar kartą. Baigę darbą viršuje dešinėje paspauskite **Atsijungti** piktogramą (durys su rodykle); užvedus ant jos žymeklį, rodoma *Atsijungti* ir jūsų el. paštas.
 
 ## 2. Kalba ir meniu
 
-**LT / EN** jungiklis viršuje, šalia logotipo, pakeičia visos programos kalbą; pasirinkimas įsimenamas šioje naršyklėje. Naudotojų įvesti pavadinimai (planai, pratimai, pastabos) neverčiami, taip pat neverčiamos ataskaitų ir serijų santraukos, kurias parašo duomenų bazė (jos visada angliškos, tokios pat ir el. laiškuose).
+Dvi mažos vėliavėlės viršuje, greta logotipo (Lietuvos ir Didžiosios Britanijos), pakeičia visos programos kalbą; pasirinkimas įsimenamas šioje naršyklėje. Naudotojų įvesti pavadinimai (planai, pratimai, pastabos) neverčiami, taip pat neverčiamos ataskaitų ir serijų santraukos, kurias parašo duomenų bazė (jos visada angliškos, tokios pat ir el. laiškuose).
 
 Kompiuteryje meniu yra viršuje, o telefone – juosta ekrano apačioje (žr. [Telefone ir be ryšio](#8-telefone-ir-be-ryšio)). Treneriai turi šias skiltis:
 

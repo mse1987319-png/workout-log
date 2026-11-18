@@ -45,11 +45,11 @@ Jei el. paštas ar slaptažodis neteisingi, pamatysite raudoną pranešimą ir d
 
 ![Prisijungimas su pranešimu „Neteisingas el. paštas arba slaptažodis“](../images/lt/04-login-error.png)
 
-Norėdami baigti darbą, viršuje dešinėje paspauskite **Atsijungti**.
+Norėdami baigti darbą, viršuje dešinėje paspauskite **Atsijungti** piktogramą (durys su rodykle). Užvedus ant jos žymeklį, rodoma *Atsijungti* ir el. paštas, kuriuo esate prisijungę.
 
 ## 2. Kalba ir meniu
 
-„Logify“ veikia **lietuvių (LT)** ir **anglų (EN)** kalbomis. **LT / EN** jungiklis yra viršuje, šalia logotipo, kiekviename ekrane, taip pat prisijungimo ekrane. Jūsų pasirinkimas įsimenamas šioje naršyklėje.
+„Logify“ veikia **lietuvių** ir **anglų** kalbomis. Kalbą perjungia dvi mažos vėliavėlės viršuje, greta logotipo: Lietuvos – lietuvių kalbai, Didžiosios Britanijos – anglų. Jos yra kiekviename ekrane, taip pat prisijungimo ekrane, o pasirinktoji apvesta spalvotu rėmeliu. Jūsų pasirinkimas įsimenamas šioje naršyklėje.
 
 Pavadinimai, kuriuos įrašote patys (planai, pratimai, pastabos), niekada nėra verčiami.
 
