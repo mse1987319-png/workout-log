@@ -150,10 +150,12 @@ Jam reikia bent vieno plano projekte (demonstraciniuose duomenyse jų yra); tuš
 Jūsų projekte lentelės jau yra, todėl nieko kurti iš naujo nereikia:
 
 1. Supabase → **SQL Editor** → **New query**, įklijuokite visą [`supabase/schema.sql`](../../supabase/schema.sql) ir paspauskite **Run**. Ją galima paleisti pakartotinai, ir ji pritaiko v5 bloką: senoji `log_workout()` pakeičiama nauja ir pridedama `schema_version()`.
-2. **New query** → įklijuokite visą [`supabase/tests/log_workout_offline.test.sql`](../../supabase/tests/log_workout_offline.test.sql) → **Run**. Tikimasi: klaida, kuri baigiasi *TESTS PASSED (…)* – tai testas, pats save atšaukiantis. Jei norite patikrinti viską, kitus `supabase/tests` testus paleiskite taip pat.
-3. Perkraukite programą. Senesnės duomenų bazės įspėjimas išnyksta, kai programa sužino, kad versija yra 5.
+2. **New query** → įklijuokite visą [`supabase/tests/log_workout_offline.test.sql`](../../supabase/tests/log_workout_offline.test.sql) → **Run**. Tikimasi: klaida, kuri baigiasi *TESTS PASSED (…)* – tai testas, pats save atšaukiantis. Jei norite patikrinti viską, kitus `supabase/tests` testus paleiskite taip pat (iš viso yra septyni testų failai).
+3. Patikrinkite versiją: `select public.schema_version();` grąžina `5`. Perkraukite programą; senesnės duomenų bazės įspėjimas išnyksta, kai programa sužino, kad versija yra 5.
 
-**Tai saugu jau veikiančiai programai.** Nauji parametrai neprivalomi, todėl šiandien programos siunčiamas kvietimas vis dar tinka, o nieko kito, ką programa naudoja, nesikeičia (lentelės, politikos, trigeriai ir webhook nepaliesti).
+**Tai saugu jau veikiančiai programai.** Nauji parametrai neprivalomi, todėl šiandien programos siunčiamas kvietimas vis dar tinka, o nieko kito, ką programa naudoja, nesikeičia (lentelės, politikos, trigeriai ir webhook nepaliesti). Pirmiausia pritaikykite duomenų bazę, o kodą suliekite vėliau: žr. [v5 išleidimas](deployment.md#7-v5-išleidimas). Supabase projektas, kuriuo remiasi veikianti demonstracinė svetainė, jau yra v5.
+
+> **Nepaleiskite `main` senojo `schema.sql` v5 duomenų bazėje.** `schema.sql` iš laikų prieš v5 yra ankstesnis nei v5: `main` esantis, kol `release/v5` nesuliesta, o vėliau – bet kuri senesnė kopija ar senesnis klonas. Jis sukuria aštuonių parametrų `log_workout()` šalia v5 versijos, ir kvietimai su aštuoniais pradiniais parametrais tada nepavyksta su `PGRST203`. Sprendimas yra [trikčių šalinimo lentelėje](#trikčių-šalinimas) žemiau.
 
 Jei šio žingsnio praleisite, v5 programa su senesne duomenų baze vis tiek veikia, tik su įspėjimu: be ryšio įrašytoms treniruotėms priskiriamas jų išsiuntimo laikas, o nutrūkus ryšiui viena gali būti išsaugota du kartus.
 
@@ -170,3 +172,7 @@ Jei šio žingsnio praleisite, v5 programa su senesne duomenų baze vis tiek vei
 | „Programėlė dar nesukonfigūruota…“ | Trūksta kintamojo arba jis vis dar vietos žymeklis | Užpildykite `.env.local`, paleiskite `npm run dev` iš naujo |
 | Eilutė po antrašte sako, kad duomenų bazė *senesnė nei ši programėlė* | `schema.sql` nebuvo paleista iš naujo po v5 | [v5 pritaikymas esamam projektui](#v5-pritaikymas-esamam-projektui) |
 | `log_workout()` kvietimai nepavyksta su `PGRST203` (*Could not choose the best candidate function between…*) arba SQL Editor rašo *function public.log_workout(…) is not unique* | Yra dvi `log_workout()` versijos, pavyzdžiui, nes v5 duomenų bazėje buvo paleista senesnė `schema.sql`: kvietimas su aštuoniais pradiniais parametrais tinka abiem | Paleiskite `drop function public.log_workout(uuid, text, text, integer, text, numeric, text, jsonb);`, tada dar kartą paleiskite v5 `schema.sql`. v5 testas (`supabase/tests/log_workout_offline.test.sql`) šią būseną aptinka: jis sustoja su šia klaida, užuot pasibaigęs *TESTS PASSED* |
+
+## Susiję
+
+[architecture.md](architecture.md) (ERD, kas ką gali skaityti, o telefono pusė – [7 skyriuje](architecture.md#7-mobilioji-architektūra-pwa)) · [pwa.md](pwa.md) (telefono programėlė ir ką reiškia senesnės duomenų bazės įspėjimas) · [deployment.md](deployment.md#7-v5-išleidimas) (v5 išleidimas: pirmiausia duomenų bazė) · [setup.md](setup.md) (vietinis paruošimas) · [zapier.md](zapier.md) (webhook ir laiškai)

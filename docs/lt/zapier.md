@@ -16,6 +16,15 @@ Treniruotės įrašymas programoje  →  INSERT į workouts
 ```
 
 **Kas gauna laišką.** Ne fiksuotas adresas Zapier: sprendžia duomenų bazė. Trigeris lentelėje `workouts` (ir `reports`, Zap 2 atveju) į eilutės stulpelį `instructor_emails` įrašo kiekvieno trenerio, su kuriuo sportininkas dalijasi, el. paštą, todėl webhook juos atsiunčia, o Gmail *To* yra tiesiog šis laukas. Sportininkas, kuris nesidalija su niekuo, gavėjo neturi: Filter sustabdo paleidimą, laiško ir užduoties nėra. Gavėjo įvesti negali niekas, nes stulpelį nustato tik trigeris.
+
+**Be ryšio įrašytos treniruotės (v5).** Telefone be ryšio įrašyta treniruotė į duomenų bazę, o kartu ir į Zapier, patenka tik tada, kai telefonas ją išsiunčia. Todėl laiškas ateina, kai treniruotė *išsiunčiama* (kai telefonas vėl turi ryšį ir programa atidaryta), o tai gali būti praėjus kelioms valandoms po treniruotės. Zap niekas nesikeičia: `INSERT`, webhook turinys ir visi laukai, kuriuos naudoja Zap, tokie patys kaip anksčiau. Verta žinoti tris dalykus:
+
+- **`record__created_at` yra laikas, kada telefone paspaustas Išsaugoti** (laiško turinyje rodomas kaip *Logged at*), jei tai buvo per pastarąsias 30 dienų ir ne ateityje; kitaip tai išsiuntimo laikas. Tai vienintelis laukas, kurio prasmė nauja, ir nuo jo Zap niekas nepriklauso: Filter skaito `type` ir `record__instructor_emails`, Paths skaito `record__type`, o Gmail naudoja `record__instructor_emails`, `record__title` ir turinio laukus.
+- **Gavėjai yra tie, su kuriais sportininkas dalijasi treniruotės išsiuntimo metu**, nes trigeris `instructor_emails` užpildo per tą INSERT.
+- **Lygiai vienas laiškas kiekvienai treniruotei**, kad ir kiek kartų telefonas bandytų: pakartotinis siuntimas randa išsaugotą treniruotę ir nieko neįterpia, todėl nėra antro INSERT, antro webhook ir antro Zap paleidimo ([supabase.md](supabase.md#6-treniruočių-įrašymas-be-ryšio-v5)).
+
+Ataskaitoms (Zap 2) reikia ryšio, todėl jos išsiunčiamos iškart; be ryšio įrašymas taikomas tik treniruotėms.
+
 ## Prieš pradedant
 
 - Zapier paskyra su **aktyviu Pro bandomuoju laikotarpiu**: Webhooks by Zapier ir Paths neveikia nemokamame plane (kurso 8 skaidrė).
@@ -67,7 +76,7 @@ Programoje, kaip **susietas sportininkas**, įrašykite **Strength** treniruotę
 | `record__instructor_emails` | `you+coach@gmail.com` | Sportininko treneriai, atskirti kableliais: **Gmail *To***. Tuščias, jei sportininkas nesidalija su niekuo |
 | `record__user_id` | `3f6c…` | Kas įrašė |
 | `record__plan_id` | `9a1e…` | |
-| `record__created_at` | `2026-11-11T18:00:00.123+00:00` | |
+| `record__created_at` | `2026-11-11T18:00:00.123+00:00` | Kada treniruotė įrašyta: be ryšio įrašytos treniruotės atveju – laikas, kada paspaustas Išsaugoti (per 30 dienų), o ne išsiuntimo laikas |
 | `old_record…` | (tuščia) | Užpildoma tik UPDATE atveju |
 
 Pačios serijos laikomos savo lentelėje (`workout_sets`), kurios webhook nestebi. Kad laiške jas vis tiek būtų galima išvardyti, `log_workout()` į įrašomą treniruotės eilutę taip pat įrašo vienos eilutės santrauką: `record__sets_summary`. Jei jūsų Zap buvo nustatytas dar prieš atsirandant šiam laukui, įrašykite jėgos treniruotę su serijomis ir dar kartą paspauskite **Test trigger**, kad Zapier išmoktų naują lauką. Tas pats galioja `record__instructor_emails`: žr. [Jau publikuotų Zap atnaujinimas](#jau-publikuotų-zap-atnaujinimas).
@@ -205,6 +214,7 @@ Kodėl Fallback siunčia laišką: kurso 16 skaidrė fallback šakoje laiško ne
 | Gavėjas 1 | Įrašykite treniruotę kaip sportininkas, susietas su treneriu X | Laiškas ateina X ir niekam kitam |
 | Gavėjas 2 | Susiekite sportininką su antru treneriu Y ir įrašykite treniruotę | Vienas laiškas, adresuotas X ir Y |
 | Gavėjas 3 | **Sharing → Stop sharing** su visais, tada įrašykite treniruotę | Zap istorijoje matyti, kad vykdymą **sustabdė Filter**; laiško ir užduoties nėra |
+| Be ryšio (v5) | Peržiūroje arba su `npm run preview` DevTools → Network nustatykite **Offline**, įrašykite treniruotę, palaukite minutę, tada tinklą grąžinkite į **No throttling** | Kol nėra ryšio, Zap nepaleidžiamas. Kai treniruotė išsiunčiama – **vienas** paleidimas ir vienas laiškas; *Logged at* rodo laiką, kada paspaustas Išsaugoti ([pwa.md](pwa.md#7-bandymas-be-ryšio)) |
 
 Pateikimo ekrano nuotraukos (kontrolinio sąrašo 4 punktas): Zap redaktorius, rodantis Paths, ir Zap istorija 2 ir 3 testams.
 
@@ -282,7 +292,7 @@ Copilot Zap 1 ir Zap 2 pakeitimus gali atlikti pagal **5 užklausą** ir aukšč
 
 **Ką žinoti.**
 
-- Sprendžia **naujo** webhook turinys: gavėjai yra tie, su kuriais sportininkas dalijosi *treniruotės įrašymo ar ataskaitos išsiuntimo metu*. Vėliau susiejus senos treniruotės iš naujo nesiunčiamos.
+- Sprendžia **naujo** webhook turinys: gavėjai yra tie, su kuriais sportininkas dalijosi *tada, kai treniruotė pasiekė duomenų bazę (be ryšio įrašytos – kai buvo išsiųsta), arba ataskaitos išsiuntimo metu*. Vėliau susiejus senos treniruotės iš naujo nesiunčiamos.
 - Sportininkas, kuris nesidalija su niekuo, laiško daugiau **negauna** (anksčiau jis eidavo fiksuotu adresu). Taip ir numatyta: dalijimasis yra sportininko pasirinkimas.
 - Su keliais treneriais vienas laiškas eina visiems (jie mato vienas kito adresus). Viena Gmail užduotis, o ne po vieną kiekvienam treneriui.
 - Abiejų demonstracinių trenerių adresai baigiasi `@example.com`, todėl laiškai jiems grįžta. Norėdami pamatyti tikrą pristatymą, užregistruokite trenerį su adresu, kurį galite skaityti, ir skiltyje **Sharing** susiekite su juo demonstracinį sportininką.
@@ -300,3 +310,8 @@ Copilot Zap 1 ir Zap 2 pakeitimus gali atlikti pagal **5 užklausą** ir aukšč
 | Jėgos treniruotės patenka į Fallback | Kelias A naudoja `Type` vietoj `Record Type` arba lygina su `Strength` (programa siunčia mažosiomis `strength`) | 5 žingsnis |
 | Du laiškai už vieną treniruotę | Nėra Filter, todėl redagavimas (UPDATE) taip pat siunčia laišką | 4 žingsnis |
 | Laiškas neateina | Prijungta netinkama Gmail paskyra, laiškas Spam aplanke arba Zap išjungtas | Pirmiausia patikrinkite Zap istoriją, tada Gmail ryšį |
+| Laiškas apie treniruotę ateina praėjus kelioms valandoms po jos | Ji buvo įrašyta be ryšio ir išsiųsta vėliau | Taip ir numatyta: laiškas išeina, kai telefonas išsiunčia treniruotę. *Logged at* rodo, kada paspaustas Išsaugoti. Treniruotė, programoje vis dar pažymėta *Laukia išsiuntimo*, dar neišsiųsta |
+
+## Susiję
+
+[supabase.md](supabase.md) (webhook, `instructor_emails` ir išsaugojimas lygiai vieną kartą [6 skyriuje](supabase.md#6-treniruočių-įrašymas-be-ryšio-v5)) · [pwa.md](pwa.md) (įrašymas be ryšio ir siuntimas vėliau) · [architecture.md](architecture.md#4-duomenų-srautai) (kaip treniruotė tampa laišku) · [deployment.md](deployment.md) (Vercel) · [setup.md](setup.md) (vietinis paruošimas)

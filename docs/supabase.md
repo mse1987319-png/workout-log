@@ -150,10 +150,12 @@ It needs at least one plan in the project (the seed data has them); on an empty 
 Your project already has the tables, so there is nothing to recreate:
 
 1. Supabase → **SQL Editor** → **New query**, paste the whole of [`supabase/schema.sql`](../supabase/schema.sql) and press **Run**. It is re-runnable, and it applies the v5 block: the old `log_workout()` is replaced by the new one and `schema_version()` is added.
-2. **New query** → paste the whole of [`supabase/tests/log_workout_offline.test.sql`](../supabase/tests/log_workout_offline.test.sql) → **Run**. Expected: an error ending in *TESTS PASSED (…)*, which is the test rolling itself back. Run the other tests in `supabase/tests` the same way if you want to check everything.
-3. Reload the app. The older-database warning is gone once the app learns the version is 5.
+2. **New query** → paste the whole of [`supabase/tests/log_workout_offline.test.sql`](../supabase/tests/log_workout_offline.test.sql) → **Run**. Expected: an error ending in *TESTS PASSED (…)*, which is the test rolling itself back. Run the other tests in `supabase/tests` the same way if you want to check everything (there are seven test files).
+3. Check the version: `select public.schema_version();` returns `5`. Reload the app; the older-database warning is gone once the app learns the version is 5.
 
-**This is safe for an app that is already live.** The new parameters are optional, so the call the app sends today still matches, and nothing else the app uses changes (tables, policies, triggers and the webhooks are untouched).
+**This is safe for an app that is already live.** The new parameters are optional, so the call the app sends today still matches, and nothing else the app uses changes (tables, policies, triggers and the webhooks are untouched). Apply the database first and merge the code afterwards: see [Releasing v5](deployment.md#7-releasing-v5). The Supabase project behind the live demo is already on v5.
+
+> **Do not run `main`'s old `schema.sql` on a v5 database.** A `schema.sql` from before v5 is the pre-v5 one: `main`'s own until `release/v5` is merged, and any older checkout or pasted copy afterwards. It creates the eight-parameter `log_workout()` next to the v5 one, and calls with the eight original parameters then fail with `PGRST203`. The fix is in the [troubleshooting table](#troubleshooting) below.
 
 If you skip this step, a v5 app still works against the older database, with a warning: workouts logged offline get the time they are sent, and after a dropped connection one could be saved twice.
 
@@ -170,3 +172,7 @@ If you skip this step, a v5 app still works against the older database, with a w
 | "The app is not set up yet…" | A variable is missing or still a placeholder | Fill in `.env.local`, restart `npm run dev` |
 | The line under the header says the database is *an older version than this app* | `schema.sql` has not been re-run since v5 | [Applying v5 to an existing project](#applying-v5-to-an-existing-project) |
 | Calls to `log_workout()` fail with `PGRST203` (*Could not choose the best candidate function between…*), or the SQL Editor says *function public.log_workout(…) is not unique* | There are two versions of `log_workout()`, for example because an older `schema.sql` was run on a v5 database: a call with the eight original parameters matches both | Run `drop function public.log_workout(uuid, text, text, integer, text, numeric, text, jsonb);`, then run the v5 `schema.sql` again. The v5 test (`supabase/tests/log_workout_offline.test.sql`) detects this state: it stops with that error instead of ending in *TESTS PASSED* |
+
+## Related
+
+[architecture.md](architecture.md) (ERD, who may read what, and the phone side in [section 7](architecture.md#7-mobile-architecture-pwa)) · [pwa.md](pwa.md) (the phone app, and what the older-database warning means) · [deployment.md](deployment.md#7-releasing-v5) (releasing v5: the database first) · [setup.md](setup.md) (local setup) · [zapier.md](zapier.md) (the webhooks and emails)

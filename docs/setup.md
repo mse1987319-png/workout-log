@@ -70,9 +70,11 @@ No Supabase CLI, Vercel CLI or Docker is needed: this project uses the hosted da
 | `oxlint` | Vite template | Linter (`npm run lint`) |
 | `@supabase/supabase-js` | Added by the script | Auth and database client |
 | `react-router-dom` | Added by the script | Navigation between the screens |
+| `recharts` | `package.json` | The Progress charts |
+| `vite-plugin-pwa` | `package.json` (dev) | Builds the service worker and the manifest (the phone app, [pwa.md](pwa.md)). A build-time tool: it adds nothing to the app at run time |
 | `vitest`, `jsdom`, `@testing-library/*` | `package.json` (dev) | Unit tests (`npm test`); they never contact Supabase |
 
-`recharts` is needed only for the bonus Progress chart. Add it in that feature's branch: `npm install recharts`.
+`npm install` installs all of these from `package.json`, so the script and a plain `npm install` give the same result; the script's own list (`@supabase/supabase-js`, `react-router-dom`) only matters for a project that doesn't have them in `package.json` yet.
 
 ### Accounts
 
@@ -137,13 +139,35 @@ cp .env.example .env.local     # then fill in the two values
 npm run dev
 ```
 
+## Try the phone app locally
+
+Logify is also an installable phone app that works without signal ([pwa.md](pwa.md)). **`npm run dev` has no service worker**, on purpose, so a stale cache never confuses development. The service worker and the manifest exist only in the production build, so test them there:
+
+```bash
+npm run build
+npm run preview        # http://localhost:4173
+```
+
+1. Open `http://localhost:4173` in Chrome and log in **with a connection**. The service worker installs, and the warm-up saves some data. A service worker works on `localhost` without HTTPS.
+2. DevTools → **Application**: *Manifest* shows the name, the icons and that the app is installable; *Service Workers* shows `sw.js` as activated; *Cache Storage* holds the precache; *Local Storage* shows the `logify.*` keys.
+3. Open My plans, Log workout and Progress once. Then tick **Application → Service Workers → Offline** (or **Network → Offline**) and reload: the app opens, and the status line says you are offline.
+4. Log a workout: it is kept on the phone and shows *Waiting to send* on My plans. Untick Offline: it is sent, and the line goes away.
+5. To start from scratch, **Application → Storage → Clear site data**; it also removes the service worker.
+
+The full walk-through and the limits are in [pwa.md](pwa.md#7-testing-it-offline). To try it on a real phone, open a Vercel preview or the live site: they are served over HTTPS ([deployment.md](deployment.md#6-the-phone-app-pwa-on-vercel)). The dev server opened by its LAN IP is plain `http://`, so a phone gets no service worker there.
+
+## Screenshots
+
+The screenshots in the [user manuals](user-manual/README.md) are retaken with a screenshot tool rather than by hand, so that they match the app after a UI change. The tool lives in `_task/results/src/screenshots/`; its README says what it needs and how to run it: [`_task/results/src/screenshots/README.md`](../_task/results/src/screenshots/README.md).
+
 ## Verify
 
 | Command | Expected |
 |---|---|
 | `powershell -ExecutionPolicy Bypass -File scripts\setup.ps1 -CheckOnly` | Every line is `[ok]`; ends with "Environment is ready" |
-| `npm run dev` | Vite prints `Local: http://localhost:5173/`; the page opens |
-| `npm run build` | Ends with `✓ built in …`; output in `dist/` |
+| `npm run dev` | Vite prints `Local: http://localhost:5173/`; the page opens (no service worker) |
+| `npm run build` | Ends with `✓ built in …`; output in `dist/`, including `sw.js` and `manifest.webmanifest` |
+| `npm run preview` | Serves the build at `http://localhost:4173`; DevTools → Application shows the manifest and an activated service worker |
 | `npm test` | Every test file passes |
 | `git status` | `.env.local`, `node_modules/` and `dist/` are **not** listed |
 
@@ -158,3 +182,8 @@ npm run dev
 | `Node.js <version> is too old` | Node is older than 22.12 | `winget upgrade OpenJS.NodeJS.LTS`, or switch version in your version manager. |
 | The app shows a Supabase error or `supabaseUrl is required` | `.env.local` still has placeholders, or the dev server was not restarted | Fill in both values, then restart `npm run dev`. |
 | Port 5173 is in use | Another dev server is running | Stop it, or accept the next port Vite offers and add that URL to Supabase Redirect URLs. |
+| The service worker doesn't show up in DevTools, or the app doesn't open offline | You are on `npm run dev` (no service worker), on a plain `http://` address that isn't `localhost`, or you haven't opened the app once with a connection | Use `npm run build` + `npm run preview` on `localhost`, and log in with a connection first ([above](#try-the-phone-app-locally)) |
+
+## Related
+
+[deployment.md](deployment.md) (Vercel, the PWA on Vercel, releasing v5) · [supabase.md](supabase.md) (the database, applying v5) · [pwa.md](pwa.md) (the phone app and how to test it offline) · [architecture.md](architecture.md) (how the pieces fit, including the phone side) · [zapier.md](zapier.md) (the emails)
