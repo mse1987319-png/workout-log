@@ -4,7 +4,7 @@
 
 „Logify“ yra progresyvioji internetinė programa (PWA): ją galima įdėti į telefono pradžios ekraną, ji atsidaro per visą ekraną kaip programėlė ir veikia be ryšio. Matote savo planus, istoriją ir pažangą (treneriai – savo sportininkus) ir galite įrašyti treniruotę. Treniruotė lieka telefone ir, grįžus ryšiui, išsiunčiama kartu su trenerio laišku.
 
-Šiame puslapyje paaiškinta, kaip veikia dalys be ryšio, kaip jas išbandyti ir kur yra ribos. Naudotojo požiūriu žr. [sportininko vadovą](../user-manual/lt/athlete.md#10-logify-naudojimas-be-ryšio); kodo sluoksnius – [architecture.md](architecture.md#6-veikimo-be-ryšio-sluoksnis).
+Šiame puslapyje paaiškinta, kaip veikia dalys be ryšio, kaip jas išbandyti ir kur yra ribos. Naudotojo požiūriu žr. [sportininko vadovą](../user-manual/lt/athlete.md#10-logify-naudojimas-be-ryšio); kodo sluoksnius – [architecture.md](architecture.md#6-veikimo-be-ryšio-sluoksnis), o dalis ir jų tinklo ryšius – komponentų diagramą skyriuje [Mobilioji architektūra (PWA)](architecture.md#7-mobilioji-architektūra-pwa). Kuris modulis ką daro, aprašyta [10 skyriuje](#10-kur-tai-yra-kode). Projektas ir planas, pagal kuriuos tai sukurta, yra [projekte](../superpowers/specs/2026-11-16-pwa-offline-design.md) (jo skyriuje *As built* aprašyta, kas keitėsi kūrimo metu) ir [plane](../superpowers/plans/2026-11-16-pwa-offline.md) (abu angliškai).
 
 ## 1. Įdiegiama programėlė
 
@@ -23,6 +23,16 @@ Service worker laiko tik sukurtą programą: HTML, kiekvieną „JavaScript“ d
 ### Atnaujinimai
 
 Nauja versija atsisiunčiama fone ir laukia. Eilutė po antrašte parašo *Paruošta nauja Logify versija.* su **Atnaujinti**; programa niekada pati nesiperkrauna, todėl pusiau užpildyta treniruotė niekada nedingsta. Atidaryta programa kas valandą pasiteirauja, ar yra nauja versija (`UPDATE_CHECK_MS` faile `src/pwa/serviceWorker.js`); nepavykusi patikra (be ryšio) tiesiog pakartojama po valandos. Paspaudus **Atnaujinti**, puslapis persikrauna į naują versiją; neišsaugota treniruotė grįžta iš juodraščio (4 skyrius). Kol siunčiama treniruotė, ši eilutė nerodoma, nes perkrovimas nutrauktų siuntimą. Pats pirmasis service worker atidarytą puslapį perima iškart (`clientsClaim`), todėl jau pirmoji sesija po įdiegimo veikia be ryšio; vėlesnės versijos vis tiek laukia **Atnaujinti**.
+
+### Antraštė ir apatinė kortelių juosta
+
+Telefonuose antraštė yra viena eilutė: logotipas, kalbos jungiklis ir paskyra.
+
+- **Kalbos jungiklis yra dvi mažos vėliavėlės**, Lietuvos ir Didžiosios Britanijos, greta logotipo. Po jomis yra radijo mygtukai, todėl veikia klaviatūra, o ekrano skaitytuvas kiekvienos kalbos pavadinimą perskaito jos pačios kalba: *Lietuvių* ir *English*.
+- **Atsijungimas yra piktograma** (durys su rodykle). Jos pavadinimas *Atsijungti*, o patarimas rodo *Atsijungti (naudotojo el. paštas)*. Šalia esantis el. paštas, kai trūksta vietos, sutrumpinamas „…“, todėl niekada neužlenda ant vėliavėlių (patikrinta nuo 320 iki 1024 px).
+- **Kai plotis ne didesnis nei 640 px, meniu yra juosta, pritvirtinta ekrano apačioje**: **Mano planai**, **Įrašyti**, **Pažanga** ir **Dalijimasis** (sportininkams) arba **Mano sportininkai** (treneriams). **Įrašyti** yra tik telefonuose. Antraštė ir juosta nesikerta su įpjova ir pradžios indikatoriumi.
+
+`src/components/Layout.jsx`, `src/components/LanguageSwitcher.jsx`, `src/components/NavIcons.jsx`, `src/index.css`.
 
 ## 2. Kas laikoma telefone ir kur
 
@@ -59,11 +69,15 @@ Kiekvienas ekranas, kuris skaito duomenis (`useLoad` faile `src/lib/useLoad.js`)
 | Tikra klaida (pavyzdžiui, nėra teisės) | Klaidos būsena, kaip visada |
 | Nėra ryšio ir nieko dar neišsaugota | Klaidos būsena: *Nėra ryšio, o šie duomenys šiame telefone dar neišsaugoti.* |
 
+**Įkėlimas niekada neatšaukia vietinio pakeitimo.** Pervadinimas, ištrynimas ar ką tik išsiųsta treniruotė pakeičia ekrane rodomus duomenis. Įkėlimas, prasidėjęs prieš tokį pakeitimą, jo turėti negali, todėl jo atsakymas (duomenys ar klaida) atmetamas, o įkėlimas paleidžiamas iš naujo, paliekant ekrane dabartinius duomenis (be *Kraunama*, be *Klaida*). Rodomas ir išsaugomas tik atsakymas iš įkėlimo, prasidėjusio po paskutinio pakeitimo. (**Bandyti dar kartą** vis tiek rodo *Kraunama*.)
+
+**Vietinis pakeitimas visada patenka į išsaugotą kopiją, nepadarydamas jos naujesnės.** Pakeitimas įrašomas į išsaugotą kopiją net tada, kai rodomi išsaugoti duomenys, todėl lėtas ryšio atsistatymas ar nepavykęs pakartotinis įkėlimas negali grąžinti kopijos be jo. Kol rodomi išsaugoti duomenys, kopija išlaiko savo *išsaugojimo* laiką; šviežiai duomenys išsaugomi dabartiniu laiku.
+
 **Pasiruošimas.** Iškart po prisijungimo arba paleidus programą su ryšiu, programa tyliai įkelia planų parinktis ir Pažangą (treneriams – ir Mano sportininkus) ir juos išsaugo, todėl be ryšio veikia ir ekranai, kurių dar neatidarėte. `src/offline/warmUp.js`.
 
 **„Mano planai“ ir įrašymo ekrano planų sąrašas sutampa.** Kai skiltis „Mano planai“ išsaugo savo planus (įkėlus juos, pervadinus ar ištrynus planą), iš jų išsaugomas ir treniruotės įrašymo ekrano planų sąrašas, nebent tas sąrašas išsaugotas vėliau. Kiekviena serverio gauta treniruotė pridedama po savo planu ir išsaugotoje „Mano planai“ kopijoje, net jei ši skiltis neatidaryta. Todėl be ryšio įrašymo ekranas siūlo ir po pasiruošimo sukurtą planą, o „Mano planai“ rodo iš įrašymo ekrano išsiųstą treniruotę. `src/offline/plansCache.js`.
 
-**Užuominos įrašant.** Be ryšio pratimų pavadinimų siūlymai ir *Praėjusį kartą* imami iš išsaugotų Pažangos duomenų (`src/offline/hints.js`).
+**Užuominos įrašant.** Kai telefonas sako, kad ryšio nėra, pratimų pavadinimų siūlymai ir *Praėjusį kartą* iškart imami iš išsaugotų Pažangos duomenų, nelaukiant užklausos, kuri vis tiek turėtų nepavykti (supabase-js bandytų maždaug 7 sekundes). Jie taip pat grįžta prie jų, kai užklausa nepavyksta dėl tinklo trūkumo. `src/offline/hints.js`.
 
 **Jokių duomenų užklausų be prisijungimo.** Po ilgo laiko be ryšio prieigos raktas būna pasibaigęs. Kol supabase-js dar neturi tinkamos sesijos (grįžus ryšiui jis gali palaukti iki minutės, kol ją atnaujins), duomenų bazės užklausas jis siųstų tik su projekto raktu, o Row Level Security atsakytų tuščiais sąrašais, kuriuos ekranas išsaugotų vietoje gerų duomenų. `src/lib/sessionGuard.js` tokią užklausą priverčia nepavykti kaip nutrūkusį ryšį, todėl ekranai išlaiko savo išsaugotus duomenis, o siuntimo eilė laukia. Vienintelė išimtis – duomenų bazės versijos patikra (`schema_version()`): ją gali kviesti bet kas, ir ji grąžina tik pastovią reikšmę, todėl siunčiama iškart, o versija sužinoma vos grįžus ryšiui.
 
@@ -83,6 +97,8 @@ Siuntimo eilė (angl. outbox) yra `src/offline/outbox.js` (kas laikoma) ir `src/
 4. **Bet kuri kita klaida** (pavyzdžiui, planas ištrintas arba treneris nebepriskiria jo): treniruotė nesaugoma, o forma parodo klaidą, kad ją būtų galima ištaisyti.
 5. **Jei telefono atmintis pilna:** išsaugoti duomenys šalinami vietai atlaisvinti. Jei treniruotės telefone vis tiek išlaikyti nepavyksta, tada **su ryšiu** ji siunčiama tiesiai, kaip iki siuntimo eilės (be telefone sukurto id, todėl nutrūkus ryšiui ji neapsaugota nuo antros kopijos), ir matote įprastą *Treniruotė išsaugota*; tik **be ryšio** forma pasako, kad jos išsaugoti nepavyko, ir niekada nesako, kad ji išsaugota.
 
+**Kol Išsaugoti dirba** (iki 15 sekundžių), formos laukai užrakinti, o mygtukas rodo *Saugoma…*. Forma išsivalo, kai treniruotė išsaugoma ar palikta telefone, todėl viskas, ką tuo metu surinktumėte, dingtų be jokio pranešimo.
+
 **Siuntimas.** Laukiančios treniruotės siunčiamos nuo seniausios, po vieną, kol programa atidaryta: paleidus programą, grįžus ryšiui, programai vėl atsidūrus ekrane, iškart po sėkmingo išsaugojimo, kas **30 sekundžių**, kol kas nors laukia, ir paspaudus **Siųsti dabar** būsenos eilutėje. Prieš kiekvieną siuntimą patikrinama, ar Supabase turi *šio naudotojo paties* sesiją; jei ne, laukiama.
 
 | Rezultatas | Kas vyksta |
@@ -93,9 +109,13 @@ Siuntimo eilė (angl. outbox) yra `src/offline/outbox.js` (kas laikoma) ir `src/
 
 Jei treniruotės plano sąraše nebėra (ištrintas ar nebepriskirtas), treniruotė rodoma kortelėje **Išsiuntimo laukiančios treniruotės** Mano planų viršuje. Laukianti eilutė nėra nuoroda: kol neišsiųsta, jos puslapio nėra. Pažanga, pasiūlymai ir ataskaitos skaičiuoja tik tas treniruotes, kurias serveris turi.
 
-**Atsijungimas, kai yra laukiančių treniruočių,** pirmiausia paklausia: jos lieka šiame telefone ir išsiunčiamos, kai tas naudotojas kitą kartą čia prisijungs. Kitas naudotojas, prisijungęs tame pačiame telefone, jų nei mato, nei siunčia.
+**Atsijungimas, kai yra išsiunčiamų treniruočių,** pirmiausia paklausia: jos lieka šiame telefone ir išsiunčiamos, kai tas naudotojas kitą kartą čia prisijungs. Klausimas skaičiuoja tik tas treniruotes, kurios bus išsiųstos pačios (*Laukia išsiuntimo* arba siunčiamos). Treniruotė, kurios *Nepavyko išsiųsti*, niekada nesiunčiama automatiškai, todėl viena pati neverčia atsijungimo klausti: ji lieka skiltyje **Mano planai** laukti **Bandyti dar kartą** ar **Ištrinti**, ir po atsijungimo taip pat. Jei klausimui esant atidarytam išsiunčiama paskutinė treniruotė, klausimas užsidaro pats. Kitas naudotojas, prisijungęs tame pačiame telefone, tų treniruočių nei mato, nei siunčia.
 
-**Neišsaugota forma.** Treniruotės įrašymo forma telefone išsaugoma jums rašant, todėl programos paleidimas iš naujo, atnaujinimas ar telefono uždaryta programa fone jos neprarandama. Atkurta forma parašo *Atkurta neišsaugota treniruotė.* su **Pradėti iš naujo**. Ji išvaloma, kai treniruotė išsaugoma ar paliekama telefone, ir atsijungus. Jei forma atidaroma plano mygtuku **+ Įrašyti treniruotę**, tas planas laimi prieš juodraščio planą.
+**Neišsaugota forma.** Treniruotės įrašymo forma telefone išsaugoma jums rašant, todėl programos paleidimas iš naujo, atnaujinimas ar telefono uždaryta programa fone jos neprarandama. Atkurta forma parašo *Atkurta neišsaugota treniruotė.* su **Pradėti iš naujo**. Jei forma atidaroma plano mygtuku **+ Įrašyti treniruotę**, tas planas laimi prieš juodraščio planą. Ji išvaloma atsijungus ir toliau nurodytais atvejais.
+
+- **Tą akimirką, kai siuntimo eilė gauna treniruotę**, o ne tada, kai siuntimas baigiasi po iki 15 sekundžių. Kitaip programos uždarymas tuo metu išsiųstų treniruotę iš siuntimo eilės *ir* atkurtų formą, o antras Išsaugoti sukurtų antrą treniruotę ir antrą laišką. Kol forma saugoma, nieko neįrašoma ir į juodraštį, todėl vėlyvas lauko fokuso praradimas jo negali sugrąžinti.
+- **Neišvaloma, jei treniruotė vis dėlto neišsaugoma:** jei serveris ją atmeta arba telefonas jos išlaikyti negali, forma palieka savo laukus ir vėl įrašo juos kaip juodraštį.
+- **Neišvaloma anksti, kai telefonas pilnas** ir treniruotė siunčiama tiesiogiai (kopijos siuntimo eilėje nėra): juodraštis lieka, kol serveris atsako.
 
 ### Lygiai vieną kartą
 
@@ -131,7 +151,7 @@ Viena eilutė po antrašte, rodoma tik tada, kai yra ką pasakyti (`src/componen
 
 | Eilutė | Kada |
 |---|---|
-| *Paruošta nauja Logify versija.* **Atnaujinti** | Atsisiųsta nauja versija |
+| *Paruošta nauja Logify versija.* **Atnaujinti** | Atsisiųsta nauja versija ir jokia treniruotė nesiunčiama |
 | *Nėra ryšio. Įrašytos treniruotės saugomos šiame telefone.* | Nėra ryšio |
 | *Siunčiama…* | Siunčiama treniruotė |
 | *{n} treniruočių laukia išsiuntimo* **Siųsti dabar** | Treniruotės laukia (mygtukas tik su ryšiu) |
@@ -180,3 +200,40 @@ Versija užfiksuota, o generatorius nėra projekto priklausomybė. `pwa-assets.c
 | **Supabase vienos minutės pauzė.** Jei prisijungimas pasibaigė be ryšio, po nepavykusio atnaujinimo supabase-js laukia iki minutės, kol bando vėl, todėl viskas atsigauna maždaug per minutę nuo ryšio grįžimo | supabase-js elgesys |
 | **Išsaugoti duomenys yra kopija.** Jie tokie seni, kada ekranas paskutinį kartą įsikėlė; eilutė pasako kada. Laikoma tik 30 paskutinių atidarytų treniruočių ir sportininkų | Telefono atmintis nedidelė |
 | **Naršyklių minimumai:** „Chrome“ 111, „Safari“ 16.4, „Firefox“ 121 | `crypto.randomUUID`, `AbortSignal.timeout` ir service worker |
+
+## 10. Kur tai yra kode
+
+| Modulis | Jo darbas |
+|---|---|
+| `vite.config.js` | vite-plugin-pwa: manifestas ir Workbox service worker (`generateSW`): sukurtos programos išankstinė talpykla, `index.html` kiekvienam maršrutui, `clientsClaim` įjungtas, `skipWaiting` išjungtas, `registerType: 'prompt'` |
+| `pwa-assets.config.js`, `public/*.png` | Kaip piktogramos kuriamos iš `public/favicon.svg`, ir įtrauktos į saugyklą piktogramos |
+| `index.html` | „Apple touch“ piktograma, pavadinimas iPhone pradžios ekrane, `viewport-fit=cover`, manifesto nuoroda su `crossorigin="use-credentials"` |
+| `src/pwa/serviceWorker.js` | Užregistruoja service worker, paskelbia „paruošta nauja versija“ ir **Atnaujinti**, ir kas valandą ieško naujos versijos |
+| `src/pwa/installPrompt.js` | Laiko naršyklės įdiegimo pasiūlymą; atskiria iPhone ir jau įdiegtą programėlę |
+| `src/components/InstallCard.jsx` | Įdiegimo kortelė skiltyje Mano planai |
+| `src/lib/useLoad.js` | Pirmiausia tinklas, išsaugota kopija kaip atsarginis variantas (be ryšio, nepavykus ar ilgiau nei 4 s); atmeta atsakymą, kuris senesnis už vietinį pakeitimą |
+| `src/offline/savedData.js` | Išsaugoti duomenys kiekvienam naudotojui: 30 įrašų ribos, vietos darymas, kai atmintis pilna, naudotojo duomenų šalinimas atsijungus |
+| `src/offline/plansCache.js` | Sutapatina „Mano planų“ kopiją ir įrašymo ekrano planų sąrašą ir prideda kiekvieną išsiųstą treniruotę prie „Mano planų“ kopijos |
+| `src/offline/warmUp.js` | Po prisijungimo išsaugo planų parinktis, Pažangą ir (treneriams) sportininkus |
+| `src/offline/hints.js` | Pratimų pavadinimų siūlymai ir *Praėjusį kartą* iš išsaugotos Pažangos |
+| `src/offline/outbox.js` | Siuntimo eilė: kiekvieno naudotojo treniruotės, kurių serveris dar neturi, su id, veikiančiais ir ne saugiame kontekste |
+| `src/offline/sync.js` | Išsaugojimas (`saveWorkout`), siuntimas iš eilės su 15 s riba, rezultatai (išsiųsta, bandoma vėliau, nepavyko išsiųsti), **Bandyti dar kartą** ir **Ištrinti**, 30 s laikmatis |
+| `src/offline/draft.js` | Neišsaugota treniruotės įrašymo forma |
+| `src/offline/dbVersion.js`, `src/api/schema.js` | Paklausia `schema_version()` ir įsimena atsakymą; senesnės duomenų bazės atsarginis būdas |
+| `src/offline/useBackgroundSync.js` | Prisijungusiam naudotojui paleidžia versijos patikrą, pasiruošimą ir siuntimo eilės siuntimą (kviečiama iš `Layout`) |
+| `src/offline/currentUser.js` | Kas prisijungęs, ne React viduje, kad išsaugoti duomenys ir siuntimo eilė visada būtų priskirti tinkamam žmogui |
+| `src/offline/network.js` | Ar telefonas sako, kad ryšys yra |
+| `src/offline/storage.js` | Saugus `localStorage` skaitymas ir rašymas (privatus režimas, pilnas telefonas, sugadintas tekstas) |
+| `src/auth/AuthProvider.jsx`, `src/auth/storedSession.js` | Prisijungęs išlieka be ryšio (išsaugota sesija naudojama iškart be ryšio, o esant lėtam ryšiui – po 3 s); atsijungimas be ryšio |
+| `src/lib/sessionGuard.js`, `src/lib/supabase.js` | `fetch`, kuris atmeta duomenų užklausą be naudotojo rakto |
+| `src/components/Layout.jsx` | Antraštė, apatinė kortelių juosta, atsijungimo klausimas ir sinchronizavimo fone paleidimas |
+| `src/components/LanguageSwitcher.jsx` | Dvi kalbos vėliavėlės |
+| `src/components/StatusBar.jsx` | Eilutė po antrašte (6 skyrius) |
+| `src/components/OutboxItem.jsx` | Laukianti ar nepavykusi treniruotė skiltyje Mano planai |
+| `src/components/SavedDataNotice.jsx` | Eilutė *Nėra ryšio: rodomi duomenys, išsaugoti …* |
+| `src/components/WorkoutForm.jsx`, `src/pages/LogWorkoutPage.jsx` | Treniruotės įrašymo forma: juodraštis, užrakinti laukai saugant, rezultato pranešimas |
+| `supabase/schema.sql`, `supabase/tests/log_workout_offline.test.sql` | `log_workout(p_id, p_logged_at)`, `schema_version()` ir jų testas |
+
+## Susiję
+
+[architecture.md](architecture.md#7-mobilioji-architektūra-pwa) (komponentų diagrama) ir [jo veikimo be ryšio sluoksnis](architecture.md#6-veikimo-be-ryšio-sluoksnis) · [supabase.md](supabase.md#6-treniruočių-įrašymas-be-ryšio-v5) (duomenų bazės pusė) · [deployment.md](deployment.md#6-telefono-programėlė-pwa-per-vercel) (HTTPS, `sw.js` talpinimas, v5 išleidimas) · [setup.md](setup.md#išbandykite-telefono-programėlę-vietoje) (PWA bandymas vietoje) · [zapier.md](zapier.md) (kada ateina laiškas apie be ryšio įrašytą treniruotę) · naudotojo vadovai: [sportininko](../user-manual/lt/athlete.md#10-logify-naudojimas-be-ryšio) ir [trenerio](../user-manual/lt/instructor.md#8-telefone-ir-be-ryšio) · v5 [projektas](../superpowers/specs/2026-11-16-pwa-offline-design.md) ir [planas](../superpowers/plans/2026-11-16-pwa-offline.md) (angliškai)
