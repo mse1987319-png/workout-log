@@ -7,7 +7,7 @@ export async function listProgress() {
     supabase.from('workouts').select('id, type, duration_min, created_at').order('created_at', { ascending: true }),
     supabase
       .from('workout_sets')
-      .select('workout_id, exercise, reps, weight_kg, created_at')
+      .select('workout_id, exercise, set_no, reps, weight_kg, created_at')
       .order('created_at', { ascending: true }),
     supabase
       .from('goals')

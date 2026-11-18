@@ -39,6 +39,12 @@ export async function listMyAthletes() {
   return data
 }
 
+/** What the My athletes screen shows: my profile (invite code) and the athletes who share with me. */
+export async function getAthletesOverview() {
+  const [profile, athletes] = await Promise.all([getMyProfile(), listMyAthletes()])
+  return { profile, athletes }
+}
+
 /** One athlete's workouts, sets, goals and latest reports; refused unless they share with me. */
 export async function getAthleteProgress(athleteId) {
   const { data, error } = await supabase.rpc('athlete_progress', { p_athlete: athleteId })

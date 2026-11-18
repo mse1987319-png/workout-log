@@ -1,19 +1,22 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { listPlanOptions } from '../api/plans'
+import SavedDataNotice from '../components/SavedDataNotice'
 import { EmptyState, ErrorState, Loading } from '../components/States'
 import WorkoutForm from '../components/WorkoutForm'
 import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
 import { useLoad } from '../lib/useLoad'
+import { readDraft } from '../offline/draft'
 
 // Log a workout under a plan. Reached from a plan card on My plans
-// (/log?plan=<id>); plans are created on their own page.
+// (/log?plan=<id>, which wins over the plan of an unsaved draft); plans are
+// created on their own page.
 export default function LogWorkoutPage() {
-  const { status, data: plans, error, reload } = useLoad(listPlanOptions)
+  const { status, data: plans, error, savedAt, reload } = useLoad(listPlanOptions, 'planOptions')
   const { t } = useLanguage()
   const [searchParams] = useSearchParams()
-  const [chosenPlanId, setChosenPlanId] = useState(searchParams.get('plan') ?? '')
+  const [chosenPlanId, setChosenPlanId] = useState(searchParams.get('plan') ?? readDraft()?.planId ?? '')
 
   // The plan from ?plan= (or the last one picked), else the newest plan.
   const planId = plans?.some((plan) => plan.id === chosenPlanId)
@@ -23,6 +26,7 @@ export default function LogWorkoutPage() {
   return (
     <section>
       <h1>{t('log.title')}</h1>
+      {savedAt && <SavedDataNotice savedAt={savedAt} onRetry={reload} />}
 
       <div className="card stack">
         <h2>{t('log.workout')}</h2>

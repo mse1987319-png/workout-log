@@ -4,6 +4,7 @@ import { listProgress } from '../api/progress'
 import GoalsCard from '../components/GoalsCard'
 import { MinutesSection, WeightSection } from '../components/ProgressCharts'
 import ReportCard from '../components/ReportCard'
+import SavedDataNotice from '../components/SavedDataNotice'
 import { EmptyState, ErrorState, Loading } from '../components/States'
 import Suggestions from '../components/Suggestions'
 import { useLanguage } from '../i18n/useLanguage'
@@ -15,7 +16,7 @@ import { useLoad } from '../lib/useLoad'
 // Progress: suggestions, goals and the report to the instructor, then the
 // heaviest set per session of one exercise and minutes per week.
 export default function ProgressPage() {
-  const { status, data, error, reload, setData } = useLoad(listProgress)
+  const { status, data, error, savedAt, reload, setData } = useLoad(listProgress, 'progress')
   const { language, t } = useLanguage()
   // The suggestions are worded in the current language, so they are redone when it changes.
   // oxlint-disable-next-line react-hooks/exhaustive-deps
@@ -32,6 +33,7 @@ export default function ProgressPage() {
   return (
     <section className="progress">
       <h1>{t('nav.progress')}</h1>
+      {savedAt && <SavedDataNotice savedAt={savedAt} onRetry={reload} />}
 
       {status === 'loading' && <Loading>{t('progress.loading')}</Loading>}
 

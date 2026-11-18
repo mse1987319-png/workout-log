@@ -4,6 +4,7 @@ import { listPlanOptions } from '../api/plans'
 import { assignPlan, getAthleteProgress, listAssignments, unassignPlan } from '../api/sharing'
 import GoalsCard from '../components/GoalsCard'
 import { MinutesSection, WeightSection } from '../components/ProgressCharts'
+import SavedDataNotice from '../components/SavedDataNotice'
 import { ErrorState, Loading, SuccessMessage } from '../components/States'
 import Suggestions from '../components/Suggestions'
 import { useLanguage } from '../i18n/useLanguage'
@@ -187,7 +188,7 @@ export default function AthletePage() {
       ),
     [id],
   )
-  const { status, data, error, reload, setData } = useLoad(load)
+  const { status, data, error, savedAt, reload, setData } = useLoad(load, `athlete:${id}`)
   const { language, t } = useLanguage()
   // The suggestions are worded in the current language, so they are redone when it changes.
   // oxlint-disable-next-line react-hooks/exhaustive-deps
@@ -225,6 +226,7 @@ export default function AthletePage() {
       {status === 'success' && (
         <>
           <h1>{data.progress.athlete.email}</h1>
+          {savedAt && <SavedDataNotice savedAt={savedAt} onRetry={reload} />}
           <p className="page-intro">{t('athlete.sharingSince', { date: formatDay(data.progress.linked_at) })}</p>
           <div className="stack">
             <AssignedPlans

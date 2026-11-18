@@ -7,6 +7,7 @@ import { Loading, SuccessMessage } from '../components/States'
 import { t } from '../i18n/i18n'
 import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
+import { useOnline } from '../offline/network'
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const MIN_PASSWORD = 6 // Supabase's default minimum
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const { status, session, signIn, signUp } = useAuth()
   const location = useLocation()
   useLanguage() // re-render when the language changes
+  const online = useOnline()
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -92,6 +94,11 @@ export default function LoginPage() {
       <section className="card">
         <h1>{isSignup ? t('login.createAccount') : t('login.logIn')}</h1>
         {notice && <SuccessMessage>{notice}</SuccessMessage>}
+        {!online && (
+          <p className="hint" role="status">
+            {t('login.offline')}
+          </p>
+        )}
 
         <form className="form" onSubmit={handleSubmit} noValidate>
           <div className="field">

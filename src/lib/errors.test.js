@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { friendlyError } from './errors'
+import { friendlyError, isNetworkError } from './errors'
 
 // Error shapes mirror what supabase-js 2.x actually returns.
 const postgrestNetworkError = {
@@ -76,5 +76,39 @@ describe('friendlyError', () => {
 
   it.each([undefined, null, {}, { message: '   ' }])('falls back to a generic message for %o', (error) => {
     expect(friendlyError(error)).toMatch(/something went wrong/i)
+  })
+})
+
+describe('isNetworkError', () => {
+  it.each([
+    ['a failed fetch', { message: 'TypeError: Failed to fetch' }],
+    ['a timeout', { message: 'TimeoutError: signal timed out' }],
+    ['a retryable auth fetch', { name: 'AuthRetryableFetchError', message: 'x' }],
+  ])('is true for %s', (_source, error) => {
+    expect(isNetworkError(error)).toBe(true)
+  })
+
+  it('is false for a database refusal', () => {
+    expect(isNetworkError({ code: '42501', message: 'permission denied for function log_workout' })).toBe(false)
+  })
+})
+
+describe('friendlyError for offline codes', () => {
+  it('says the data is not saved yet when offline', () => {
+    expect(friendlyError({ code: 'offline_not_saved' })).toBe(
+      "You're offline, and this hasn't been saved on this phone yet.",
+    )
+  })
+
+  it('says the data is not saved yet even when the error carries the failed request message', () => {
+    expect(friendlyError({ code: 'offline_not_saved', message: 'TypeError: Failed to fetch' })).toBe(
+      "You're offline, and this hasn't been saved on this phone yet.",
+    )
+  })
+
+  it('says the storage is full', () => {
+    expect(friendlyError({ code: 'storage_full' })).toBe(
+      "This phone's storage is full, so the workout couldn't be kept here. Free some space, or save it when you're online.",
+    )
   })
 })

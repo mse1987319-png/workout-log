@@ -4,13 +4,18 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatCalendarDay } from '../lib/format'
 import { toYmd } from '../lib/goals'
+import { setCurrentUser } from '../offline/currentUser'
+import { saveData } from '../offline/savedData'
 import { backend } from '../test/fakeBackend'
+import { ATHLETE } from '../test/fakeSupabase'
 import AthletePage from './AthletePage'
 
 vi.mock('../lib/supabase', async () => {
   const { createTestClient } = await import('../test/fakeBackend')
   return { supabase: createTestClient(), configError: null }
 })
+
+const SAVED_AT = Date.parse('2026-11-16T16:42:00Z')
 
 const now = new Date()
 const daysAgo = (n) => new Date(now.getTime() - n * 24 * 60 * 60 * 1000).toISOString()
@@ -193,5 +198,17 @@ describe('AthletePage', () => {
     const plans = await card('Plans you assigned')
     expect(plans.getByText('No plans assigned yet.')).toBeInTheDocument()
     expect(plans.getByRole('link', { name: 'Create a plan' })).toHaveAttribute('href', '/plans/new')
+  })
+
+  it('shows the saved athlete offline, with when it was saved', async () => {
+    setCurrentUser(ATHLETE.id)
+    saveData('athlete:a-1', { progress: PROGRESS, assignments: [FIVE_BY_FIVE], plans: PLANS }, SAVED_AT)
+    backend.networkDown('POST', '/rest/v1/rpc/athlete_progress')
+    backend.networkDown('GET', '/rest/v1/plan_assignments')
+    backend.networkDown('GET', '/rest/v1/plans')
+    renderAthlete()
+
+    expect(await screen.findByRole('heading', { name: 'anna@example.com' })).toBeInTheDocument()
+    expect(screen.getByText(/Offline: showing data saved on/)).toBeInTheDocument()
   })
 })

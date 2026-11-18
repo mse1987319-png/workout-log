@@ -35,6 +35,7 @@ export function createFakeBackend() {
       query: url.searchParams,
       headers: new Headers(init.headers),
       body: typeof init.body === 'string' ? JSON.parse(init.body) : undefined,
+      signal: init.signal,
     }
     requests.push(request)
     const candidates = routes.filter((r) => r.method === method && r.path === url.pathname)

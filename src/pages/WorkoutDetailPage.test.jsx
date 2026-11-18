@@ -2,13 +2,18 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { setCurrentUser } from '../offline/currentUser'
+import { saveData } from '../offline/savedData'
 import { backend } from '../test/fakeBackend'
+import { ATHLETE } from '../test/fakeSupabase'
 import WorkoutDetailPage from './WorkoutDetailPage'
 
 vi.mock('../lib/supabase', async () => {
   const { createTestClient } = await import('../test/fakeBackend')
   return { supabase: createTestClient(), configError: null }
 })
+
+const SAVED_AT = Date.parse('2026-11-16T16:42:00Z')
 
 const STRENGTH = {
   id: 'w-1',
@@ -148,5 +153,15 @@ describe('WorkoutDetailPage', () => {
     await user.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(await screen.findByRole('heading', { name: 'Leg day', level: 1 })).toBeInTheDocument()
+  })
+
+  it('shows the saved workout offline, with when it was saved', async () => {
+    setCurrentUser(ATHLETE.id)
+    saveData('workout:w-1', STRENGTH, SAVED_AT)
+    backend.networkDown('GET', '/rest/v1/workouts')
+    renderDetail('w-1')
+
+    expect(await screen.findByRole('heading', { name: 'Leg day', level: 1 })).toBeInTheDocument()
+    expect(screen.getByText(/Offline: showing data saved on/)).toBeInTheDocument()
   })
 })

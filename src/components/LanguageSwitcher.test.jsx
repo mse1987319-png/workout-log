@@ -33,12 +33,14 @@ describe('the language switcher', () => {
     backend.reply('GET', '/rest/v1/plans', 200, [])
   })
 
-  it('sits in the header between the logo and the menu, as two radio buttons: LT and EN', async () => {
+  it('sits in the header between the logo and the menu, as two flag radio buttons: Lithuanian and English', async () => {
     renderApp('/')
 
     const switcher = (await screen.findByRole('group', { name: 'Language' })).closest('fieldset')
     const radios = within(switcher).getAllByRole('radio')
-    expect(radios.map((radio) => radio.parentElement.textContent)).toEqual(['LT', 'EN'])
+    expect(radios.map((radio) => radio.value)).toEqual(['lt', 'en'])
+    expect(within(switcher).getByRole('radio', { name: 'Lietuvių' })).toBe(radios[0])
+    expect(within(switcher).getByRole('radio', { name: 'English' })).toBe(radios[1])
 
     const inner = switcher.parentElement
     const order = [...inner.children]
@@ -46,15 +48,25 @@ describe('the language switcher', () => {
     expect(order.indexOf(switcher)).toBeLessThan(order.indexOf(screen.getByRole('navigation', { name: 'Main' })))
   })
 
+  it('shows each language as a flag, with the language name as its tooltip', async () => {
+    renderApp('/')
+
+    for (const name of ['Lietuvių', 'English']) {
+      const option = (await screen.findByRole('radio', { name })).closest('label')
+      expect(option.querySelector('svg')).not.toBeNull()
+      expect(option).toHaveAttribute('title', name)
+    }
+  })
+
   it('translates the screen and checks the chosen radio', async () => {
     const user = renderApp('/')
     await screen.findByRole('heading', { name: 'My plans' })
-    expect(screen.getByRole('radio', { name: 'EN' })).toBeChecked()
+    expect(screen.getByRole('radio', { name: 'English' })).toBeChecked()
 
-    await user.click(screen.getByRole('radio', { name: 'LT' }))
+    await user.click(screen.getByRole('radio', { name: 'Lietuvių' }))
 
     expect(await screen.findByRole('heading', { name: 'Mano planai' })).toBeInTheDocument()
-    expect(screen.getByRole('radio', { name: 'LT' })).toBeChecked()
+    expect(screen.getByRole('radio', { name: 'Lietuvių' })).toBeChecked()
     expect(screen.getByRole('link', { name: 'Pažanga' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Atsijungti' })).toBeInTheDocument()
     expect(screen.getByText('Planų dar nėra – sukurkite pirmąjį planą.')).toBeInTheDocument()
@@ -72,9 +84,9 @@ describe('the language switcher', () => {
 
     await user.click(screen.getByRole('link', { name: 'Mano planai' }))
     expect(await screen.findByRole('heading', { name: 'Mano planai' })).toBeInTheDocument()
-    expect(screen.getByRole('radio', { name: 'LT' })).toBeChecked()
+    expect(screen.getByRole('radio', { name: 'Lietuvių' })).toBeChecked()
 
-    await user.click(screen.getByRole('radio', { name: 'EN' }))
+    await user.click(screen.getByRole('radio', { name: 'English' }))
     expect(await screen.findByRole('heading', { name: 'My plans' })).toBeInTheDocument()
   })
 
@@ -86,7 +98,7 @@ describe('the language switcher', () => {
     expect(await screen.findByRole('heading', { name: 'Prisijungti' })).toBeInTheDocument()
     expect(screen.getByLabelText('El. paštas')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('radio', { name: 'EN' }))
+    await user.click(screen.getByRole('radio', { name: 'English' }))
     expect(await screen.findByRole('heading', { name: 'Log in' })).toBeInTheDocument()
   })
 })

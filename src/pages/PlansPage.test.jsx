@@ -1,16 +1,23 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthContext } from '../auth/AuthContext'
+import { supabase } from '../lib/supabase'
+import { setCurrentUser } from '../offline/currentUser'
+import { addToOutbox, getOutbox, updateItem } from '../offline/outbox'
+import { readSaved, saveData } from '../offline/savedData'
+import { syncOutbox } from '../offline/sync'
 import { backend } from '../test/fakeBackend'
-import { ATHLETE } from '../test/fakeSupabase'
+import { ATHLETE, createFakeAuth, sessionFor } from '../test/fakeSupabase'
 import PlansPage from './PlansPage'
 
 vi.mock('../lib/supabase', async () => {
   const { createTestClient } = await import('../test/fakeBackend')
   return { supabase: createTestClient(), configError: null }
 })
+
+const SAVED_AT = Date.parse('2026-11-16T16:42:00Z')
 
 const PLANS = [
   {
@@ -66,9 +73,27 @@ async function startRenaming(user, title) {
   return screen.getByRole('textbox', { name: 'Workout title' })
 }
 
+// The next request reaches the backend now, but its reply waits for release().
+function holdNextReply() {
+  let release
+  const released = new Promise((resolve) => {
+    release = resolve
+  })
+  const answer = backend.fetch
+  vi.spyOn(backend, 'fetch').mockImplementationOnce((input, init) => {
+    const reply = answer(input, init)
+    return released.then(() => reply)
+  })
+  return release
+}
+
 describe('PlansPage', () => {
   beforeEach(() => {
     backend.reset()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('shows the Loading state while the plans load', () => {
@@ -390,6 +415,258 @@ describe('PlansPage', () => {
 
       await user.click(card.getByRole('button', { name: 'Try again' }))
       await waitFor(() => expect(screen.queryByRole('heading', { name: 'Strength block' })).not.toBeInTheDocument())
+    })
+  })
+
+  it('shows the saved plans offline, with when they were saved', async () => {
+    setCurrentUser(ATHLETE.id)
+    saveData('plans', PLANS, SAVED_AT)
+    backend.networkDown('GET', '/rest/v1/plans')
+    renderPlans()
+
+    expect(await screen.findByRole('heading', { name: 'Strength block' })).toBeInTheDocument()
+    expect(screen.getByText(/Offline: showing data saved on/)).toBeInTheDocument()
+  })
+
+  describe('the plan list it keeps for the Log workout screen', () => {
+    const OPTIONS = [
+      { id: 'plan-1', name: 'Strength block' },
+      { id: 'plan-2', name: '5K plan' },
+    ]
+
+    beforeEach(() => {
+      setCurrentUser(ATHLETE.id)
+    })
+
+    it('is the plans it loaded, saved at the same time', async () => {
+      // The warm-up's older list is replaced.
+      saveData('planOptions', [{ id: 'plan-2', name: '5K plan' }], SAVED_AT)
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      renderPlans()
+      await screen.findByRole('heading', { name: 'Strength block' })
+
+      const { savedAt } = readSaved('plans')
+      expect(savedAt).toBeGreaterThan(SAVED_AT)
+      expect(readSaved('planOptions')).toEqual({ data: OPTIONS, savedAt })
+    })
+
+    it('follows a renamed and a deleted plan', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      backend.reply('PATCH', '/rest/v1/plans', 200, { ...PLANS[0], name: 'Heavy block' })
+      backend.reply('DELETE', '/rest/v1/plans', 200, [{ id: 'plan-2' }])
+      const user = renderPlans()
+
+      const strength = await planCard('Strength block')
+      await user.click(strength.getByRole('button', { name: 'Edit plan Strength block' }))
+      await user.clear(strength.getByLabelText('Plan name'))
+      await user.type(strength.getByLabelText('Plan name'), 'Heavy block')
+      await user.click(strength.getByRole('button', { name: 'Save plan' }))
+      await screen.findByRole('heading', { name: 'Heavy block' })
+      expect(readSaved('planOptions').data).toEqual([{ id: 'plan-1', name: 'Heavy block' }, OPTIONS[1]])
+
+      const fiveK = await planCard('5K plan')
+      await user.click(fiveK.getByRole('button', { name: 'Delete plan 5K plan' }))
+      await user.click(fiveK.getByRole('button', { name: 'Yes, delete plan' }))
+      await waitFor(() => expect(screen.queryByRole('heading', { name: '5K plan' })).not.toBeInTheDocument())
+
+      expect(readSaved('planOptions')).toEqual({ data: [{ id: 'plan-1', name: 'Heavy block' }], savedAt: readSaved('plans').savedAt })
+    })
+  })
+
+  describe('workouts waiting to send', () => {
+    const LOG_WORKOUT = '/rest/v1/rpc/log_workout'
+    const WAITING = {
+      planId: 'plan-1',
+      title: 'Evening ride',
+      type: 'other',
+      durationMin: 45,
+      activity: 'Cycling',
+      distanceKm: 20,
+      notes: null,
+      sets: [],
+    }
+    const SENT_ROW = {
+      id: 'b2c4e6a8-1d3f-4a5b-8c7d-9e0f1a2b3c4d',
+      plan_id: 'plan-1',
+      user_id: ATHLETE.id,
+      title: 'Evening ride',
+      type: 'other',
+      duration_min: 45,
+      created_at: '2026-11-16T18:00:00+00:00',
+    }
+    const PLAN_GONE = {
+      code: '23503',
+      message: 'insert or update on table "workouts" violates foreign key constraint',
+      details: null,
+      hint: null,
+    }
+
+    beforeEach(() => {
+      supabase.auth = createFakeAuth({ session: sessionFor(ATHLETE) })
+      setCurrentUser(ATHLETE.id)
+    })
+
+    const wait = (workout = {}, planName = 'Strength block') =>
+      addToOutbox({ workout: { ...WAITING, ...workout }, planName })
+    const posts = () => backend.requests.filter((request) => request.method === 'POST' && request.path === LOG_WORKOUT)
+    const planLoads = () =>
+      backend.requests.filter((request) => request.method === 'GET' && request.path === '/rest/v1/plans')
+
+    it('lists a waiting workout under its plan with a Waiting to send badge, not as a link', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      wait()
+      renderPlans()
+
+      const strength = await planCard('Strength block')
+      const rows = strength.getAllByRole('listitem')
+      expect(rows).toHaveLength(3)
+      expect(rows[0]).toHaveTextContent('Evening ride')
+      expect(rows[0]).toHaveTextContent('Waiting to send')
+      expect(rows[0]).toHaveTextContent('45 min')
+      expect(rows[1]).toHaveTextContent('Leg day')
+      expect(strength.queryByRole('link', { name: 'Evening ride' })).not.toBeInTheDocument()
+      expect(strength.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument()
+      expect(screen.queryByText('Workouts waiting to send')).not.toBeInTheDocument()
+    })
+
+    it('hides "No workouts yet" while a workout waits under a plan with none saved', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      wait({ planId: 'plan-2' }, '5K plan')
+      renderPlans()
+
+      const fiveK = await planCard('5K plan')
+      expect(fiveK.getByText('Evening ride')).toBeInTheDocument()
+      expect(fiveK.queryByText('No workouts logged under this plan yet.')).not.toBeInTheDocument()
+    })
+
+    it('shows a waiting workout whose plan is gone in its own card', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      wait({ planId: 'plan-gone' }, 'Old plan')
+      renderPlans()
+
+      const heading = await screen.findByRole('heading', { name: 'Workouts waiting to send' })
+      const card = within(heading.closest('section'))
+      expect(card.getByText('Evening ride')).toBeInTheDocument()
+      expect(card.getByText('Waiting to send')).toBeInTheDocument()
+      // The plans are listed as before, and the workout is in no plan's card.
+      expect((await planCard('Strength block')).queryByText('Evening ride')).not.toBeInTheDocument()
+    })
+
+    it('shows every waiting workout in that card when the plans cannot be loaded', async () => {
+      backend.networkDown('GET', '/rest/v1/plans')
+      wait()
+      renderPlans()
+
+      expect(await screen.findByRole('alert')).toHaveTextContent("Can't reach the server")
+      const heading = screen.getByRole('heading', { name: 'Workouts waiting to send' })
+      expect(within(heading.closest('section')).getByText('Evening ride')).toBeInTheDocument()
+    })
+
+    it('shows nothing extra while the plans load', () => {
+      backend.hang('GET', '/rest/v1/plans')
+      wait()
+      renderPlans()
+
+      expect(screen.queryByText('Evening ride')).not.toBeInTheDocument()
+      expect(screen.queryByRole('heading', { name: 'Workouts waiting to send' })).not.toBeInTheDocument()
+    })
+
+    it("shows why a workout couldn't be sent, with Try again and Delete", async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      const item = wait()
+      updateItem(item.id, { status: 'failed', error: { code: PLAN_GONE.code, message: PLAN_GONE.message } })
+      const user = renderPlans()
+
+      const strength = await planCard('Strength block')
+      const row = within(strength.getByText('Evening ride').closest('li'))
+      expect(row.getByText("Couldn't send")).toBeInTheDocument()
+      expect(row.getByText(`Couldn't send: ${PLAN_GONE.message}`)).toBeInTheDocument()
+
+      // Try again sends it once more.
+      backend.reply('POST', LOG_WORKOUT, 200, SENT_ROW)
+      await user.click(row.getByRole('button', { name: 'Try again' }))
+      expect(await strength.findByRole('link', { name: 'Evening ride' })).toBeInTheDocument()
+      expect(posts()).toHaveLength(1)
+      expect(getOutbox()).toHaveLength(0)
+    })
+
+    it('deletes a workout that could not be sent once confirmed', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      const item = wait()
+      updateItem(item.id, { status: 'failed', error: { code: PLAN_GONE.code, message: PLAN_GONE.message } })
+      const user = renderPlans()
+
+      const strength = await planCard('Strength block')
+      const row = within(strength.getByText('Evening ride').closest('li'))
+      await user.click(row.getByRole('button', { name: 'Delete' }))
+      expect(row.getByText('Delete “Evening ride”? It was never sent, so it will be gone.')).toBeInTheDocument()
+
+      await user.click(row.getByRole('button', { name: 'Cancel' }))
+      expect(row.queryByText(/It was never sent/)).not.toBeInTheDocument()
+      expect(getOutbox()).toHaveLength(1)
+
+      await user.click(row.getByRole('button', { name: 'Delete' }))
+      await user.click(row.getByRole('button', { name: 'Delete' }))
+      await waitFor(() => expect(strength.queryByText('Evening ride')).not.toBeInTheDocument())
+      expect(getOutbox()).toHaveLength(0)
+      expect(posts()).toHaveLength(0)
+    })
+
+    it('turns a sent workout into a normal row', async () => {
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      backend.reply('POST', LOG_WORKOUT, 200, SENT_ROW)
+      wait()
+      renderPlans()
+
+      const strength = await planCard('Strength block')
+      expect(strength.getByText('Waiting to send')).toBeInTheDocument()
+
+      await syncOutbox()
+
+      const link = await strength.findByRole('link', { name: 'Evening ride' })
+      expect(link).toHaveAttribute('href', `/workouts/${SENT_ROW.id}`)
+      expect(strength.queryByText('Waiting to send')).not.toBeInTheDocument()
+      // It is the first of the plan's workouts, and shown once.
+      expect(strength.getAllByRole('listitem')[0]).toContainElement(link)
+      expect(strength.getAllByText('Evening ride')).toHaveLength(1)
+    })
+
+    it('a workout sent while the list reloads stays in My plans', async () => {
+      // The plans as the database lists them once the workout is saved.
+      const sent = { id: SENT_ROW.id, title: 'Evening ride', type: 'other', duration_min: 45, created_at: SENT_ROW.created_at }
+      const plansWithSent = [{ ...PLANS[0], workouts: [sent, ...PLANS[0].workouts] }, PLANS[1]]
+      backend.networkDown('GET', '/rest/v1/plans')
+      backend.reply('GET', '/rest/v1/plans', 200, PLANS)
+      backend.reply('GET', '/rest/v1/plans', 200, plansWithSent)
+      backend.reply('POST', LOG_WORKOUT, 200, SENT_ROW)
+
+      // Offline, My plans shows the saved plans, with the workout waiting.
+      saveData('plans', PLANS, SAVED_AT)
+      const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+      wait()
+      renderPlans()
+      const strength = await planCard('Strength block')
+      expect(strength.getByText('Waiting to send')).toBeInTheDocument()
+      await waitFor(() => expect(planLoads()).toHaveLength(1))
+
+      // Back online, the plans load again. That answer is read before the
+      // workout is saved (no Evening ride) and arrives last.
+      const release = holdNextReply()
+      onLine.mockReturnValue(true)
+      act(() => window.dispatchEvent(new Event('online')))
+      await waitFor(() => expect(planLoads()).toHaveLength(2))
+
+      // Meanwhile the outbox sends the workout, and it becomes a normal row.
+      await syncOutbox()
+      expect(await strength.findByRole('link', { name: 'Evening ride' })).toBeInTheDocument()
+
+      release()
+
+      // That old answer is not shown: the plans load once more and list it.
+      await waitFor(() => expect(screen.queryByText(/Offline: showing data saved on/)).not.toBeInTheDocument())
+      expect(strength.getByRole('link', { name: 'Evening ride' })).toHaveAttribute('href', `/workouts/${SENT_ROW.id}`)
+      expect(strength.queryByText('Waiting to send')).not.toBeInTheDocument()
+      expect(planLoads()).toHaveLength(3)
     })
   })
 })

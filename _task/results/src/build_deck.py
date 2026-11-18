@@ -221,6 +221,7 @@ class Deck:
         self.prs.slide_width, self.prs.slide_height = SW, SH
         self.layout = self.prs.slide_layouts[6]
         self.count = 0
+        self.tag_n = 0
         from pptx.opc.constants import RELATIONSHIP_TYPE as RT
         theme = self.prs.slide_masters[0].part.part_related_by(RT.THEME)
         xml = theme.blob.decode("utf-8")
@@ -228,6 +229,11 @@ class Deck:
         xml = re.sub(r"<a:folHlink>.*?</a:folHlink>", f'<a:folHlink><a:srgbClr val="{TEAL}"/></a:folHlink>', xml,
                      flags=re.S)
         theme._blob = xml.encode("utf-8")
+
+    def tag(self):
+        """Next number for a main-part slide: 01, 02, ... (the title slide has none)."""
+        self.tag_n += 1
+        return f"{self.tag_n:02d}"
 
     def new(self, dark=False):
         s = self.prs.slides.add_slide(self.layout)
@@ -318,7 +324,7 @@ def dark_link(s, x, y, w, h, item, size=13, color=WHITE, font=BODY):
 
 def slide_problem(d):
     c = d.c["problem"]
-    s = d.content("01", c["title"])
+    s = d.content(d.tag(), c["title"])
     # left: the gap
     text(s, 0.45, 1.5, 5.6, 0.4, [c["gap_h"]], size=15, color=MUTED, font=HEAD_N, space=0)
     y = 1.95
@@ -344,7 +350,7 @@ def slide_problem(d):
 
 def slide_scope(d):
     c = d.c["scope"]
-    s = d.content("02", c["title"], c["kicker"])
+    s = d.content(d.tag(), c["title"], c["kicker"])
     rows = c["rows"]
     gf = s.shapes.add_table(len(rows) + 1, 2, Inches(0.45), Inches(1.5), Inches(12.45), Inches(5.2))
     tbl = gf.table
@@ -388,7 +394,7 @@ def style_table(tbl, rows, sizes=(13, 13), first_col_bold=False, header_fill=DAR
 
 def slide_flow(d):
     c = d.c["flow"]
-    s = d.content("03", c["title"])
+    s = d.content(d.tag(), c["title"])
     lh = 2.25
     lanes = [(c["athlete"], ORANGE, SOFT_O, 1.55), (c["instructor"], TEAL, SOFT_T, 4.6)]
     for label, col, soft, y in lanes:
@@ -423,7 +429,7 @@ def slide_flow(d):
 
 def slide_arch(d):
     c = d.c["arch"]
-    s = d.content("04", c["title"])
+    s = d.content(d.tag(), c["title"])
     xs = [0.45, 3.05, 5.65, 8.25, 10.85]
     w, h, y = 2.05, 1.5, 1.55
     fills = [SOFT, SOFT_T, SOFT, SOFT_O, SOFT]
@@ -457,9 +463,66 @@ def slide_arch(d):
     notes(s, c["notes"])
 
 
+def slide_pwa(d):
+    """v5: the phone app. A phone container (service worker, saved data, outbox, draft, guard) with Vercel
+    and Supabase on the right."""
+    c = d.c["pwa"]
+    s = d.content(d.tag(), c["title"], c["kicker"])
+    # the phone
+    rect(s, 0.45, 1.5, 7.5, 5.35, SOFT_T, TEAL, shape=MSO_SHAPE.ROUNDED_RECTANGLE, line_w=2.0, adj=0.03)
+    badge(s, 0.65, 1.38, c["phone"], fill=TEAL, size=11, w=3.9, h=0.3)
+    fills = [WHITE, WHITE, SOFT_O, WHITE]
+    cols = [TEAL, TEAL, ORANGE, TEAL]
+    pos = [(0.7, 1.95), (4.3, 1.95), (0.7, 3.65), (4.3, 3.65)]
+    for (head, body), (x, y), fill, col in zip(c["boxes"], pos, fills, cols):
+        box(s, x, y, 3.45, 1.55, [f"**{head}**", body], fill=fill, line_color=col, size=12, space=3,
+            line_w=1.5)
+    head, body = c["guard"]
+    box(s, 0.7, 5.4, 7.05, 1.2, [f"**{head}**", body], fill=WHITE, line_color=ORANGE, size=11.5, space=2,
+        line_w=1.5, anchor=MSO_ANCHOR.MIDDLE)
+    # the network side
+    (vh, vb), (sh, sb) = c["vercel"], c["supabase"]
+    box(s, 9.55, 1.5, 3.35, 1.45, [f"**{vh}**", vb], fill=SOFT, line_color=LINE, size=12, space=2)
+    box(s, 9.55, 3.5, 3.35, 2.6, [f"**{sh}**", sb], fill=SOFT_T, line_color=LINE, size=12, space=2)
+    # horizontal arrows across the gap, each with its label above it
+    for y, col, label_col, i in ((2.3, TEAL, TEAL, 0), (4.35, INK, INK, 1), (5.45, ORANGE, ORANGE_D, 2)):
+        if i == 0:
+            arrow(s, 9.55, y, 7.95, y, color=col, w=2.25)       # Vercel -> phone
+        else:
+            arrow(s, 7.95, y, 9.55, y, color=col, w=2.25)       # phone -> Supabase
+        text(s, 8.0, y - 0.55, 1.5, 0.5, [c["arrows"][i]], size=10, color=label_col, font=BODY_B, space=0,
+             align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.BOTTOM)
+    box(s, 9.55, 6.25, 3.35, 0.6, [c["noserver"]], fill=SOFT_O, line_color=None, size=11,
+        anchor=MSO_ANCHOR.MIDDLE)
+    notes(s, c["notes"])
+
+
+def slide_offline(d):
+    """v5: what happens to a workout logged without signal."""
+    c = d.c["offline"]
+    s = d.content(d.tag(), c["title"], c["kicker"])
+    w, gap = 1.85, 0.27
+    for i, (num, head, body) in enumerate(c["steps"]):
+        x = 0.45 + i * (w + gap)
+        box(s, x, 1.85, w, 1.75, [f"**{head}**", body], fill=WHITE, line_color=ORANGE, size=11.5, space=3,
+            margin=0.1, line_w=1.5)
+        badge(s, x + 0.08, 1.67, num, fill=ORANGE, w=0.42, h=0.32, size=12)
+        if i < len(c["steps"]) - 1:
+            arrow(s, x + w, 2.72, x + w + gap, 2.72, color=ORANGE, w=2.25)
+    text(s, 0.45, 3.85, 8.0, 0.4, [c["what_h"]], size=16, color=INK, font=HEAD, space=0)
+    gf = s.shapes.add_table(len(c["what"]) + 1, 2, Inches(0.45), Inches(4.3), Inches(8.1), Inches(2.55))
+    tbl = gf.table
+    for i, wv in enumerate((3.1, 5.0)):
+        tbl.columns[i].width = Inches(wv)
+    style_table(tbl, [c["what_head"]] + c["what"], sizes=(12, 11.5), first_col_bold=True)
+    box(s, 8.85, 3.95, 4.05, 2.9, [f"**{c['live'][0]}**"] + c["live"][1], fill=SOFT_T, line_color=None, size=12,
+        space=5, margin=0.18)
+    notes(s, c["notes"])
+
+
 def slide_erd(d):
     c = d.c["erd"]
-    s = d.content("05", c["title"])
+    s = d.content(d.tag(), c["title"])
 
     def table_box(x, y, w, name, fields, hl):
         hh = 0.42
@@ -494,7 +557,7 @@ def slide_erd(d):
 
 def slide_zaps(d):
     c = d.c["zaps"]
-    s = d.content("06", c["title"])
+    s = d.content(d.tag(), c["title"])
 
     def chip(x, y, w, label, fill, col=WHITE, h=0.62, size=11.5):
         return box(s, x, y, w, h, [label], fill=fill, line_color=None, size=size, color=col, font=BODY_B,
@@ -531,12 +594,12 @@ def slide_zaps(d):
     notes(s, c["notes"])
 
 
-def slide_mail_flow(d, key, tag):
+def slide_mail_flow(d, key):
     """Left-to-right flowchart: does anyone get an email when a new user logs a workout / sends a report?
     content: spine = [(kind, text)], kind in start | dec | proc | mail; edges = labels of the arrows between
     spine nodes; downs = [(spine index, arrow label, kind, text)], kind in none | note | mail2."""
     c = d.c[key]
-    s = d.content(tag, c["title"], c["kicker"])
+    s = d.content(d.tag(), c["title"], c["kicker"])
     nodes, labels = c["spine"], c["edges"]
     n = len(nodes)
     Y = 2.42                                   # centre line of the main path
@@ -614,7 +677,7 @@ def slide_mail_flow(d, key, tag):
 
 def slide_deploy(d):
     c = d.c["deploy"]
-    s = d.content("09", c["title"])
+    s = d.content(d.tag(), c["title"])
     y = 1.6
     for i, (head, body, col) in enumerate(c["pipe"]):
         box(s, 0.45, y, 5.3, 1.0, [f"**{head}**", body], fill=WHITE, line_color=col, size=12, space=2,
@@ -635,7 +698,7 @@ def slide_deploy(d):
 
 def slide_reqs(d):
     c = d.c["reqs"]
-    s = d.content("10", c["title"], c["kicker"])
+    s = d.content(d.tag(), c["title"], c["kicker"])
     gf = s.shapes.add_table(len(c["rows"]) + 1, 3, Inches(0.45), Inches(1.5), Inches(12.45), Inches(5.3))
     tbl = gf.table
     for i, wv in enumerate((2.35, 4.6, 5.5)):
@@ -646,7 +709,7 @@ def slide_reqs(d):
 
 def slide_quality(d):
     c = d.c["quality"]
-    s = d.content("11", c["title"])
+    s = d.content(d.tag(), c["title"])
     for i, (num, label, col) in enumerate(c["tiles"]):
         x = 0.45 + i * 3.15
         rect(s, x, 1.55, 2.95, 1.75, DARK)
@@ -662,7 +725,7 @@ def slide_quality(d):
 
 def slide_hard(d):
     c = d.c["hard"]
-    s = d.content("12", c["title"])
+    s = d.content(d.tag(), c["title"])
     for i, (head, problem, fix) in enumerate(c["cards"]):
         x = 0.45 + (i % 2) * 6.3
         y = 1.55 + (i // 2) * 2.7
@@ -676,7 +739,7 @@ def slide_hard(d):
 
 def slide_tco(d):
     c = d.c["tco"]
-    s = d.content("13", c["title"], c["kicker"])
+    s = d.content(d.tag(), c["title"], c["kicker"])
     rows = c["rows"]                               # Supabase, Zapier, other infra, per month, per year
     gf = s.shapes.add_table(len(rows) + 1, 5, Inches(0.45), Inches(1.45), Inches(12.45), Inches(4.0))
     tbl = gf.table
@@ -801,6 +864,25 @@ def slide_demo_step(d, tag, step, shot_dir):
         f"{c[k]}: {re.sub(r'[*`]', '', step[k])}" for k in ("do", "say", "behind") if step.get(k)))
 
 
+# ---- appendix C: the phone app (v5) --------------------------------------
+def slide_phone_step(d, tag, step, shot_dir):
+    """Tall phone screenshots side by side on the left (centred in 9 in), do / say / behind on the right."""
+    from PIL import Image
+    s = d.content(tag, step["title"])
+    paths = [os.path.join(SHOTS, shot_dir, "phone", n) for n in step["img"]]
+    ih, gap = 4.95, 0.3
+    widths = [ih * Image.open(p).size[0] / Image.open(p).size[1] for p in paths]
+    x = 0.45 + (9.0 - (sum(widths) + gap * (len(paths) - 1))) / 2
+    for p, w, cap in zip(paths, widths, step["caps"]):
+        picture(s, p, x, 1.42, w, ih)
+        text(s, x - gap / 2 + 0.03, 1.42 + ih + 0.05, w + gap - 0.06, 0.45, [cap], size=10.5, color=MUTED,
+             align=PP_ALIGN.CENTER, space=0)
+        x += w + gap
+    step_panel(d, s, 9.65, 1.5, 3.25, step)
+    c = d.c["demo"]
+    notes(s, "\n".join(f"{c[k]}: {re.sub(r'[*`]', '', step[k])}" for k in ("do", "say", "behind") if step.get(k)))
+
+
 # ---- appendix B: links ---------------------------------------------------
 def slide_links(d, tag, block):
     s = d.content(tag, block["title"], block.get("kicker"))
@@ -830,10 +912,12 @@ def build(lang):
     slide_scope(d)
     slide_flow(d)
     slide_arch(d)
+    slide_pwa(d)
+    slide_offline(d)
     slide_erd(d)
     slide_zaps(d)
-    slide_mail_flow(d, "mail_workout", "07")
-    slide_mail_flow(d, "mail_report", "08")
+    slide_mail_flow(d, "mail_workout")
+    slide_mail_flow(d, "mail_report")
     slide_deploy(d)
     slide_reqs(d)
     slide_quality(d)
@@ -851,10 +935,15 @@ def build(lang):
     d.section("B", b["title"], b["subtitle"], b["notes"])
     for i, block in enumerate(c["links"], 1):
         slide_links(d, f"B{i}", block)
+    # Appendix C
+    cc = c["appC"]
+    d.section("C", cc["title"], cc["subtitle"], cc["notes"])
+    for i, step in enumerate(c["phone"], 1):
+        slide_phone_step(d, f"C{i}", step, lang.lower())
     cp = d.prs.core_properties
     cp.title = c["title"]["title"]
     cp.subject = c["title"]["kicker"].title()
-    cp.keywords = "Logify, capstone, Supabase, Vercel, Zapier"
+    cp.keywords = "Logify, capstone, PWA, Supabase, Vercel, Zapier"
     cp.language = "en-US" if lang == "EN" else "lt-LT"
     cp.author = "Logify project"
     out = os.path.join(RESULTS, f"Logify_{lang}.pptx")

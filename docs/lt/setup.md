@@ -70,9 +70,11 @@ Supabase CLI, Vercel CLI ar Docker nereikia: šis projektas naudoja talpinamus s
 | `oxlint` | Vite šablonas | Linteris (`npm run lint`) |
 | `@supabase/supabase-js` | Prideda skriptas | Auth ir duomenų bazės klientas |
 | `react-router-dom` | Prideda skriptas | Naršymas tarp ekranų |
+| `recharts` | `package.json` | Pažangos diagramos |
+| `vite-plugin-pwa` | `package.json` (dev) | Sukuria service worker ir manifestą (telefono programėlė, [pwa.md](pwa.md)). Kūrimo įrankis: programai vykdymo metu nieko nepriduria |
 | `vitest`, `jsdom`, `@testing-library/*` | `package.json` (dev) | Vienetų testai (`npm test`); jie niekada nesikreipia į Supabase |
 
-`recharts` reikia tik papildomai Pažangos diagramai. Pridėkite jį tos funkcijos šakoje: `npm install recharts`.
+`npm install` įdiegia visa tai iš `package.json`, todėl skriptas ir paprastas `npm install` duoda tą patį rezultatą; paties skripto sąrašas (`@supabase/supabase-js`, `react-router-dom`) svarbus tik projektui, kurio `package.json` jų dar neturi.
 
 ### Paskyros
 
@@ -137,13 +139,35 @@ cp .env.example .env.local     # tada įrašykite dvi reikšmes
 npm run dev
 ```
 
+## Išbandykite telefono programėlę vietoje
+
+„Logify“ yra ir įdiegiama telefono programėlė, veikianti be ryšio ([pwa.md](pwa.md)). **`npm run dev` neturi service worker**, ir tai sąmoninga: pasenusi talpykla nesumaišo kūrimo. Service worker ir manifestas yra tik produkcinėje versijoje, todėl bandykite ją:
+
+```bash
+npm run build
+npm run preview        # http://localhost:4173
+```
+
+1. Atidarykite `http://localhost:4173` „Chrome“ ir prisijunkite **turėdami ryšį**. Service worker įsidiegia, o pasiruošimas išsaugo šiek tiek duomenų. Service worker `localhost` veikia ir be HTTPS.
+2. DevTools → **Application**: *Manifest* rodo pavadinimą, piktogramas ir kad programą galima įdiegti; *Service Workers* rodo `sw.js` kaip aktyvuotą; *Cache Storage* laiko išankstinę talpyklą; *Local Storage* rodo `logify.*` raktus.
+3. Kartą atidarykite Mano planus, Įrašyti treniruotę ir Pažangą. Tada pažymėkite **Application → Service Workers → Offline** (arba **Network → Offline**) ir perkraukite: programa atsidaro, o būsenos eilutė parašo, kad nėra ryšio.
+4. Įrašykite treniruotę: ji laikoma telefone ir skiltyje Mano planai rodoma kaip *Laukia išsiuntimo*. Nuimkite Offline žymę: treniruotė išsiunčiama, o eilutė dingsta.
+5. Norėdami pradėti iš pradžių, **Application → Storage → Clear site data**; tai pašalina ir service worker.
+
+Visas žingsnis po žingsnio ir ribos aprašyti [pwa.md](pwa.md#7-bandymas-be-ryšio). Norėdami išbandyti tikrame telefone, atidarykite Vercel peržiūrą ar veikiančią svetainę: jos pateikiamos per HTTPS ([deployment.md](deployment.md#6-telefono-programėlė-pwa-per-vercel)). Kūrimo serveris, atidarytas pagal LAN IP, yra paprastas `http://`, todėl telefonas ten service worker negauna.
+
+## Ekrano nuotraukos
+
+[Naudotojo vadovų](../user-manual/README.md) ekrano nuotraukos perfotografuojamos ekrano nuotraukų įrankiu, o ne rankomis, kad pakeitus sąsają jos atitiktų programą. Įrankis yra `_task/results/src/screenshots/`; jo README parašo, ko jam reikia ir kaip jį paleisti: [`_task/results/src/screenshots/README.md`](../../_task/results/src/screenshots/README.md).
+
 ## Patikra
 
 | Komanda | Tikimasi |
 |---|---|
 | `powershell -ExecutionPolicy Bypass -File scripts\setup.ps1 -CheckOnly` | Kiekviena eilutė yra `[ok]`; pabaigoje „Environment is ready“ |
-| `npm run dev` | Vite išveda `Local: http://localhost:5173/`; puslapis atsidaro |
-| `npm run build` | Baigiasi `✓ built in …`; rezultatas `dist/` |
+| `npm run dev` | Vite išveda `Local: http://localhost:5173/`; puslapis atsidaro (be service worker) |
+| `npm run build` | Baigiasi `✓ built in …`; rezultatas `dist/`, įskaitant `sw.js` ir `manifest.webmanifest` |
+| `npm run preview` | Pateikia versiją adresu `http://localhost:4173`; DevTools → Application rodo manifestą ir aktyvuotą service worker |
 | `npm test` | Kiekvienas testų failas praeina |
 | `git status` | `.env.local`, `node_modules/` ir `dist/` **nėra** sąraše |
 
@@ -158,3 +182,8 @@ npm run dev
 | `Node.js <version> is too old` | Node senesnė nei 22.12 | `winget upgrade OpenJS.NodeJS.LTS` arba pakeiskite versiją versijų tvarkyklėje. |
 | Programa rodo Supabase klaidą arba `supabaseUrl is required` | `.env.local` vis dar turi vietos žymeklius arba kūrimo serveris nebuvo paleistas iš naujo | Užpildykite abi reikšmes, tada paleiskite `npm run dev` iš naujo. |
 | Prievadas 5173 užimtas | Veikia kitas kūrimo serveris | Sustabdykite jį arba priimkite kitą Vite siūlomą prievadą ir pridėkite tą adresą į Supabase Redirect URLs. |
+| DevTools nerodo service worker arba programa neatsidaro be ryšio | Naudojate `npm run dev` (service worker nėra), paprastą `http://` adresą, kuris nėra `localhost`, arba dar nė karto neatidarėte programos su ryšiu | Naudokite `npm run build` + `npm run preview` per `localhost` ir pirmiausia prisijunkite turėdami ryšį ([aukščiau](#išbandykite-telefono-programėlę-vietoje)) |
+
+## Susiję
+
+[deployment.md](deployment.md) (Vercel, PWA per Vercel, v5 išleidimas) · [supabase.md](supabase.md) (duomenų bazė, v5 pritaikymas) · [pwa.md](pwa.md) (telefono programėlė ir kaip ją išbandyti be ryšio) · [architecture.md](architecture.md) (kaip dalys dera tarpusavyje, įskaitant telefono pusę) · [zapier.md](zapier.md) (laiškai)

@@ -1,12 +1,10 @@
 import { useEffect, useId, useState } from 'react'
 import { listExerciseNames } from '../api/sets'
 import { useLanguage } from '../i18n/useLanguage'
+import { savedExerciseNames } from '../offline/hints'
+import { isOnline } from '../offline/network'
+import { newExercise, newSet } from './exerciseKeys'
 import LastTime from './LastTime'
-
-let lastKey = 0
-const nextKey = () => `draft-${(lastKey += 1)}`
-const newSet = (copyOf) => ({ key: nextKey(), reps: copyOf?.reps ?? '', weight: copyOf?.weight ?? '' })
-const newExercise = () => ({ key: nextKey(), name: '', lookup: '', sets: [newSet()] })
 
 /**
  * Exercises and sets of a strength workout. The draft lives in the parent:
@@ -19,11 +17,17 @@ export default function ExercisesEditor({ exercises, onChange }) {
 
   useEffect(() => {
     let current = true
-    listExerciseNames().then(
+    // When the phone says it is offline, the saved progress is used at once
+    // (see LastTime).
+    const lookup = isOnline() ? listExerciseNames() : Promise.resolve().then(savedExerciseNames)
+    lookup.then(
       (list) => {
         if (current) setNames(list)
       },
-      () => {}, // suggestions are optional
+      // Suggestions are optional: if the lookup fails, use the saved progress (maybe none).
+      () => {
+        if (current) setNames(savedExerciseNames())
+      },
     )
     return () => {
       current = false

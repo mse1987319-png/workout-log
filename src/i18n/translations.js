@@ -44,7 +44,13 @@ export const translations = {
     'nav.myAthletes': 'My athletes',
     'nav.progress': 'Progress',
     'nav.sharing': 'Sharing',
+    'nav.log': 'Log',
     'account.logOut': 'Log out',
+    'account.logOutAs': 'Log out ({email})',
+    'account.unsent.one':
+      "{count} workout hasn't been sent yet. It stays on this phone and is sent the next time you log in here.",
+    'account.unsent.other':
+      "{count} workouts haven't been sent yet. They stay on this phone and are sent the next time you log in here.",
 
     // Errors
     'errors.network': "Can't reach the server. Check your internet connection and try again.",
@@ -56,11 +62,46 @@ export const translations = {
     'errors.code.over_request_rate_limit': 'Too many attempts. Wait a few minutes and try again.',
     'errors.code.42501': "You don't have permission to do that.",
     'errors.code.PGRST116': 'This item no longer exists. Reload the page and try again.',
+    'errors.code.offline_not_saved': "You're offline, and this hasn't been saved on this phone yet.",
+    'errors.code.storage_full':
+      "This phone's storage is full, so the workout couldn't be kept here. Free some space, or save it when you're online.",
     // Messages the database raises on purpose (supabase/schema.sql), by their English text.
     'errors.db.reportTooSoon': 'You sent a report a few minutes ago. Wait a little before sending another.',
     'errors.db.noInstructorCode': 'No instructor has that code. Check it and try again.',
     'errors.db.ownCode': 'That is your own code: give it to your athletes.',
     'errors.db.planHasWorkouts': "Athletes have logged workouts under this plan, so it can't be deleted.",
+
+    // Offline
+    'offline.savedData': 'Offline: showing data saved on {time}.',
+
+    // Workouts waiting to send (My plans)
+    'outbox.waiting': 'Waiting to send',
+    'outbox.badgeFailed': "Couldn't send",
+    'outbox.failed': "Couldn't send: {reason}",
+    'outbox.cardTitle': 'Workouts waiting to send',
+    'outbox.confirmDelete': 'Delete “{title}”? It was never sent, so it will be gone.',
+
+    // Status line under the header
+    'status.offline': "You're offline. Workouts you log are kept on this phone.",
+    'status.waiting.one': '{count} workout waiting to send',
+    'status.waiting.other': '{count} workouts waiting to send',
+    'status.sendNow': 'Send now',
+    'status.sending': 'Sending…',
+    'status.failed.one': "{count} workout couldn't be sent: see My plans.",
+    'status.failed.other': "{count} workouts couldn't be sent: see My plans.",
+    'status.update': 'A new version of Logify is ready.',
+    'status.updateNow': 'Update',
+    'status.oldDb':
+      "Logify's database is an older version than this app: workouts logged offline get the time they're sent, and after a dropped connection one could be saved twice. The fix is updating the database (supabase/schema.sql).",
+    'status.hide': 'Hide',
+
+    // Install card (My plans)
+    'install.title': 'Install Logify',
+    'install.text': 'It opens like an app and works without signal.',
+    'install.button': 'Install',
+    'install.notNow': 'Not now',
+    'install.ios': 'On iPhone: tap Share, then Add to Home Screen.',
+    'install.gotIt': 'Got it',
 
     // Configuration (shown when the Supabase settings are missing)
     'config.and': ' and ',
@@ -90,6 +131,7 @@ export const translations = {
     'login.alreadyRegistered': 'Already registered?',
     'login.newHere': 'New here?',
     'login.haveAccount': 'I already have an account',
+    'login.offline': "You're offline. Logging in needs a connection.",
 
     // My plans
     'plans.new': 'New plan',
@@ -147,6 +189,10 @@ export const translations = {
     'workout.saved': 'Workout saved: {title}.',
     'workout.openIt': 'Open it',
     'workout.seeInPlans': 'See it in My plans',
+    'workout.kept':
+      "Saved on this phone. It will be sent as soon as there's a connection, and your instructor gets the email then.",
+    'workout.draftRestored': 'Unsaved workout restored.',
+    'workout.startOver': 'Start over',
     'workout.submit': 'Save workout',
     'workout.titleLabelHidden': 'Workout title',
     'workout.editTitleLabel': 'Edit title of {title}',
@@ -374,7 +420,15 @@ export const translations = {
     'nav.myAthletes': 'Mano sportininkai',
     'nav.progress': 'Pažanga',
     'nav.sharing': 'Dalijimasis',
+    'nav.log': 'Įrašyti',
     'account.logOut': 'Atsijungti',
+    'account.logOutAs': 'Atsijungti ({email})',
+    'account.unsent.one':
+      '{count} treniruotė dar neišsiųsta. Ji liks šiame telefone ir bus išsiųsta, kai kitą kartą čia prisijungsite.',
+    'account.unsent.few':
+      '{count} treniruotės dar neišsiųstos. Jos liks šiame telefone ir bus išsiųstos, kai kitą kartą čia prisijungsite.',
+    'account.unsent.other':
+      '{count} treniruočių dar neišsiųsta. Jos liks šiame telefone ir bus išsiųstos, kai kitą kartą čia prisijungsite.',
 
     // Errors
     'errors.network': 'Nepavyksta pasiekti serverio. Patikrinkite interneto ryšį ir bandykite dar kartą.',
@@ -387,10 +441,47 @@ export const translations = {
     'errors.code.over_request_rate_limit': 'Per daug bandymų. Palaukite kelias minutes ir bandykite dar kartą.',
     'errors.code.42501': 'Neturite teisės to daryti.',
     'errors.code.PGRST116': 'Šio įrašo nebėra. Perkraukite puslapį ir bandykite dar kartą.',
+    'errors.code.offline_not_saved': 'Nėra ryšio, o šie duomenys šiame telefone dar neišsaugoti.',
+    'errors.code.storage_full':
+      'Šio telefono atmintis pilna, todėl treniruotės čia išsaugoti nepavyko. Atlaisvinkite vietos arba išsaugokite, kai bus ryšys.',
     'errors.db.reportTooSoon': 'Ataskaitą išsiuntėte prieš kelias minutes. Šiek tiek palaukite, prieš siųsdami kitą.',
     'errors.db.noInstructorCode': 'Joks treneris neturi tokio kodo. Patikrinkite jį ir bandykite dar kartą.',
     'errors.db.ownCode': 'Tai jūsų pačių kodas: duokite jį savo sportininkams.',
     'errors.db.planHasWorkouts': 'Sportininkai yra įrašę treniruočių pagal šį planą, todėl jo ištrinti negalima.',
+
+    // Offline
+    'offline.savedData': 'Nėra ryšio: rodomi duomenys, išsaugoti {time}.',
+
+    // Workouts waiting to send (My plans)
+    'outbox.waiting': 'Laukia išsiuntimo',
+    'outbox.badgeFailed': 'Nepavyko išsiųsti',
+    'outbox.failed': 'Nepavyko išsiųsti: {reason}',
+    'outbox.cardTitle': 'Išsiuntimo laukiančios treniruotės',
+    'outbox.confirmDelete': 'Ištrinti „{title}“? Ji nebuvo išsiųsta, todėl dings visam laikui.',
+
+    // Status line under the header
+    'status.offline': 'Nėra ryšio. Įrašytos treniruotės saugomos šiame telefone.',
+    'status.waiting.one': '{count} treniruotė laukia išsiuntimo',
+    'status.waiting.few': '{count} treniruotės laukia išsiuntimo',
+    'status.waiting.other': '{count} treniruočių laukia išsiuntimo',
+    'status.sendNow': 'Siųsti dabar',
+    'status.sending': 'Siunčiama…',
+    'status.failed.one': 'Nepavyko išsiųsti {count} treniruotės: žr. „Mano planai“.',
+    'status.failed.few': 'Nepavyko išsiųsti {count} treniruočių: žr. „Mano planai“.',
+    'status.failed.other': 'Nepavyko išsiųsti {count} treniruočių: žr. „Mano planai“.',
+    'status.update': 'Paruošta nauja Logify versija.',
+    'status.updateNow': 'Atnaujinti',
+    'status.oldDb':
+      'Logify duomenų bazė senesnė nei ši programėlė: be ryšio įrašytoms treniruotėms priskiriamas išsiuntimo laikas, o nutrūkus ryšiui ta pati treniruotė gali būti išsaugota du kartus. Sprendimas – atnaujinti duomenų bazę (supabase/schema.sql).',
+    'status.hide': 'Slėpti',
+
+    // Install card (My plans)
+    'install.title': 'Įdiekite Logify',
+    'install.text': 'Logify atsidaro kaip programėlė ir veikia be ryšio.',
+    'install.button': 'Įdiegti',
+    'install.notNow': 'Ne dabar',
+    'install.ios': 'iPhone: bakstelėkite „Bendrinti“, tada „Pridėti prie pradžios ekrano“.',
+    'install.gotIt': 'Supratau',
 
     // Configuration (shown when the Supabase settings are missing)
     'config.and': ' ir ',
@@ -421,6 +512,7 @@ export const translations = {
     'login.alreadyRegistered': 'Jau užsiregistravote?',
     'login.newHere': 'Pirmą kartą čia?',
     'login.haveAccount': 'Jau turiu paskyrą',
+    'login.offline': 'Nėra ryšio. Prisijungti galima tik turint ryšį.',
 
     // My plans
     'plans.new': 'Naujas planas',
@@ -482,6 +574,10 @@ export const translations = {
     'workout.saved': 'Treniruotė išsaugota: {title}.',
     'workout.openIt': 'Atidaryti',
     'workout.seeInPlans': 'Žiūrėti skiltyje „Mano planai“',
+    'workout.kept':
+      'Išsaugota šiame telefone. Treniruotė bus išsiųsta, kai tik atsiras ryšys; tada treneris gaus ir laišką.',
+    'workout.draftRestored': 'Atkurta neišsaugota treniruotė.',
+    'workout.startOver': 'Pradėti iš naujo',
     'workout.submit': 'Išsaugoti treniruotę',
     'workout.titleLabelHidden': 'Treniruotės pavadinimas',
     'workout.editTitleLabel': 'Redaguoti treniruotės „{title}“ pavadinimą',

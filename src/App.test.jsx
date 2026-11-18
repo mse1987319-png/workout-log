@@ -5,7 +5,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { supabase } from './lib/supabase'
 import { backend } from './test/fakeBackend'
-import { ATHLETE, createFakeAuth, INSTRUCTOR, sessionFor } from './test/fakeSupabase'
+import { ATHLETE, authError, createFakeAuth, INSTRUCTOR, sessionFor } from './test/fakeSupabase'
 
 // A real supabase-js client on the fake REST backend, with the auth
 // part swapped for the in-memory fake (sign-in without a server).
@@ -13,6 +13,10 @@ vi.mock('./lib/supabase', async () => {
   const { createTestClient } = await import('./test/fakeBackend')
   return { supabase: createTestClient(), configError: null }
 })
+
+// The background work (version check, warm-up, sending) makes requests of its
+// own; these tests assert the requests of the screens.
+vi.mock('./offline/useBackgroundSync', () => ({ useBackgroundSync: () => {} }))
 
 function renderApp(path = '/') {
   render(
@@ -26,8 +30,19 @@ function renderApp(path = '/') {
 describe('App', () => {
   // Screens loaded on demand: compile them once up front, so the tests
   // measure routing, not how long the test runner takes to transform them.
+  // The first render of the whole app and the first role query (the library
+  // builds its role tables on first use) also cost a one-off ~150 ms, which a
+  // busy machine multiplies past findByRole's 1 s: pay it here, not in test 1.
   beforeAll(async () => {
     await Promise.all([import('./pages/ProgressPage'), import('./pages/WorkoutDetailPage')])
+    supabase.auth = createFakeAuth()
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+    await screen.findByRole('heading', { name: 'Log in' }, { timeout: 30000 })
+    unmount()
   }, 60000)
 
   beforeEach(() => {
@@ -71,17 +86,15 @@ describe('App', () => {
 
   it('explains a failed logout and lets the user try again', async () => {
     supabase.auth = createFakeAuth({ session: sessionFor(ATHLETE) })
-    // supabase-js keeps the session when the logout request fails.
+    // supabase-js keeps the session when the server refuses the logout. (One
+    // that can't reach the server logs out on this phone: AuthProvider tests.)
     supabase.auth.signOut.mockResolvedValueOnce({
-      error: Object.assign(new Error('Failed to fetch'), {
-        name: 'AuthRetryableFetchError',
-        status: 0,
-      }),
+      error: authError('over_request_rate_limit', 429, 'Request rate limit reached'),
     })
     const user = renderApp('/')
 
     await user.click(await screen.findByRole('button', { name: 'Log out' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent("Can't reach the server")
+    expect(await screen.findByRole('alert')).toHaveTextContent('Too many attempts. Wait a few minutes and try again.')
     expect(screen.getByRole('heading', { name: 'My plans' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Try again' }))
@@ -143,6 +156,7 @@ describe('App', () => {
     const nav = await screen.findByRole('navigation', { name: 'Main' })
     expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual([
       'My plans',
+      'Log',
       'Progress',
       'Sharing',
     ])
@@ -155,6 +169,7 @@ describe('App', () => {
     const nav = await screen.findByRole('navigation', { name: 'Main' })
     expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual([
       'My plans',
+      'Log',
       'My athletes',
       'Progress',
     ])

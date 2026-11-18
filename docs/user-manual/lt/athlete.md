@@ -2,7 +2,7 @@
 
 *Lietuviškai · [English](../en/athlete.md) · [Trenerio vadovas](instructor.md)*
 
-„Logify“ – tai internetinis treniruočių žurnalas. Sekate treniruočių planus (savo arba tuos, kuriuos jums priskyrė treneris), registruojate jėgos ir kardio treniruotes, stebite pažangą, o treneris gali sekti kartu. Nieko diegti nereikia: programa veikia naršyklėje kompiuteryje, planšetėje ar telefone.
+„Logify“ – tai internetinis treniruočių žurnalas. Sekate treniruočių planus (savo arba tuos, kuriuos jums priskyrė treneris), registruojate jėgos ir kardio treniruotes, stebite pažangą, o treneris gali sekti kartu. Programa veikia naršyklėje kompiuteryje, planšetėje ar telefone, o telefone ją galima įdiegti kaip programėlę ir toliau naudoti be ryšio.
 
 > Ekrano nuotraukose rodomi žmonės, planai ir treniruotės yra išgalvoti demonstraciniai duomenys.
 
@@ -16,7 +16,9 @@
 6. [Pažanga](#6-pažanga)
 7. [Dalijimasis su treneriu](#7-dalijimasis-su-treneriu)
 8. [„Logify“ telefone](#8-logify-telefone)
-9. [Pranešimai ir ką daryti](#9-pranešimai-ir-ką-daryti)
+9. [Įdiegimas telefone](#9-įdiegimas-telefone)
+10. [„Logify“ naudojimas be ryšio](#10-logify-naudojimas-be-ryšio)
+11. [Pranešimai ir ką daryti](#11-pranešimai-ir-ką-daryti)
 
 ---
 
@@ -43,19 +45,20 @@ Jei el. paštas ar slaptažodis neteisingi, pamatysite raudoną pranešimą ir d
 
 ![Prisijungimas su pranešimu „Neteisingas el. paštas arba slaptažodis“](../images/lt/04-login-error.png)
 
-Norėdami baigti darbą, viršuje dešinėje paspauskite **Atsijungti**.
+Norėdami baigti darbą, viršuje dešinėje paspauskite **Atsijungti** piktogramą (durys su rodykle). Užvedus ant jos žymeklį, rodoma *Atsijungti* ir el. paštas, kuriuo esate prisijungę.
 
 ## 2. Kalba ir meniu
 
-„Logify“ veikia **lietuvių (LT)** ir **anglų (EN)** kalbomis. **LT / EN** jungiklis yra viršuje, šalia logotipo, kiekviename ekrane, taip pat prisijungimo ekrane. Jūsų pasirinkimas įsimenamas šioje naršyklėje.
+„Logify“ veikia **lietuvių** ir **anglų** kalbomis. Kalbą perjungia dvi mažos vėliavėlės viršuje, greta logotipo: Lietuvos – lietuvių kalbai, Didžiosios Britanijos – anglų. Jos yra kiekviename ekrane, taip pat prisijungimo ekrane, o pasirinktoji apvesta spalvotu rėmeliu. Jūsų pasirinkimas įsimenamas šioje naršyklėje.
 
 Pavadinimai, kuriuos įrašote patys (planai, pratimai, pastabos), niekada nėra verčiami.
 
-Sportininko meniu viršuje turi tris skiltis:
+Kompiuteryje meniu yra viršuje, o telefone – juosta ekrano apačioje (žr. [„Logify“ telefone](#8-logify-telefone)). Sportininko meniu skiltys:
 
 | Meniu | Kam skirta |
 |---|---|
 | **Mano planai** | Jūsų planai ir kiekvieno plano treniruotės |
+| **Įrašyti** (tik telefonuose) | Treniruotės įrašymas |
 | **Pažanga** | Pasiūlymai, tikslai, ataskaita treneriui, diagramos |
 | **Dalijimasis** | Ryšys su treneriu |
 
@@ -87,7 +90,7 @@ Kiekvienas planas rodomas kaip kortelė su tikslu ir joje įrašytomis treniruot
 
 ![Plano kortelė su paryškintais mygtukais](../images/lt/42-plan-actions.png)
 
-Planas, kurį jums priskyrė treneris, pažymėtas užrašu **Priskyrė jūsų treneris**. Pagal jį galite įrašyti savo treniruotes, bet jo negalite redaguoti ar ištrinti.
+Planas, kurį jums priskyrė treneris, pažymėtas užrašu **Priskyrė jūsų treneris** (treneriai planus priskiria taip, kaip aprašyta [trenerio vadove](instructor.md#5-planų-kūrimas-ir-priskyrimas)). Pagal jį galite įrašyti savo treniruotes, bet jo negalite redaguoti ar ištrinti.
 
 ![Trenerio priskirtas planas](../images/lt/41-assigned-plan.png)
 
@@ -116,6 +119,8 @@ Plano kortelėje paspauskite **+ Įrašyti treniruotę**. (Čia galite patekti i
 7. Paspauskite **Išsaugoti treniruotę**.
 
 ![Tuščia treniruotės įrašymo forma](../images/lt/20-log-form-empty.png)
+
+> Sporto salėje nėra ryšio? Treniruotę vis tiek galite įrašyti: „Logify“ ją laiko jūsų telefone ir išsiunčia vėliau. Žr. [„Logify“ naudojimas be ryšio](#10-logify-naudojimas-be-ryšio).
 
 > Kiekviena išsaugota treniruotė automatiškai išsiunčiama el. paštu treneriui (treneriams), su kuriuo dalijatės; jėgos treniruotės pažymimos. Todėl prie **Tipo** yra atitinkama pastaba. Jei nesidalijate su niekuo, laiško negauna niekas (žr. [Dalijimasis su treneriu](#7-dalijimasis-su-treneriu)).
 
@@ -212,7 +217,7 @@ Stulpeliai už pastarąsias 8 savaites, padalyti į jėgos ir kitas treniruotes.
 
 Skiltyje **Dalijimasis** nusprendžiate, kas gali jus sekti. Treneris, su kuriuo dalijatės, gali **skaityti** jūsų treniruotes, serijas, tikslus ir ataskaitas, bet **niekada negali jų keisti**, o jūs bet kada galite nustoti dalytis.
 
-1. Paprašykite trenerio **kodo** (šešios raidės ir skaitmenys, pavyzdžiui, `K7P2QX`). Treneris jį mato savo ekrane **Mano sportininkai**.
+1. Paprašykite trenerio **kodo** (šešios raidės ir skaitmenys, pavyzdžiui, `K7P2QX`). Treneris jį mato savo ekrane **Mano sportininkai** (žr. [trenerio vadovą](instructor.md#3-jūsų-kodas-sportininkų-prijungimas)).
 2. Atidarykite **Dalijimasis** ir įveskite kodą lauke **Trenerio kodas**.
 3. Paspauskite **Dalytis**. Pamatysite *Dabar dalijatės su …*, o treneris atsiras sąraše **Su kuo dalijatės**.
 
@@ -228,20 +233,128 @@ Norėdami nustoti, šalia trenerio paspauskite **Nebesidalyti**. Jūsų duomenys
 
 ## 8. „Logify“ telefone
 
-„Logify“ sukurta naudoti ir sporto salėje. Siaurame ekrane meniu persikelia į atskirą eilutę po logotipu, o mygtukai lieka pakankamai dideli paspausti pirštu.
+„Logify“ sukurta naudoti ir sporto salėje. Telefone (ekrane iki 640 px pločio) meniu tampa **juosta ekrano apačioje**, kaip programėlėje: piktograma ir užrašas kiekvienai skilčiai – **Mano planai**, **Įrašyti**, **Pažanga** ir **Dalijimasis**. Skiltis, kurioje esate, paryškinta akcento spalva. Skiltis **Įrašyti** iškart atveria treniruotės įrašymo formą; ji yra tik telefonuose. Antraštė susitraukia į vieną eilutę: logotipas, dvi kalbos vėliavėlės šalia jo ir paskyra dešinėje su **Atsijungti** piktograma (užvedus ant jos žymeklį, rodoma *Atsijungti* ir jūsų el. paštas). Jei vietos neužtenka, el. paštas sutrumpinamas „…“, o ne užlenda ant vėliavėlių. Todėl pačiam ekranui lieka daugiau vietos.
+
+Po antrašte atsiranda **būsenos eilutė**, kai yra ką pasakyti: nėra ryšio, treniruotės laukia išsiuntimo arba paruošta nauja versija. Žr. [„Logify“ naudojimas be ryšio](#10-logify-naudojimas-be-ryšio).
+
+Mygtukai ir planų bei pratimų pasirinkimai lieka pakankamai dideli paspausti pirštu.
 
 | Mano planai | Treniruotės įrašymas |
 |---|---|
-| ![Mano planai telefone](../images/lt/80-phone-plans.png) | ![Treniruotės įrašymas telefone](../images/lt/81-phone-log.png) |
+| ![Mano planai telefone su apatine kortelių juosta](../images/lt/80-phone-plans.png) | ![Treniruotės įrašymas telefone su apatine kortelių juosta](../images/lt/81-phone-log.png) |
 
-## 9. Pranešimai ir ką daryti
+Kaip tai veikia iš vidaus, aprašyta [Kaip tai veikia (techniškai)](../../lt/pwa.md); toliau pateikti ekranai yra tai, ką matote kaip naudotojas.
+
+## 9. Įdiegimas telefone
+
+Įdiegus „Logify“ atsiranda jūsų pradžios ekrane. Tada ji atsidaro per visą ekraną su sava piktograma, kaip bet kuri programėlė. Tai neprivaloma, o „Logify“ be ryšio veikia ir taip, ir taip, kai tik ją kartą atidarote su ryšiu ir prisijungiate.
+
+![Įdiegimo kortelė telefone, skilties Mano planai viršuje](../images/lt/82-phone-install.png)
+
+*Įdiegimo kortelė skiltyje Mano planai: ji rodoma tik tol, kol „Logify“ dar neįdiegta.*
+
+**„Android“ („Chrome“)**
+
+1. Atidarykite „Logify“. Skiltyje **Mano planai** kortelė sako **Įdiekite Logify**: *Logify atsidaro kaip programėlė ir veikia be ryšio.*
+2. Paspauskite **Įdiegti** ir patvirtinkite. (Paspaudus **Ne dabar**, kortelė dingsta visam laikui; vis tiek galite naudoti naršyklės meniu → **Install app** arba **Add to Home screen**.)
+3. Ilgai paspaudę piktogramą pradžios ekrane, pamatysite du trumpinius: vieną treniruotei įrašyti ir vieną **Pažangai**. (Jų pavadinimai visada lietuviški: programėlės diegimo failas negali sekti kalbos jungiklio.)
+
+**iPhone („Safari“)**
+
+1. Atidarykite „Logify“ naršyklėje **Safari**. Kortelė skiltyje **Mano planai** sako *iPhone: bakstelėkite „Bendrinti“, tada „Pridėti prie pradžios ekrano“.*
+2. Bakstelėkite **Bendrinti**, tada **Pridėti prie pradžios ekrano** ir **Pridėti**. Kortelėje paspauskite **Supratau**.
+
+> **iPhone įdiegta programėlė turi savo atmintį**, atskirą nuo „Safari“. Prisijungus „Safari“, pradžios ekrano programėlėje neprisijungiama: **prisijunkite joje dar kartą**. Išsaugoti duomenys ir išsiuntimo laukiančios treniruotės taip pat atskiros.
+
+Įdiegus „Logify“, kortelė išnyksta.
+
+**Atnaujinimai.** Kai nauja versija paruošta, būsenos eilutė parašo *Paruošta nauja Logify versija.* su **Atnaujinti**. „Logify“ niekada pati nesiperkrauna; paspauskite **Atnaujinti**, kai jums patogu (jūsų rašyta treniruotė po perkrovimo grįžta). Atidaryta programa taip pat kas valandą ieško naujos versijos. Kol siunčiama treniruotė, eilutė **Atnaujinti** palaukia, kol siuntimas baigsis, nes perkrovimas siuntimą nutrauktų.
+
+## 10. „Logify“ naudojimas be ryšio
+
+Sporto salėse ryšys dažnai silpnas arba jo nėra. „Logify“ toliau veikia: ji atsidaro, rodo tai, ką matėte paskutinį kartą, ir leidžia įrašyti treniruotę, kuri išsiunčiama, kai grįžta ryšys. (Kaip tai veikia techniškai ir kokios ribos: [Kaip tai veikia (techniškai)](../../lt/pwa.md).)
+
+### Pasiruoškite vieną kartą
+
+Atidarykite „Logify“ **su ryšiu** ir prisijunkite. Iškart po to „Logify“ tyliai išsaugo jūsų planus ir pažangą, todėl be ryšio veikia net ekranai, kurių dar neatidarėte. Kad treniruotės informaciją galėtumėte atidaryti be ryšio, kartą atidarykite ją su ryšiu (laikoma 30 paskutinių atidarytų treniruočių). Be ryšio lieka prisijungta, net jei ryšio neturėjote kelias valandas.
+
+### Ką matote be ryšio
+
+- Būsenos eilutė parašo *Nėra ryšio. Įrašytos treniruotės saugomos šiame telefone.*
+- Planai, treniruotės, **Pažanga** ir **Dalijimasis** rodo paskutinius „Logify“ gautus duomenis su eilute, pavyzdžiui, *Nėra ryšio: rodomi duomenys, išsaugoti 2026-11-16 18:42.*, ir **Bandyti dar kartą**. Kai ryšys grįžta, ekranas pats atsinaujina, o eilutė dingsta. Išsaugoti duomenys gali būti seni, todėl pažiūrėkite į laiką.
+- Tas pats įvyksta ir esant silpnam ryšiui: jei ekranas kraunasi ilgiau nei apie 4 sekundes, matote išsaugotus duomenis (o šviežiai, jei atkeliauja, juos pakeičia).
+- Jei kas nors telefone niekada nebuvo išsaugota, ekranas parašo *Nėra ryšio, o šie duomenys šiame telefone dar neišsaugoti.*
+- Įrašant, pratimų pavadinimų siūlymai ir *Praėjusį kartą* iškart imami iš jūsų išsaugotos pažangos.
+
+![Mano planai telefone be ryšio](../images/lt/83-phone-offline.png)
+
+*Be ryšio: būsenos eilutė parašo, kad ryšio nėra, o ekranas rodo telefone išsaugotus duomenis su jų išsaugojimo laiku.*
+
+### Treniruotės įrašymas be ryšio
+
+1. Atidarykite **Įrašyti** (arba plano **+ Įrašyti treniruotę**) ir užpildykite treniruotę kaip įprasta.
+2. Paspauskite **Išsaugoti treniruotę**. Vietoje *Treniruotė išsaugota* pamatysite *Išsaugota šiame telefone. Treniruotė bus išsiųsta, kai tik atsiras ryšys; tada treneris gaus ir laišką.* Forma vėl tuščia.
+3. Skiltyje **Mano planai** treniruotė atsiranda po savo planu su užrašu **Laukia išsiuntimo**. Kol kas tai nėra nuoroda: kol treniruotė neišsiųsta, jos puslapio nėra. Būsenos eilutė parodo, kiek jų laukia, pavyzdžiui, *1 treniruotė laukia išsiuntimo*.
+
+![Treniruotės įrašymo forma, išsaugojus be ryšio](../images/lt/84-phone-saved-on-phone.png)
+
+*Paspaudus Išsaugoti be ryšio: atsiranda pranešimas „Išsaugota šiame telefone…“, o forma vėl tuščia.*
+
+![Mano planai su treniruote, laukiančia išsiuntimo](../images/lt/85-phone-waiting.png)
+
+*Mano planai: treniruotė po savo planu su užrašu **Laukia išsiuntimo**, o būsenos eilutė ją suskaičiuoja.*
+
+Treneris gauna laišką, kai treniruotė išsiunčiama, o ne tada, kai ją išsaugojote telefone.
+
+Kol **Išsaugoti treniruotę** dirba (rodoma *Saugoma…*), laukai užrakinti, nes forma išsivalo, vos treniruotė išsaugoma ar palikta telefone. Jei rašant treniruotę telefonas uždaro programą arba atnaujinate „Logify“, forma grįžta su užrašu *Atkurta neišsaugota treniruotė.* Paspauskite **Pradėti iš naujo**, kad ją išvalytumėte. Kai treniruotė jau išsaugota telefone, forma išvaloma galutinai: antrą kartą ji negrįš.
+
+### Kai grįžta ryšys
+
+Kol „Logify“ atidaryta, laukiančios treniruotės išsiunčiamos pačios: kai grįžta ryšys, kai sugrįžtate į programą ir kas 30 sekundžių. Paspauskite **Siųsti dabar** būsenos eilutėje, kad išsiųstumėte iškart. Tuo metu būsenos eilutė rodo *Siunčiama…*, o išsiųsta treniruotė tampa įprasta eilute. **Kiekviena treniruotė išsaugoma, ir laiškas išsiunčiamas, lygiai vieną kartą**, net jei siunčiant ryšys nutrūksta ir „Logify“ turi bandyti dar kartą.
+
+„Logify“ siunčia tik kol programa atidaryta (fone siųsti negali), todėl grįžę į ryšio zoną atidarykite ją. Treniruotės laikas yra tas, kada paspaudėte **Išsaugoti treniruotę**, jei tai buvo per pastarąsias 30 dienų.
+
+### Jei treniruotės išsiųsti nepavyksta
+
+Jei serveris treniruotę atmeta (pavyzdžiui, planas ištrintas arba treneris jo nebepriskiria), ji rodoma su **Nepavyko išsiųsti: …** ir priežastimi, o skiltyje **Mano planai** – su mygtukais **Bandyti dar kartą** ir **Ištrinti**. **Ištrinti** pirmiausia paklausia: *Ištrinti „…“? Ji nebuvo išsiųsta, todėl dings visam laikui.* Jei plano jūsų sąraše nebėra, treniruotė rodoma kortelėje **Išsiuntimo laukiančios treniruotės** skilties **Mano planai** viršuje. Būsenos eilutė parašo *Nepavyko išsiųsti 1 treniruotės: žr. „Mano planai“.*
+
+### Atsijungimas, kai yra laukiančių treniruočių
+
+„Logify“ pirmiausia paklausia: *1 treniruotė dar neišsiųsta. Ji liks šiame telefone ir bus išsiųsta, kai kitą kartą čia prisijungsite.* Norėdami ją išsiųsti, vėl prisijunkite šiame telefone. Klausimas skaičiuoja tik treniruotes, kurios bus išsiųstos pačios (laukiančias arba siunčiamas): treniruotė, kurios **Nepavyko išsiųsti**, pati niekada neišsiunčiama, todėl „Logify“ dėl jos neklausia, o ji lieka skiltyje **Mano planai** laukti **Bandyti dar kartą** ar **Ištrinti**. Atsijungti galima ir be ryšio; tada iš telefono pašalinami jūsų išsaugoti duomenys (bet ne laukiančios treniruotės).
+
+### Kam vis dar reikia ryšio
+
+Planų kūrimui, redagavimui ir trynimui, treniruotės pervadinimui, tikslams, ataskaitos siuntimui, dalijimuisi su treneriu ir prisijungimui reikia ryšio; be jo matysite *Nepavyksta pasiekti serverio…* (o prisijungimo ekrane – *Nėra ryšio. Prisijungti galima tik turint ryšį.*).
+
+### Jei telefono atmintis pilna
+
+„Logify“ pašalina išsaugotus duomenis, kad atlaisvintų vietos jūsų treniruotei. Jei treniruotės telefone vis tiek išlaikyti nepavyksta, su ryšiu ji iškart išsiunčiama kaip įprastai, ir matote *Treniruotė išsaugota*. Tik be ryšio forma parašo *Šio telefono atmintis pilna, todėl treniruotės čia išsaugoti nepavyko. Atlaisvinkite vietos arba išsaugokite, kai bus ryšys.* ir nesako, kad treniruotė išsaugota.
+
+### Senesnė duomenų bazė
+
+Jei projekto duomenų bazė dar neatnaujinta iki naujausios versijos, „Logify“ vis tiek veikia, bet būsenos eilutė perspėja, kad be ryšio įrašytoms treniruotėms priskiriamas jų išsiuntimo laikas ir kad nutrūkus ryšiui viena gali būti išsaugota du kartus. Paspauskite **Slėpti**, kad paslėptumėte likusiai sesijai. Tai ištaiso projektą prižiūrintis žmogus, atnaujindamas duomenų bazę ([docs/lt/supabase.md](../../lt/supabase.md#v5-pritaikymas-esamam-projektui)).
+
+## 11. Pranešimai ir ką daryti
 
 | Ką matote | Ką tai reiškia |
 |---|---|
 | *Neteisingas el. paštas arba slaptažodis.* | Patikrinkite duomenis; slaptažodyje svarbios didžiosios ir mažosios raidės. |
 | *Paskyra su šiuo el. paštu jau egzistuoja. Geriau prisijunkite.* | Paspauskite **Jau turiu paskyrą**. |
 | *Pirmiausia patvirtinkite el. paštą…* | Atidarykite gautame laiške esančią patvirtinimo nuorodą ir prisijunkite. |
-| *Nepavyksta pasiekti serverio…* | Patikrinkite interneto ryšį ir paspauskite **Bandyti dar kartą**. |
+| *Nepavyksta pasiekti serverio…* | Patikrinkite interneto ryšį ir paspauskite **Bandyti dar kartą**. (Treniruotės įrašymui jo nereikia: ji laikoma telefone.) |
+| *Nėra ryšio. Prisijungti galima tik turint ryšį.* | Prisijunkite vieną kartą su ryšiu; po to „Logify“ veikia be ryšio. |
+| *Nėra ryšio. Įrašytos treniruotės saugomos šiame telefone.* | Ryšio nėra. Viskas, ką įrašote, laukia telefone. |
+| *Nėra ryšio: rodomi duomenys, išsaugoti …* | Ekranas rodo paskutinius išsaugotus duomenis. Jis pats atsinaujina, kai grįžta ryšys, arba paspauskite **Bandyti dar kartą**. |
+| *Nėra ryšio, o šie duomenys šiame telefone dar neišsaugoti.* | Atidarykite tą ekraną vieną kartą su ryšiu. |
+| *Išsaugota šiame telefone. Treniruotė bus išsiųsta, kai tik atsiras ryšys; tada treneris gaus ir laišką.* | Jūsų treniruotė saugi. Kai turėsite ryšį, palikite „Logify“ atidarytą. |
+| *1 treniruotė laukia išsiuntimo* · **Laukia išsiuntimo** | Išsiunčiama automatiškai; arba paspauskite **Siųsti dabar**. |
+| *Nepavyko išsiųsti: …* | Serveris ją atmetė; žr. priežastį. **Bandyti dar kartą** arba **Ištrinti**. |
+| *Nepavyko išsiųsti 1 treniruotės: žr. „Mano planai“.* | Atidarykite **Mano planai** ir susitvarkykite su ja. |
+| *Šio telefono atmintis pilna, todėl treniruotės čia išsaugoti nepavyko…* | Atlaisvinkite vietos telefone arba išsaugokite treniruotę, kai turėsite ryšį. |
+| *1 treniruotė dar neišsiųsta. Ji liks šiame telefone…* | Rodoma atsijungiant. Vėliau prisijunkite šiame telefone, kad ją išsiųstumėte. |
+| *Atkurta neišsaugota treniruotė.* | Grįžo forma, kurią rašėte. **Pradėti iš naujo** ją išvalo. |
+| *Paruošta nauja Logify versija.* | Paspauskite **Atnaujinti**. |
+| *Logify duomenų bazė senesnė nei ši programėlė…* | Žr. [Senesnė duomenų bazė](#senesnė-duomenų-bazė). |
 | *Per daug bandymų…* | Palaukite kelias minutes. |
 | *Joks treneris neturi tokio kodo…* | Patikrinkite kodą pas trenerį. |
 | *Tai jūsų pačių kodas…* | Įvedėte trenerio paskyros savo paties kodą. |

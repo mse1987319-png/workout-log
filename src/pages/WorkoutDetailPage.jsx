@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getWorkout } from '../api/workouts'
 import LastTime from '../components/LastTime'
+import SavedDataNotice from '../components/SavedDataNotice'
 import { EmptyState, ErrorState, Loading } from '../components/States'
 import { useLanguage } from '../i18n/useLanguage'
 import { friendlyError } from '../lib/errors'
@@ -39,7 +40,7 @@ function ExerciseSets({ group, before }) {
   )
 }
 
-function Workout({ workout }) {
+function Workout({ workout, savedAt, onRetry }) {
   const { t } = useLanguage()
   const pace = formatPace(workout.duration_min, workout.distance_km)
   const groups = groupByExercise(workout.workout_sets ?? [])
@@ -47,6 +48,7 @@ function Workout({ workout }) {
   return (
     <>
       <h1>{workout.title}</h1>
+      {savedAt && <SavedDataNotice savedAt={savedAt} onRetry={onRetry} />}
       <p className="workout-meta">
         <span className={`badge badge-${workout.type}`}>{typeLabel(workout.type)}</span>
         {workout.plan && <span>{workout.plan.name}</span>}
@@ -95,7 +97,7 @@ function Workout({ workout }) {
 export default function WorkoutDetailPage() {
   const { id } = useParams()
   const load = useCallback(() => getWorkout(id), [id])
-  const { status, data: workout, error, reload } = useLoad(load)
+  const { status, data: workout, error, savedAt, reload } = useLoad(load, `workout:${id}`)
   const { t } = useLanguage()
   const notFound = status === 'error' && error?.code === 'PGRST116'
 
@@ -107,7 +109,7 @@ export default function WorkoutDetailPage() {
       {status === 'loading' && <Loading>{t('detail.loading')}</Loading>}
       {notFound && <EmptyState>{t('detail.notFound')}</EmptyState>}
       {status === 'error' && !notFound && <ErrorState message={friendlyError(error)} onRetry={reload} />}
-      {status === 'success' && <Workout workout={workout} />}
+      {status === 'success' && <Workout workout={workout} savedAt={savedAt} onRetry={reload} />}
     </article>
   )
 }
