@@ -1332,10 +1332,10 @@ LT["quality"] = {
     "test_h": "Testai",
     "tests": [
         "Vienetų testai naudoja tikrą supabase-js klientą su netikru `fetch`, todėl tikrina tikslias užklausas.",
-        "SQL testai: RLS tarp naudotojų, dalijimasis, tikslai, ataskaitos, trenerių el. paštai, serijų santrauka, treniruotės išsaugojimas lygiai vieną kartą.",
+        "SQL testai: RLS tarp naudotojų, dalijimasis, tikslai, ataskaitos, trenerių el. paštai, serijų santrauka, išsaugojimas lygiai vieną kartą.",
         "Testų lentelė (19 skaidrė + išplėstiniai): naujas naudotojas, strength / other laiškai, svetimi duomenys, "
         "redagavimas, klaidos būsena, ataskaitos, dalijimasis.",
-        "Šiandienos demo: kelio A ir Zap 2 paleidimai Zap history pažymėti **Successful**. v5: įrašymas be ryšio patikrintas gyvai su bandomąja paskyra.",
+        "Šiandienos demo: kelio A ir Zap 2 paleidimai pažymėti **Successful**. v5: įrašymas be ryšio patikrintas gyvai.",
     ],
     "rel_h": "Patikimumas",
     "rel": [
