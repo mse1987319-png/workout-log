@@ -6,8 +6,8 @@ APP = "https://workout-log-murex-three.vercel.app/"
 REPO = "https://github.com/mse1987319-png/workout-log"
 BLOB = REPO + "/blob/main/"
 TREE = REPO + "/tree/main/"
-# v5 (the phone app) is on the release/v5 branch until it is merged into main.
-BLOB5 = REPO + "/blob/release/v5/"
+# v5 (the phone app) was merged into main on 2026-11-18; TREE5 keeps pointing at the release/v5 snapshot branch.
+BLOB5 = BLOB
 TREE5 = REPO + "/tree/release/v5/"
 PREVIEW = "https://workout-f3whexba1-mse1987319-9300.vercel.app/"
 PRS = REPO + "/pulls?q=is%3Apr+is%3Amerged"
@@ -664,7 +664,7 @@ EN["script"] = {
         "Open Gmail `mse1987319@gmail.com` (switch account at the top right) and search "
         "`to:mse1987319+logify@gmail.com`.",
         "Zapier: both Zaps **On**. One report per 5 min: wait if one was just sent.",
-        f"Phone part (optional): open the [v5 preview]({PREVIEW}) on a phone; screenshots are in Appendix C.",
+        f"Phone part (optional): open [the live site]({APP}) on a phone (v5 is live since 2026-11-18; the [v5 preview]({PREVIEW}) is the same build); screenshots are in Appendix C.",
     ],
     "head": ["#", "Do", "Say", "Time"],
     "steps": [
@@ -773,9 +773,9 @@ EN["appC"] = {
     "title": "Mobile app (PWA)",
     "subtitle": [
         "Install it, use it in the gym, lose the signal, and see the workout arrive once.",
-        "About 3 minutes  ·  v5 preview  ·  the real app on a 390 × 780 px phone, demo data",
+        "About 3 minutes  ·  v5, live since 2026-11-18  ·  the real app on a 390 × 780 px phone, demo data",
     ],
-    "notes": f"Run this after Appendix A if the audience asks about phones. Live: open {PREVIEW} on a phone (the v5 build against the live database). The screens here were taken from the real app with a mocked API, so nothing was saved or emailed.",
+    "notes": f"Run this after Appendix A if the audience asks about phones. Live: open {APP} on a phone (v5 is live since 2026-11-18; {PREVIEW} is the same build). The screens here were taken from the real app with a mocked API, so nothing was saved or emailed.",
 }
 
 EN["phone"] = [
@@ -1489,7 +1489,7 @@ LT["script"] = {
         "Atidarykite Gmail `mse1987319@gmail.com` (paskyrą perjunkite viršuje dešinėje) ir ieškokite "
         "`to:mse1987319+logify@gmail.com`.",
         "Zapier: abu Zap'ai **On**. Tik viena ataskaita per 5 min.: jei ką tik siųsta, palaukite.",
-        f"Telefono dalis (neprivaloma): atidarykite [v5 peržiūrą]({PREVIEW}) telefone; ekrano nuotraukos – C priede.",
+        f"Telefono dalis (neprivaloma): telefone atidarykite [svetainę]({APP}) (v5 veikia nuo 2026-11-18; [v5 peržiūra]({PREVIEW}) yra ta pati versija); ekrano nuotraukos – C priede.",
     ],
     "head": ["#", "Darykite", "Sakykite", "Laikas"],
     "steps": [
@@ -1598,9 +1598,9 @@ LT["appC"] = {
     "title": "Mobilioji programėlė (PWA)",
     "subtitle": [
         "Įdiekite, naudokite salėje, prarandate ryšį ir matote, kaip treniruotė atkeliauja vieną kartą.",
-        "Apie 3 minutes  ·  v5 peržiūra  ·  tikra programėlė 390 × 780 px telefone, demonstraciniai duomenys",
+        "Apie 3 minutes  ·  v5, veikia nuo 2026-11-18  ·  tikra programėlė 390 × 780 px telefone, demonstraciniai duomenys",
     ],
-    "notes": f"Rodykite po A priedo, jei klausytojai klausia apie telefonus. Gyvai: telefone atidarykite {PREVIEW} (v5 versija su gyva duomenų baze). Čia pateikti ekranai nufotografuoti tikroje programėlėje su imituotu API, todėl nieko neišsaugota ir nesiųsta.",
+    "notes": f"Rodykite po A priedo, jei klausytojai klausia apie telefonus. Gyvai: telefone atidarykite {APP} (v5 veikia nuo 2026-11-18; {PREVIEW} yra ta pati versija). Čia pateikti ekranai nufotografuoti tikroje programėlėje su imituotu API, todėl nieko neišsaugota ir nesiųsta.",
 }
 
 LT["phone"] = [
