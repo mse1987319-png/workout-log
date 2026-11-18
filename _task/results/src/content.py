@@ -196,7 +196,7 @@ EN["arch"] = {
         ("Gmail", ["to the athlete's instructor(s)", "STRENGTH / New workout / report"]),
     ],
     "vercel": ("Vercel", "Build + `VITE_` env vars, static hosting, PR previews"),
-    "github": ("GitHub", "feature/… branches, 25 merged pull requests"),
+    "github": ("GitHub", "feature/… branches, 30 merged pull requests"),
     "serves": "serves the app",
     "legend": [
         "**1**  supabase-js with the anon key + the user's JWT; RLS decides what each user sees",
@@ -473,7 +473,7 @@ EN["reqs"] = {
     "kicker": "Task slides 2, 4, 12, 17 and 21",
     "head": ["Part", "Minimum in the task", "Delivered"],
     "rows": [
-        ["Code", "GitHub repo, branches, ≥ 3 pull requests", "**25 merged PRs**, one `feature/…` branch per feature, plus the v5 release branch"],
+        ["Code", "GitHub repo, branches, ≥ 3 pull requests", "**30 merged PRs**, one `feature/…` branch per feature, plus the v5 release branch"],
         ["Interface", "React + Vite, JavaScript; 3 screens, 4 states",
          "**8 screens**, each with Loading / Error / Empty / Success; LT / EN; **installable on a phone, works offline (v5)**"],
         ["Data", "Supabase Auth, 2 related tables, RLS", "**8 tables**, RLS on all, SQL functions and triggers"],
@@ -481,7 +481,7 @@ EN["reqs"] = {
         ["Automation", "Webhook → Filter → Paths → Gmail",
          "**Zap 1** with Paths + **Zap 2** for reports; 3 error handlers"],
         ["Documentation", "Notion page, logs, README",
-         "Notion (EN + LT): task table, 23 decisions, 9 errors, tests; README, docs/, user manuals"],
+         "Notion (EN + LT): task table, 38 decisions, 17 errors, tests; README, docs/, user manuals"],
         ["Bonus", "A chart from history; an AI feature",
          "**2 charts**, goals, rule-based suggestions (explainable; no AI key in the app)"],
         ["Out of scope", "Payments, realtime, uploads, own server, TypeScript, mobile app",
@@ -1009,7 +1009,7 @@ LT["arch"] = {
         ("Gmail", ["sportininko treneriui (-iams)", "STRENGTH / New workout / ataskaita"]),
     ],
     "vercel": ("Vercel", "Build + `VITE_` aplinkos kintamieji, statinis talpinimas, PR peržiūros"),
-    "github": ("GitHub", "feature/… šakos, 25 sulieti pull request"),
+    "github": ("GitHub", "feature/… šakos, 30 sulietų pull request"),
     "serves": "pateikia programą",
     "legend": [
         "**1**  supabase-js su anon raktu ir naudotojo JWT; RLS nusprendžia, ką mato kiekvienas",
@@ -1295,7 +1295,7 @@ LT["reqs"] = {
     "kicker": "Užduoties 2, 4, 12, 17 ir 21 skaidrės",
     "head": ["Dalis", "Užduoties minimumas", "Įgyvendinta"],
     "rows": [
-        ["Kodas", "GitHub saugykla, šakos, ≥ 3 pull request", "**25 sulieti PR**, kiekvienai funkcijai `feature/…` šaka, plius v5 išleidimo šaka"],
+        ["Kodas", "GitHub saugykla, šakos, ≥ 3 pull request", "**30 sulietų PR**, kiekvienai funkcijai `feature/…` šaka, plius v5 išleidimo šaka"],
         ["Sąsaja", "React + Vite, JavaScript; 3 ekranai, 4 būsenos",
          "**8 ekranai**, kiekviename Kraunama / Klaida / Tuščia / Pavyko; LT / EN; **įdiegiama telefone, veikia be ryšio (v5)**"],
         ["Duomenys", "Supabase Auth, 2 susijusios lentelės, RLS", "**8 lentelės**, RLS visose, SQL funkcijos ir trigeriai"],
@@ -1303,7 +1303,7 @@ LT["reqs"] = {
         ["Automatizacija", "Webhook → Filter → Paths → Gmail",
          "**Zap 1** su Paths + **Zap 2** ataskaitoms; 3 klaidų tvarkyklės"],
         ["Dokumentacija", "Notion puslapis, žurnalai, README",
-         "Notion (EN + LT): užduotys, 23 sprendimai, 9 klaidos, testai; README, docs/, naudotojo vadovai"],
+         "Notion (EN + LT): užduotys, 38 sprendimai, 17 klaidų, testai; README, docs/, naudotojo vadovai"],
         ["Papildomi taškai", "Grafikas iš istorijos; DI funkcija",
          "**2 diagramos**, tikslai, taisyklėmis pagrįsti pasiūlymai (paaiškinami; programoje nėra DI rakto)"],
         ["Ko nedarome", "Mokėjimų, realaus laiko, failų įkėlimo, savo serverio, TypeScript, mobiliosios programos",
